@@ -1,13 +1,13 @@
 # devpul_flutter
 
-Flutter error hooks for [DevPul](https://devpul.saradgajurel.com.np). Sends `FlutterError` reports and uncaught platform errors, with stack traces, to the browser UI.
+Flutter hooks for [DevPul](https://devpul.saradgajurel.com.np). Sends `FlutterError` reports with Flutter's diagnostics and uncaught platform errors to the browser UI, and optionally `debugPrint` output and route changes.
 
 ## Install
 
 ```yaml
 dependencies:
-  devpul: ^0.1.0
-  devpul_flutter: ^0.1.0
+  devpul: ^0.2.0
+  devpul_flutter: ^0.2.0
 ```
 
 ## Usage
@@ -17,7 +17,11 @@ import 'package:devpul_flutter/devpul_flutter.dart';
 
 void main() {
   DevpulFlutter.install();
-  runApp(const MyApp());
+  DevpulFlutter.captureDebugPrint(); // optional: debugPrint to the Logs tab
+  runApp(MaterialApp(
+    navigatorObservers: [DevpulNavigatorObserver()], // optional: route events
+    home: const Home(),
+  ));
 }
 ```
 
