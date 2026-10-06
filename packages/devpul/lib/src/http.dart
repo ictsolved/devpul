@@ -157,7 +157,8 @@ final class DevpulHttpCall {
       final code = status == null ? '' : '$status ';
       _print(
         'x',
-        '$code$method $url ${ms}ms $errorType${message == null ? '' : ': $message'}',
+        '$code$method $url ${ms}ms $errorType'
+            '${message == null ? '' : ': ${message.split('\n').first}'}',
         ansiRed,
         h,
         b,
