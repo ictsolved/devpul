@@ -48,7 +48,7 @@ npx devpul http://127.0.0.1:41234/AbCdEf12=/
 
 ## Fixed port (optional)
 
-Run with a fixed DDS port and no token, then use `ws://127.0.0.1:8181/ws` or the "Fixed port 8181" button. The connection then survives restarts.
+Run with a fixed DDS port and no token, then paste `127.0.0.1:8181` once. DevPul keeps the URL, so the connection survives restarts.
 
 ```sh
 flutter run --dds-port=8181 --disable-service-auth-codes

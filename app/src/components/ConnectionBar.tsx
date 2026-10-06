@@ -18,8 +18,6 @@ interface Props {
   onRemove: (id: string) => void;
 }
 
-export const FIXED_URL = 'ws://127.0.0.1:8181/ws';
-
 export function ConnectionBar(props: Props) {
   const { connections, states, names, localOrigin, hero, onAdd, onRemove } = props;
   const [text, setText] = useState('');
@@ -65,16 +63,6 @@ export function ConnectionBar(props: Props) {
           <Plug size={14} />
           Connect
         </button>
-        {!connections.some((c) => c.url === FIXED_URL) && (
-          <button
-            type="button"
-            className="btn"
-            onClick={() => add(FIXED_URL)}
-            data-tip="For apps run with --dds-port=8181 --disable-service-auth-codes"
-          >
-            Fixed port 8181
-          </button>
-        )}
       </form>
       {connections.length > 0 && (
         <ul className="conns" aria-label="Connections">

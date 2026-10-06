@@ -88,7 +88,6 @@ export function Home({ icon, connect, tools, waiting, localOrigin, onOpenFile }:
         <span>
           or run <code>npx devpul</code>
         </span>
-        <span>Open source, MIT</span>
       </footer>
     </div>
   );
