@@ -14,7 +14,7 @@ resolution: workspace
 
 dependencies:
   devpul: ^0.1.0
-  dio: ^5.0.0
+  dio: ^5.2.0
 
 dev_dependencies:
   lints: ^6.1.0
