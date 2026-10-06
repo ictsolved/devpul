@@ -1,0 +1,14 @@
+name: devpul_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/devpul
+  - packages/devpul_dio
+  - packages/devpul_flutter
+  - examples/devpul_example
+
+dev_dependencies:
+  lints: ^6.1.0
