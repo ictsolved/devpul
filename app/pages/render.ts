@@ -1,6 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import hljs from 'highlight.js/lib/core';
+import bash from 'highlight.js/lib/languages/bash';
+import dart from 'highlight.js/lib/languages/dart';
+import javascript from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import yaml from 'highlight.js/lib/languages/yaml';
+import { ChevronLeft, ChevronRight, Monitor, Moon, Sun } from 'lucide-react';
 import { Marked, type Token, type Tokens } from 'marked';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 export interface Site {
   url: string;
@@ -84,6 +93,24 @@ function faq(tokens: Token[]): { q: string; a: string }[] {
   return out;
 }
 
+hljs.registerLanguage('dart', dart);
+hljs.registerLanguage('sh', bash);
+hljs.registerLanguage('js', javascript);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('yaml', yaml);
+
+const themeIcons = [
+  ['system', Monitor],
+  ['light', Sun],
+  ['dark', Moon],
+] as const;
+const themeButton = themeIcons
+  .map(([theme, icon]) => renderToStaticMarkup(createElement(icon, { size: 14, className: `for-${theme}` })))
+  .join('');
+
+const chevronLeft = renderToStaticMarkup(createElement(ChevronLeft, { size: 14 }));
+const chevronRight = renderToStaticMarkup(createElement(ChevronRight, { size: 14 }));
+
 const markdown = new Marked({
   gfm: true,
   renderer: {
@@ -92,6 +119,10 @@ const markdown = new Marked({
       const inner = this.parser.parseInline(tokens);
       if (depth === 1) return `<h1>${inner}</h1>\n`;
       return `<h${depth} id="${id}"><a class="anchor" href="#${id}">${inner}</a></h${depth}>\n`;
+    },
+    code({ text, lang }) {
+      const html = lang && hljs.getLanguage(lang) ? hljs.highlight(text, { language: lang }).value : escape(text);
+      return `<pre><code>${html}</code></pre>\n`;
     },
   },
 });
@@ -139,8 +170,8 @@ export function renderPage(path: string, site: Site): string | null {
   const prev = PAGES[index - 1];
   const next = PAGES[index + 1];
   const pager = [
-    prev ? `<a href="${root}${prev.path}">&larr; ${escape(parse(prev.file).title)}</a>` : '<span></span>',
-    next ? `<a href="${root}${next.path}">${escape(parse(next.file).title)} &rarr;</a>` : '<span></span>',
+    prev ? `<a href="${root}${prev.path}">${chevronLeft}${escape(parse(prev.file).title)}</a>` : '<span></span>',
+    next ? `<a href="${root}${next.path}">${escape(parse(next.file).title)}${chevronRight}</a>` : '<span></span>',
   ].join('');
   const top = path.startsWith('help/') ? 'help' : path.startsWith('docs/plugins/') ? 'plugins' : 'docs';
   const navLink = (id: string, href: string, label: string) =>
@@ -181,7 +212,7 @@ export function renderPage(path: string, site: Site): string | null {
         ${navLink('help', 'help/', 'Help')}
         <a href="${site.repo}">GitHub</a>
       </nav>
-      <button type="button" class="theme" aria-label="Theme"></button>
+      <button type="button" class="theme" aria-label="Theme">${themeButton}</button>
       <a class="open" href="${root}">Open DevPul</a>
     </header>
     <div class="layout">

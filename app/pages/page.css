@@ -72,6 +72,21 @@ pre {
   white-space: nowrap;
 }
 
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
 .open {
   background: var(--accent);
   border-color: var(--accent);
@@ -179,6 +194,32 @@ pre {
   line-height: 1.5;
 }
 
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
 .doc pre .copy {
   position: absolute;
   top: 6px;
@@ -249,6 +290,12 @@ pre {
   margin-top: 48px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .foot {

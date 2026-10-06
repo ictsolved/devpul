@@ -5,8 +5,9 @@
   const button = document.querySelector('.theme');
   let theme = root.dataset.theme ?? 'system';
   const show = () => {
-    button.textContent = theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark';
+    button.dataset.current = theme;
     button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
   };
   show();
   button.addEventListener('click', () => {
