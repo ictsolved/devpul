@@ -2,6 +2,7 @@ name: devpul_http
 description: package:http client wrapper for DevPul. Shows requests, responses and errors live in the DevPul browser UI, with curl commands.
 version: 0.2.0
 homepage: https://devpul.saradgajurel.com.np
+documentation: https://devpul.saradgajurel.com.np/docs/http/
 repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_http
 issue_tracker: https://github.com/ictsolved/devpul/issues
 topics: [debugging, network, http, devtools]
