@@ -5,7 +5,6 @@ homepage: https://devpul.saradgajurel.com.np
 repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_dio
 issue_tracker: https://github.com/ictsolved/devpul/issues
 topics: [debugging, network, dio, http, devtools]
-publish_to: none
 
 environment:
   sdk: ^3.6.0
