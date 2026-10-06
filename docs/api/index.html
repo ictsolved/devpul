@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Core API - DevPul</title>
+    <meta name="description" content="Devpul.session, tags, emit, log, error, action and DevpulConfig in the devpul Dart package, with redaction and ignore rules." />
+    <link rel="canonical" href="https://devpul.saradgajurel.com.np/docs/api/" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="Core API - DevPul" />
+    <meta property="og:description" content="Devpul.session, tags, emit, log, error, action and DevpulConfig in the devpul Dart package, with redaction and ignore rules." />
+    <meta property="og:url" content="https://devpul.saradgajurel.com.np/docs/api/" />
+    <meta property="og:image" content="https://devpul.saradgajurel.com.np/og.png" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <style>/* Shared by the app and the static pages. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f9f9, #0b1416);
+  --panel: light-dark(#ffffff, #111d20);
+  --panel-2: light-dark(#f0f4f4, #16262a);
+  --border: light-dark(#dbe3e4, #23383c);
+  --text: light-dark(#13201f, #e2ecec);
+  --muted: light-dark(#5d6f70, #8aa0a2);
+  --accent: light-dark(#0f766e, #2dd4bf);
+  --accent-soft: light-dark(#ccfbf1, #134e4a);
+  --select: light-dark(#e0f2f1, #173a3a);
+  --ok: light-dark(#15803d, #4ade80);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fef3c7, #3d2e0a);
+  --bad: light-dark(#b91c1c, #f87171);
+  --bad-soft: light-dark(#fee2e2, #3b1414);
+  --j-key: light-dark(#0f5b8a, #7dd3fc);
+  --j-str: light-dark(#0f766e, #5eead4);
+  --j-num: light-dark(#9a3412, #fdba74);
+  --j-lit: light-dark(#7c3aed, #c4b5fd);
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.top nav a:hover,
+.top nav a[aria-current] {
+  color: var(--text);
+}
+
+.theme,
+.open {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
+.open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.side {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.side h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side a {
+  display: block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.side a:hover {
+  background: var(--panel-2);
+}
+
+.side a[aria-current] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.doc {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.doc h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.doc h2 {
+  font-size: 21px;
+  margin: 36px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.doc h3 {
+  font-size: 16px;
+  margin: 24px 0 6px;
+}
+
+.doc .anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc .anchor:hover::after {
+  content: ' #';
+  color: var(--muted);
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+
+.doc pre {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
+.doc pre .copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 1px 7px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.doc pre:hover .copy,
+.doc pre .copy:focus-visible {
+  opacity: 1;
+}
+
+.doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px 6px 0;
+}
+
+.doc td:first-child {
+  white-space: nowrap;
+}
+
+.doc td:first-child code {
+  overflow-wrap: normal;
+}
+
+.doc th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc blockquote {
+  margin: 16px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc blockquote p {
+  margin: 4px 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 12px;
+  }
+
+  .side {
+    position: static;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .side nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+
+  .side h2 {
+    display: none;
+  }
+
+  .side ul {
+    display: contents;
+  }
+
+  .side a {
+    padding: 2px 0;
+  }
+
+  .side a[aria-current] {
+    background: none;
+    color: var(--accent);
+  }
+
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 16px;
+  }
+
+  .top nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .brand {
+    flex: 1;
+  }
+}
+</style>
+    
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="../../"><img src="../../favicon.svg" alt="" width="20" height="20" />DevPul</a>
+      <nav>
+        <a href="../../docs/" aria-current="page">Docs</a>
+        <a href="../../docs/plugins/">Plugins</a>
+        <a href="../../help/">Help</a>
+        <a href="https://github.com/ictsolved/devpul">GitHub</a>
+      </nav>
+      <button type="button" class="theme" aria-label="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor for-system" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun for-light" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon for-dark" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path></svg></button>
+      <a class="open" href="../../">Open DevPul</a>
+    </header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/">Connecting</a></li><li><a href="../../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/" aria-current="page">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/plugins/">Plugins</a></li><li><a href="../../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
+      <main class="doc">
+        <h1>Core API</h1>
+<p>Everything here is in <code>package:devpul/devpul.dart</code>. Calls are no-ops in release and profile builds and when <code>enabled</code> is false, and they never throw into your app.</p>
+<h2 id="session"><a class="anchor" href="#session">Session</a></h2>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">session</span>(
+  {<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Shop&#x27;</span>, <span class="hljs-string">&#x27;version&#x27;</span>: <span class="hljs-string">&#x27;2.3.1&#x27;</span>, <span class="hljs-string">&#x27;env&#x27;</span>: <span class="hljs-string">&#x27;staging&#x27;</span>, <span class="hljs-string">&#x27;baseUrl&#x27;</span>: <span class="hljs-string">&#x27;https://api.example.com&#x27;</span>},
+  tags: {<span class="hljs-string">&#x27;env&#x27;</span>: <span class="hljs-string">&#x27;staging&#x27;</span>},
+);</code></pre>
+<p>Fields are free-form and show in the header; pick which ones in Settings. <code>name</code> labels the app in connection chips and run dividers. The session is sent again when DevPul connects late, so it is never missing.</p>
+<h2 id="tags"><a class="anchor" href="#tags">Tags</a></h2>
+<pre><code><span class="hljs-title class_">Devpul</span>.tags[<span class="hljs-string">&#x27;user&#x27;</span>] = <span class="hljs-string">&#x27;guest&#x27;</span>;</code></pre>
+<p>Tags are added to every event from then on and become filter chips and <code>tag:</code> filters. Values are strings.</p>
+<h2 id="custom-events"><a class="anchor" href="#custom-events">Custom events</a></h2>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;cart.updated&#x27;</span>, {<span class="hljs-string">&#x27;items&#x27;</span>: <span class="hljs-number">3</span>, <span class="hljs-string">&#x27;total&#x27;</span>: <span class="hljs-number">42.5</span>});</code></pre>
+<p>Any JSON-like value works; other objects become their <code>toString()</code>. Kinds that no plugin claims show in Events. Prefer dotted names, such as <code>cart.updated</code>, so <code>kind:cart</code> finds the family.</p>
+<h2 id="logs"><a class="anchor" href="#logs">Logs</a></h2>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;Signed in&#x27;</span>, name: <span class="hljs-string">&#x27;auth&#x27;</span>);
+<span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;Retrying&#x27;</span>, level: <span class="hljs-string">&#x27;warn&#x27;</span>, name: <span class="hljs-string">&#x27;sync&#x27;</span>);
+<span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;Sync failed&#x27;</span>, level: <span class="hljs-string">&#x27;error&#x27;</span>, name: <span class="hljs-string">&#x27;sync&#x27;</span>, error: e, stack: s);</code></pre>
+<p><code>level</code> is free-form; <code>debug</code>, <code>info</code>, <code>warn</code> and <code>error</code> get colors. To forward <code>package:logging</code>:</p>
+<pre><code><span class="hljs-title class_">Logger</span>.root.onRecord.<span class="hljs-title function_">listen</span>((r) =&gt; <span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">log</span>(
+      r.message,
+      level: r.level.name.<span class="hljs-title function_">toLowerCase</span>(),
+      name: r.loggerName,
+      error: r.error,
+      stack: r.stackTrace,
+    ));</code></pre>
+<p>In Flutter, <code>DevpulFlutter.captureDebugPrint()</code> sends <code>debugPrint</code> output too.</p>
+<h2 id="errors"><a class="anchor" href="#errors">Errors</a></h2>
+<pre><code><span class="hljs-keyword">try</span> {
+  <span class="hljs-keyword">await</span> <span class="hljs-title function_">sync</span>();
+} <span class="hljs-keyword">catch</span> (e, s) {
+  <span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">error</span>(e, s, source: <span class="hljs-string">&#x27;sync&#x27;</span>);
+}</code></pre>
+<p><code>source</code> groups errors in the UI. <code>library</code>, <code>context</code> and <code>information</code> add detail; <code>silent: true</code> marks errors that are expected noise. <code>DevpulFlutter.install()</code> reports Flutter and uncaught errors for you.</p>
+<h2 id="actions"><a class="anchor" href="#actions">Actions</a></h2>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">action</span>(<span class="hljs-string">&#x27;Clear cache&#x27;</span>, () <span class="hljs-keyword">async</span> {
+  <span class="hljs-keyword">final</span> n = <span class="hljs-keyword">await</span> cache.<span class="hljs-title function_">clear</span>();
+  <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;removed <span class="hljs-subst">$n</span> entries&#x27;</span>;
+});
+<span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">action</span>(<span class="hljs-string">&#x27;Sign out&#x27;</span>, () =&gt; auth.<span class="hljs-title function_">signOut</span>());</code></pre>
+<p>Each action becomes an item in the UI&#39;s <strong>Actions</strong> menu. It runs in the app when clicked, and the return value, if any, shows as text. Exceptions show as the failure message. Registering a name again replaces it.</p>
+<p>Actions are debug tools: keep them to things that are safe to trigger at any time.</p>
+<h2 id="configuration"><a class="anchor" href="#configuration">Configuration</a></h2>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">configure</span>(<span class="hljs-title class_">DevpulConfig</span>(
+  console: <span class="hljs-title class_">ConsoleMode</span>.verbose,
+  ignoreUrls: [<span class="hljs-title class_">RegExp</span>(<span class="hljs-string">r&#x27;/health$&#x27;</span>), <span class="hljs-string">&#x27;analytics.example.com&#x27;</span>],
+  ignoreMethods: {<span class="hljs-string">&#x27;OPTIONS&#x27;</span>},
+));</code></pre>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>enabled</code></td>
+<td><code>true</code></td>
+<td>Release and profile builds never emit either way.</td>
+</tr>
+<tr>
+<td><code>console</code></td>
+<td><code>summary</code></td>
+<td><code>off</code>, <code>summary</code> (one line per call, <code>#12 &lt; 200 GET https://example.com/items 143ms</code>) or <code>verbose</code> (headers and bodies).</td>
+</tr>
+<tr>
+<td><code>ansiColors</code></td>
+<td><code>true</code></td>
+<td>Colored console lines.</td>
+</tr>
+<tr>
+<td><code>maxValueLength</code></td>
+<td>1 MB</td>
+<td>Longer event fields become a truncation marker with a preview.</td>
+</tr>
+<tr>
+<td><code>backlogSize</code></td>
+<td>16 MB</td>
+<td>Events kept in app memory per isolate and served to the UI on connect.</td>
+</tr>
+<tr>
+<td><code>ignoreUrls</code>, <code>ignoreMethods</code></td>
+<td>none</td>
+<td>Calls that are not reported. A string matches as a substring.</td>
+</tr>
+<tr>
+<td><code>redactHeaders</code>, <code>redactBody</code></td>
+<td>none</td>
+<td>See below.</td>
+</tr>
+<tr>
+<td><code>idGenerator</code></td>
+<td>counter</td>
+<td>Request ids.</td>
+</tr>
+</tbody></table>
+<p>Configuration is per isolate. Set it again in a long-lived background isolate if you need the same rules there.</p>
+<h2 id="redaction"><a class="anchor" href="#redaction">Redaction</a></h2>
+<p>Redaction is opt-in: by default you see what is sent and received. Redactors apply to events, curl commands and console output.</p>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">configure</span>(<span class="hljs-title class_">DevpulConfig</span>(
+  redactHeaders: (url, headers) =&gt; {
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">final</span> e <span class="hljs-keyword">in</span> headers.entries)
+      e.key: e.key.<span class="hljs-title function_">toLowerCase</span>() == <span class="hljs-string">&#x27;authorization&#x27;</span> ? <span class="hljs-string">&#x27;***&#x27;</span> : e.value,
+  },
+  redactBody: (url, body) =&gt; url.path.<span class="hljs-title function_">endsWith</span>(<span class="hljs-string">&#x27;/login&#x27;</span>) ? <span class="hljs-string">&#x27;&lt;hidden&gt;&#x27;</span> : body,
+));</code></pre>
+<h2 id="http-adapters"><a class="anchor" href="#http-adapters">HTTP adapters</a></h2>
+<p><code>DevpulHttp</code> pairs requests with responses, applies ignore rules and redaction, builds curl commands and prints console lines. <a href="../../docs/adapters/">Writing an HTTP adapter</a> shows how to use it for any client.</p>
+
+        <nav class="pager" aria-label="Pages"><a href="../../docs/ui/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Using the UI</a><a href="../../docs/dio/">Dio<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
+      </main>
+    </div>
+    <footer class="foot">
+      <a href="https://github.com/ictsolved/devpul">Source</a> · <a href="https://github.com/ictsolved/devpul/issues">Issues</a>
+    </footer>
+    <script>(() => {
+  const root = document.documentElement;
+  const next = { system: 'light', light: 'dark', dark: 'system' };
+  const label = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
+  const button = document.querySelector('.theme');
+  let theme = root.dataset.theme ?? 'system';
+  const show = () => {
+    button.dataset.current = theme;
+    button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
+  };
+  show();
+  button.addEventListener('click', () => {
+    theme = next[theme];
+    try {
+      localStorage.setItem('devpul:theme', JSON.stringify(theme));
+    } catch {}
+    if (theme === 'system') delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    show();
+  });
+
+  for (const pre of document.querySelectorAll('.doc pre')) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.textContent ?? '');
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Failed';
+      }
+      setTimeout(() => (copy.textContent = 'Copy'), 1200);
+    });
+    pre.append(copy);
+  }
+})();
+</script>
+  </body>
+</html>

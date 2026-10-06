@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connecting - DevPul</title>
+    <meta name="description" content="Connect DevPul to flutter run, dart run, flutter attach, Flutter web and IDE debug sessions, with a pasted URL, a link or a fixed port." />
+    <link rel="canonical" href="https://devpul.saradgajurel.com.np/docs/connecting/" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="Connecting - DevPul" />
+    <meta property="og:description" content="Connect DevPul to flutter run, dart run, flutter attach, Flutter web and IDE debug sessions, with a pasted URL, a link or a fixed port." />
+    <meta property="og:url" content="https://devpul.saradgajurel.com.np/docs/connecting/" />
+    <meta property="og:image" content="https://devpul.saradgajurel.com.np/og.png" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <style>/* Shared by the app and the static pages. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f9f9, #0b1416);
+  --panel: light-dark(#ffffff, #111d20);
+  --panel-2: light-dark(#f0f4f4, #16262a);
+  --border: light-dark(#dbe3e4, #23383c);
+  --text: light-dark(#13201f, #e2ecec);
+  --muted: light-dark(#5d6f70, #8aa0a2);
+  --accent: light-dark(#0f766e, #2dd4bf);
+  --accent-soft: light-dark(#ccfbf1, #134e4a);
+  --select: light-dark(#e0f2f1, #173a3a);
+  --ok: light-dark(#15803d, #4ade80);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fef3c7, #3d2e0a);
+  --bad: light-dark(#b91c1c, #f87171);
+  --bad-soft: light-dark(#fee2e2, #3b1414);
+  --j-key: light-dark(#0f5b8a, #7dd3fc);
+  --j-str: light-dark(#0f766e, #5eead4);
+  --j-num: light-dark(#9a3412, #fdba74);
+  --j-lit: light-dark(#7c3aed, #c4b5fd);
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.top nav a:hover,
+.top nav a[aria-current] {
+  color: var(--text);
+}
+
+.theme,
+.open {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
+.open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.side {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.side h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side a {
+  display: block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.side a:hover {
+  background: var(--panel-2);
+}
+
+.side a[aria-current] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.doc {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.doc h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.doc h2 {
+  font-size: 21px;
+  margin: 36px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.doc h3 {
+  font-size: 16px;
+  margin: 24px 0 6px;
+}
+
+.doc .anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc .anchor:hover::after {
+  content: ' #';
+  color: var(--muted);
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+
+.doc pre {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
+.doc pre .copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 1px 7px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.doc pre:hover .copy,
+.doc pre .copy:focus-visible {
+  opacity: 1;
+}
+
+.doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px 6px 0;
+}
+
+.doc td:first-child {
+  white-space: nowrap;
+}
+
+.doc td:first-child code {
+  overflow-wrap: normal;
+}
+
+.doc th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc blockquote {
+  margin: 16px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc blockquote p {
+  margin: 4px 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 12px;
+  }
+
+  .side {
+    position: static;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .side nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+
+  .side h2 {
+    display: none;
+  }
+
+  .side ul {
+    display: contents;
+  }
+
+  .side a {
+    padding: 2px 0;
+  }
+
+  .side a[aria-current] {
+    background: none;
+    color: var(--accent);
+  }
+
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 16px;
+  }
+
+  .top nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .brand {
+    flex: 1;
+  }
+}
+</style>
+    
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="../../"><img src="../../favicon.svg" alt="" width="20" height="20" />DevPul</a>
+      <nav>
+        <a href="../../docs/" aria-current="page">Docs</a>
+        <a href="../../docs/plugins/">Plugins</a>
+        <a href="../../help/">Help</a>
+        <a href="https://github.com/ictsolved/devpul">GitHub</a>
+      </nav>
+      <button type="button" class="theme" aria-label="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor for-system" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun for-light" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon for-dark" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path></svg></button>
+      <a class="open" href="../../">Open DevPul</a>
+    </header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/" aria-current="page">Connecting</a></li><li><a href="../../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/plugins/">Plugins</a></li><li><a href="../../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
+      <main class="doc">
+        <h1>Connecting</h1>
+<p>DevPul connects to the Dart Development Service (DDS) of a debug run. It needs the VM service URL, which changes on every run unless you fix it.</p>
+<h2 id="paste-the-url"><a class="anchor" href="#paste-the-url">Paste the URL</a></h2>
+<p>Any of these work:</p>
+<ul>
+<li>the <code>http://127.0.0.1:PORT/TOKEN=/</code> line from <code>flutter run</code> or <code>dart run --enable-vm-service</code></li>
+<li>a DevTools link that contains <code>?uri=...</code></li>
+<li>a <code>ws://127.0.0.1:PORT/TOKEN=/ws</code> URL</li>
+</ul>
+<p>Paste it into the field, or anywhere on the page outside a text field.</p>
+<p>Where to find it:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>flutter run</code></td>
+<td>&quot;A Dart VM Service on ... is available at:&quot;</td>
+</tr>
+<tr>
+<td><code>dart run --enable-vm-service</code></td>
+<td>&quot;The Dart VM service is listening on&quot;</td>
+</tr>
+<tr>
+<td>VS Code</td>
+<td>Debug Console, the &quot;Connecting to VM Service at&quot; line, or the command &quot;Dart: Copy VM Service URL&quot;</td>
+</tr>
+<tr>
+<td>Android Studio, IntelliJ</td>
+<td>Run tool window, the VM service line</td>
+</tr>
+</tbody></table>
+<h2 id="restarts-and-stale-urls"><a class="anchor" href="#restarts-and-stale-urls">Restarts and stale URLs</a></h2>
+<p>Hot reload and hot restart keep the URL. A full restart gets a new port and token. Paste the new URL and DevPul replaces the old one: a saved URL with a token that is not connected belongs to a run that ended. URLs that are still connected stay, so you can watch several apps at once.</p>
+<p>With <strong>Clear an app&#39;s earlier events when it restarts</strong> in Settings, a hot restart or a replaced URL also drops that app&#39;s older events. Without it, earlier runs stay and show as separate run chips.</p>
+<h2 id="open-devpul-already-connected"><a class="anchor" href="#open-devpul-already-connected">Open DevPul already connected</a></h2>
+<p>Add the URL after <code>#connect=</code>:</p>
+<pre><code>https://devpul.saradgajurel.com.np/#connect=http://127.0.0.1:41234/AbCdEf12=/</code></pre>
+<p>The local server takes the URL as an argument and opens that link for you:</p>
+<pre><code>npx devpul http://127.0.0.1:41234/AbCdEf12=/</code></pre>
+<h2 id="fixed-port-optional"><a class="anchor" href="#fixed-port-optional">Fixed port (optional)</a></h2>
+<p>Run with a fixed DDS port and no token, then paste <code>127.0.0.1:8181</code> once. DevPul keeps the URL, so the connection survives restarts.</p>
+<pre><code>flutter run --dds-port=8181 --disable-service-auth-codes</code></pre>
+<p>VS Code, for every run in <code>settings.json</code>:</p>
+<pre><code><span class="hljs-attr">&quot;dart.flutterRunAdditionalArgs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;--dds-port=8181&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;--disable-service-auth-codes&quot;</span><span class="hljs-punctuation">]</span></code></pre>
+<p>Or as a launch configuration in <code>.vscode/launch.json</code>:</p>
+<pre><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;0.2.0&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;configurations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Flutter (DevPul)&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;dart&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;request&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;launch&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;program&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;lib/main.dart&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;toolArgs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;--dds-port=8181&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;--disable-service-auth-codes&quot;</span><span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+<p>Android Studio: add the same flags under Run &gt; Edit Configurations &gt; Additional run args.</p>
+<blockquote>
+<p>Without the token, any local process and any web page open in your browser can connect to the debug service while the app runs. Use it on machines you trust.</p>
+</blockquote>
+<h2 id="runs-and-platforms"><a class="anchor" href="#runs-and-platforms">Runs and platforms</a></h2>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>flutter run</code> on Android, iOS, desktop</td>
+<td>Full support. Devices are forwarded to <code>127.0.0.1</code> by flutter tools.</td>
+</tr>
+<tr>
+<td><code>flutter attach</code></td>
+<td>Always uses a token. Events from before the attach come from the app&#39;s own backlog.</td>
+</tr>
+<tr>
+<td>Flutter web</td>
+<td>Always uses a token. Flutter web does not report uncaught async errors to <code>PlatformDispatcher.onError</code> (<a href="https://github.com/flutter/flutter/issues/100277">flutter#100277</a>); wrap <code>runApp</code> in <code>runZonedGuarded</code> and call <code>Devpul.error</code>.</td>
+</tr>
+<tr>
+<td>Plain Dart</td>
+<td><code>dart run --enable-vm-service</code>. Avoid <code>--observe</code>: it pauses isolates on exit, which stalls <code>Isolate.run</code> and Dio&#39;s background JSON decoding.</td>
+</tr>
+</tbody></table>
+<h2 id="hosted-local-or-a-file"><a class="anchor" href="#hosted-local-or-a-file">Hosted, local or a file</a></h2>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>How</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Hosted</td>
+<td>the site you are on</td>
+<td>Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching <code>127.0.0.1</code>. Installable as an app.</td>
+</tr>
+<tr>
+<td>Local server</td>
+<td><code>npx devpul</code></td>
+<td>Any browser, Safari included. Serves these docs too.</td>
+</tr>
+<tr>
+<td>File</td>
+<td>&quot;Download as one HTML file&quot; on the home page</td>
+<td>One self-contained file that works from disk.</td>
+</tr>
+</tbody></table>
+<p>All three run entirely in the browser. The hosted site only serves the page; your app&#39;s data goes from the app to the tab.</p>
+
+        <nav class="pager" aria-label="Pages"><a href="../../docs/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Getting started</a><a href="../../docs/ui/">Using the UI<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
+      </main>
+    </div>
+    <footer class="foot">
+      <a href="https://github.com/ictsolved/devpul">Source</a> · <a href="https://github.com/ictsolved/devpul/issues">Issues</a>
+    </footer>
+    <script>(() => {
+  const root = document.documentElement;
+  const next = { system: 'light', light: 'dark', dark: 'system' };
+  const label = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
+  const button = document.querySelector('.theme');
+  let theme = root.dataset.theme ?? 'system';
+  const show = () => {
+    button.dataset.current = theme;
+    button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
+  };
+  show();
+  button.addEventListener('click', () => {
+    theme = next[theme];
+    try {
+      localStorage.setItem('devpul:theme', JSON.stringify(theme));
+    } catch {}
+    if (theme === 'system') delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    show();
+  });
+
+  for (const pre of document.querySelectorAll('.doc pre')) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.textContent ?? '');
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Failed';
+      }
+      setTimeout(() => (copy.textContent = 'Copy'), 1200);
+    });
+    pre.append(copy);
+  }
+})();
+</script>
+  </body>
+</html>

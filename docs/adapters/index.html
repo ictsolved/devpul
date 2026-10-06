@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Writing an HTTP adapter - DevPul</title>
+    <meta name="description" content="Report requests from any Dart HTTP client to DevPul with DevpulHttp, DevpulHttpCall and DevpulForm." />
+    <link rel="canonical" href="https://devpul.saradgajurel.com.np/docs/adapters/" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="Writing an HTTP adapter - DevPul" />
+    <meta property="og:description" content="Report requests from any Dart HTTP client to DevPul with DevpulHttp, DevpulHttpCall and DevpulForm." />
+    <meta property="og:url" content="https://devpul.saradgajurel.com.np/docs/adapters/" />
+    <meta property="og:image" content="https://devpul.saradgajurel.com.np/og.png" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <style>/* Shared by the app and the static pages. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f9f9, #0b1416);
+  --panel: light-dark(#ffffff, #111d20);
+  --panel-2: light-dark(#f0f4f4, #16262a);
+  --border: light-dark(#dbe3e4, #23383c);
+  --text: light-dark(#13201f, #e2ecec);
+  --muted: light-dark(#5d6f70, #8aa0a2);
+  --accent: light-dark(#0f766e, #2dd4bf);
+  --accent-soft: light-dark(#ccfbf1, #134e4a);
+  --select: light-dark(#e0f2f1, #173a3a);
+  --ok: light-dark(#15803d, #4ade80);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fef3c7, #3d2e0a);
+  --bad: light-dark(#b91c1c, #f87171);
+  --bad-soft: light-dark(#fee2e2, #3b1414);
+  --j-key: light-dark(#0f5b8a, #7dd3fc);
+  --j-str: light-dark(#0f766e, #5eead4);
+  --j-num: light-dark(#9a3412, #fdba74);
+  --j-lit: light-dark(#7c3aed, #c4b5fd);
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.top nav a:hover,
+.top nav a[aria-current] {
+  color: var(--text);
+}
+
+.theme,
+.open {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
+.open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.side {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.side h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side a {
+  display: block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.side a:hover {
+  background: var(--panel-2);
+}
+
+.side a[aria-current] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.doc {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.doc h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.doc h2 {
+  font-size: 21px;
+  margin: 36px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.doc h3 {
+  font-size: 16px;
+  margin: 24px 0 6px;
+}
+
+.doc .anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc .anchor:hover::after {
+  content: ' #';
+  color: var(--muted);
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+
+.doc pre {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
+.doc pre .copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 1px 7px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.doc pre:hover .copy,
+.doc pre .copy:focus-visible {
+  opacity: 1;
+}
+
+.doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px 6px 0;
+}
+
+.doc td:first-child {
+  white-space: nowrap;
+}
+
+.doc td:first-child code {
+  overflow-wrap: normal;
+}
+
+.doc th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc blockquote {
+  margin: 16px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc blockquote p {
+  margin: 4px 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 12px;
+  }
+
+  .side {
+    position: static;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .side nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+
+  .side h2 {
+    display: none;
+  }
+
+  .side ul {
+    display: contents;
+  }
+
+  .side a {
+    padding: 2px 0;
+  }
+
+  .side a[aria-current] {
+    background: none;
+    color: var(--accent);
+  }
+
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 16px;
+  }
+
+  .top nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .brand {
+    flex: 1;
+  }
+}
+</style>
+    
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="../../"><img src="../../favicon.svg" alt="" width="20" height="20" />DevPul</a>
+      <nav>
+        <a href="../../docs/" aria-current="page">Docs</a>
+        <a href="../../docs/plugins/">Plugins</a>
+        <a href="../../help/">Help</a>
+        <a href="https://github.com/ictsolved/devpul">GitHub</a>
+      </nav>
+      <button type="button" class="theme" aria-label="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor for-system" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun for-light" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon for-dark" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path></svg></button>
+      <a class="open" href="../../">Open DevPul</a>
+    </header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/">Connecting</a></li><li><a href="../../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/plugins/">Plugins</a></li><li><a href="../../docs/adapters/" aria-current="page">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
+      <main class="doc">
+        <h1>Writing an HTTP adapter</h1>
+<p>The Dio and <code>package:http</code> adapters are thin layers over <code>DevpulHttp</code> in the core package. Use it to report calls from any other client: GraphQL clients, gRPC gateways, or your own wrapper.</p>
+<h2 id="the-calls"><a class="anchor" href="#the-calls">The calls</a></h2>
+<pre><code><span class="hljs-keyword">final</span> call = <span class="hljs-title class_">DevpulHttp</span>.<span class="hljs-title function_">request</span>(
+  method: <span class="hljs-string">&#x27;POST&#x27;</span>,
+  url: uri,
+  headers: headers,
+  body: body,
+);</code></pre>
+<p><code>request</code> returns <code>null</code> when DevPul is disabled or the call matches an ignore rule; skip the rest then. Otherwise it emits <code>http.request</code> with a new id, the params, a curl command and a console line, after redaction.</p>
+<p>Finish the call exactly once:</p>
+<pre><code>call?.<span class="hljs-title function_">response</span>(
+  status: <span class="hljs-number">200</span>,
+  statusMessage: <span class="hljs-string">&#x27;OK&#x27;</span>,
+  headers: responseHeaders,
+  body: decodedBody,
+  finalUrl: redirectedTo,
+);
+
+call?.<span class="hljs-title function_">error</span>(
+  errorType: <span class="hljs-string">&#x27;connectionTimeout&#x27;</span>,
+  message: e.<span class="hljs-title function_">toString</span>(),
+  status: response?.statusCode,
+  headers: response?.headers ?? <span class="hljs-keyword">const</span> {},
+  body: response?.data,
+);</code></pre>
+<p>Duration is measured from <code>request</code> to <code>response</code> or <code>error</code>.</p>
+<h2 id="bodies"><a class="anchor" href="#bodies">Bodies</a></h2>
+<ul>
+<li>Strings that look like JSON are decoded, so the UI shows them as trees.</li>
+<li><code>List&lt;int&gt;</code> shows as <code>&lt;N bytes&gt;</code>.</li>
+<li><code>DevpulForm(fields: [...], files: [MapEntry(&#39;file&#39;, &#39;photo.png&#39;)])</code> shows multipart forms as a map and builds <code>-F</code> curl arguments.</li>
+<li>Anything else goes through <code>toJsonSafe</code>: maps and lists as they are, other objects as <code>toString()</code>.</li>
+<li>Values longer than <code>maxValueLength</code> are cut, with a preview.</li>
+</ul>
+<p>Headers may be <code>Map&lt;String, String&gt;</code> or <code>Map&lt;String, List&lt;String&gt;&gt;</code>; single values become strings.</p>
+<h2 id="a-complete-adapter"><a class="anchor" href="#a-complete-adapter">A complete adapter</a></h2>
+<pre><code><span class="hljs-title class_">Future</span>&lt;<span class="hljs-title class_">Response</span>&gt; <span class="hljs-title function_">send</span>(<span class="hljs-title class_">Request</span> request) <span class="hljs-keyword">async</span> {
+  <span class="hljs-keyword">final</span> call = <span class="hljs-title class_">DevpulHttp</span>.<span class="hljs-title function_">request</span>(
+    method: request.method,
+    url: request.url,
+    headers: request.headers,
+    body: request.body,
+  );
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">final</span> response = <span class="hljs-keyword">await</span> inner.<span class="hljs-title function_">send</span>(request);
+    call?.<span class="hljs-title function_">response</span>(
+      status: response.statusCode,
+      headers: response.headers,
+      body: response.body,
+    );
+    <span class="hljs-keyword">return</span> response;
+  } <span class="hljs-keyword">catch</span> (e) {
+    call?.<span class="hljs-title function_">error</span>(errorType: e.runtimeType.<span class="hljs-title function_">toString</span>(), message: <span class="hljs-string">&#x27;<span class="hljs-subst">$e</span>&#x27;</span>);
+    <span class="hljs-keyword">rethrow</span>;
+  }
+}</code></pre>
+<p>Keep the adapter free of side effects on the request: read bodies without consuming streams the client still needs, and rethrow what you catch. The <code>devpul_http</code> <a href="https://github.com/ictsolved/devpul/tree/main/packages/devpul_http">source</a> shows buffering a streamed response and handing it on unchanged.</p>
+
+        <nav class="pager" aria-label="Pages"><a href="../../docs/plugins/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Plugins</a><a href="../../docs/events/">Event contract<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
+      </main>
+    </div>
+    <footer class="foot">
+      <a href="https://github.com/ictsolved/devpul">Source</a> · <a href="https://github.com/ictsolved/devpul/issues">Issues</a>
+    </footer>
+    <script>(() => {
+  const root = document.documentElement;
+  const next = { system: 'light', light: 'dark', dark: 'system' };
+  const label = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
+  const button = document.querySelector('.theme');
+  let theme = root.dataset.theme ?? 'system';
+  const show = () => {
+    button.dataset.current = theme;
+    button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
+  };
+  show();
+  button.addEventListener('click', () => {
+    theme = next[theme];
+    try {
+      localStorage.setItem('devpul:theme', JSON.stringify(theme));
+    } catch {}
+    if (theme === 'system') delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    show();
+  });
+
+  for (const pre of document.querySelectorAll('.doc pre')) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.textContent ?? '');
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Failed';
+      }
+      setTimeout(() => (copy.textContent = 'Copy'), 1200);
+    });
+    pre.append(copy);
+  }
+})();
+</script>
+  </body>
+</html>

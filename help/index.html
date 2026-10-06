@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help and FAQ - DevPul</title>
+    <meta name="description" content="Troubleshooting DevPul connections and missing events, how your data stays in the browser, and answers to common questions." />
+    <link rel="canonical" href="https://devpul.saradgajurel.com.np/help/" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="Help and FAQ - DevPul" />
+    <meta property="og:description" content="Troubleshooting DevPul connections and missing events, how your data stays in the browser, and answers to common questions." />
+    <meta property="og:url" content="https://devpul.saradgajurel.com.np/help/" />
+    <meta property="og:image" content="https://devpul.saradgajurel.com.np/og.png" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <style>/* Shared by the app and the static pages. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f9f9, #0b1416);
+  --panel: light-dark(#ffffff, #111d20);
+  --panel-2: light-dark(#f0f4f4, #16262a);
+  --border: light-dark(#dbe3e4, #23383c);
+  --text: light-dark(#13201f, #e2ecec);
+  --muted: light-dark(#5d6f70, #8aa0a2);
+  --accent: light-dark(#0f766e, #2dd4bf);
+  --accent-soft: light-dark(#ccfbf1, #134e4a);
+  --select: light-dark(#e0f2f1, #173a3a);
+  --ok: light-dark(#15803d, #4ade80);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fef3c7, #3d2e0a);
+  --bad: light-dark(#b91c1c, #f87171);
+  --bad-soft: light-dark(#fee2e2, #3b1414);
+  --j-key: light-dark(#0f5b8a, #7dd3fc);
+  --j-str: light-dark(#0f766e, #5eead4);
+  --j-num: light-dark(#9a3412, #fdba74);
+  --j-lit: light-dark(#7c3aed, #c4b5fd);
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.top nav a:hover,
+.top nav a[aria-current] {
+  color: var(--text);
+}
+
+.theme,
+.open {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
+.open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.side {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.side h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side a {
+  display: block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.side a:hover {
+  background: var(--panel-2);
+}
+
+.side a[aria-current] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.doc {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.doc h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.doc h2 {
+  font-size: 21px;
+  margin: 36px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.doc h3 {
+  font-size: 16px;
+  margin: 24px 0 6px;
+}
+
+.doc .anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc .anchor:hover::after {
+  content: ' #';
+  color: var(--muted);
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+
+.doc pre {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
+.doc pre .copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 1px 7px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.doc pre:hover .copy,
+.doc pre .copy:focus-visible {
+  opacity: 1;
+}
+
+.doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px 6px 0;
+}
+
+.doc td:first-child {
+  white-space: nowrap;
+}
+
+.doc td:first-child code {
+  overflow-wrap: normal;
+}
+
+.doc th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc blockquote {
+  margin: 16px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc blockquote p {
+  margin: 4px 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 12px;
+  }
+
+  .side {
+    position: static;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .side nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+
+  .side h2 {
+    display: none;
+  }
+
+  .side ul {
+    display: contents;
+  }
+
+  .side a {
+    padding: 2px 0;
+  }
+
+  .side a[aria-current] {
+    background: none;
+    color: var(--accent);
+  }
+
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 16px;
+  }
+
+  .top nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .brand {
+    flex: 1;
+  }
+}
+</style>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I see Flutter network requests in the browser?","acceptedAnswer":{"@type":"Answer","text":"Add the devpul package and an HTTP adapter (devpul_dio for Dio, devpul_http for package:http), run the app in debug mode and paste the VM service URL that flutter run prints into DevPul. Requests, responses and errors appear live."}},{"@type":"Question","name":"Does DevPul send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. DevPul runs entirely in your browser and reads events from your app over 127.0.0.1. Requests, headers and bodies are never sent to a server. History stays in the browser's local storage."}},{"@type":"Question","name":"Does DevPul need a proxy, certificates or a server?","acceptedAnswer":{"@type":"Answer","text":"No. The app posts events with dart:developer postEvent, and the browser reads them from the Dart Development Service websocket on 127.0.0.1."}},{"@type":"Question","name":"Does DevPul run in release builds?","acceptedAnswer":{"@type":"Answer","text":"No. Release and profile builds have no VM service and DevPul never emits in them, so there is nothing to strip before shipping."}},{"@type":"Question","name":"How is DevPul different from the Flutter DevTools network tab?","acceptedAnswer":{"@type":"Answer","text":"DevPul works with any HTTP client through adapters, including on Flutter web, shows errors, logs and custom events next to requests, filters by tags, fields and app runs, watches several apps at once, keeps history across reloads, exports HAR and takes plugins."}},{"@type":"Question","name":"Can I share what I see with a teammate?","acceptedAnswer":{"@type":"Answer","text":"Yes. Export a session file and they can open it in DevPul without the app, or export HAR for other tools. Exports contain everything the app sent, so redact secrets first."}},{"@type":"Question","name":"Does it work with Riverpod, Bloc or GetX?","acceptedAnswer":{"@type":"Answer","text":"DevPul does not depend on state management. Send state changes as custom events, or write a plugin that renders them."}},{"@type":"Question","name":"Can I trigger things in the app from DevPul?","acceptedAnswer":{"@type":"Answer","text":"Yes. Register actions with Devpul.action and they show in the Actions menu. Plugins can call any service extension the app registers."}}]}</script>
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="../"><img src="../favicon.svg" alt="" width="20" height="20" />DevPul</a>
+      <nav>
+        <a href="../docs/">Docs</a>
+        <a href="../docs/plugins/">Plugins</a>
+        <a href="../help/" aria-current="page">Help</a>
+        <a href="https://github.com/ictsolved/devpul">GitHub</a>
+      </nav>
+      <button type="button" class="theme" aria-label="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor for-system" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun for-light" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon for-dark" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path></svg></button>
+      <a class="open" href="../">Open DevPul</a>
+    </header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../docs/">Getting started</a></li><li><a href="../docs/connecting/">Connecting</a></li><li><a href="../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../docs/api/">Core API</a></li><li><a href="../docs/dio/">Dio</a></li><li><a href="../docs/http/">package:http</a></li><li><a href="../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../docs/plugins/">Plugins</a></li><li><a href="../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../help/" aria-current="page">Help and FAQ</a></li></ul></nav></aside>
+      <main class="doc">
+        <h1>Help and FAQ</h1>
+<h2 id="troubleshooting"><a class="anchor" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="the-connection-chip-stays-grey"><a class="anchor" href="#the-connection-chip-stays-grey">The connection chip stays grey</a></h3>
+<p>The URL is from an earlier run; the token changes on every full restart. Paste the new URL and it replaces the old one. For a URL that survives restarts, use a <a href="../docs/connecting/#fixed-port-optional">fixed port</a>.</p>
+<h3 id="the-browser-asks-to-access-apps-on-this-device"><a class="anchor" href="#the-browser-asks-to-access-apps-on-this-device">The browser asks to access apps on this device</a></h3>
+<p>Chrome and Firefox ask before a hosted page connects to <code>127.0.0.1</code>. Allow it once for this site. If you dismissed it, allow &quot;Local network access&quot; in the site settings.</p>
+<h3 id="safari-does-not-connect"><a class="anchor" href="#safari-does-not-connect">Safari does not connect</a></h3>
+<p>Safari blocks hosted pages from reaching <code>127.0.0.1</code>. Run <code>npx devpul</code> or open the downloaded HTML file instead; both work in Safari.</p>
+<h3 id="connected-but-nothing-shows"><a class="anchor" href="#connected-but-nothing-shows">Connected, but nothing shows</a></h3>
+<ul>
+<li>The app must be a debug build. Release and profile builds never emit.</li>
+<li>The packages must be hooked up: <code>Devpul.session</code>, an HTTP adapter, <code>DevpulFlutter.install()</code>.</li>
+<li><code>DevpulConfig(enabled: false)</code> or an <code>ignoreUrls</code> rule may hide calls.</li>
+<li>Check the filter box and chips; filters are remembered per tab.</li>
+</ul>
+<h3 id="events-from-before-connecting-are-missing"><a class="anchor" href="#events-from-before-connecting-are-missing">Events from before connecting are missing</a></h3>
+<p>On connect, DevPul fetches the app&#39;s own backlog of recent events, up to <code>backlogSize</code> (16 MB by default). Older events are gone; raise <code>backlogSize</code> if you attach late to long sessions.</p>
+<h3 id="requests-stay-pending"><a class="anchor" href="#requests-stay-pending">Requests stay pending</a></h3>
+<p>The response never reached the adapter: the call is still running, was dropped without an error, or the Dio interceptor is not last in the chain and another interceptor resolved the call. Long-lived streams stay pending by design.</p>
+<h3 id="plain-dart-program-stalls"><a class="anchor" href="#plain-dart-program-stalls">Plain Dart program stalls</a></h3>
+<p>Use <code>--enable-vm-service</code>, not <code>--observe</code>. <code>--observe</code> pauses isolates on exit, which stalls <code>Isolate.run</code> and Dio&#39;s background JSON decoding.</p>
+<h3 id="a-plugin-does-not-load"><a class="anchor" href="#a-plugin-does-not-load">A plugin does not load</a></h3>
+<p>Its error shows under the plugin URLs in Settings. The module must be served with CORS headers and a JavaScript content type, and export a plugin as its default export.</p>
+<h2 id="privacy-and-security"><a class="anchor" href="#privacy-and-security">Privacy and security</a></h2>
+<ul>
+<li><strong>DevPul runs only in your browser.</strong> The page reads events straight from your app over <code>127.0.0.1</code>. There is no DevPul server, account or analytics; the hosted site only serves the page itself.</li>
+<li>Events contain whatever the app sends, including tokens and personal data in headers and bodies. Use <a href="../docs/api/#redaction">redaction</a> when that matters, for example before sharing a screen or an export.</li>
+<li>History is stored in your browser (IndexedDB). Turn it off or clear it in Settings.</li>
+<li>The VM service URL token is the only access check. With <code>--disable-service-auth-codes</code>, any local process and any web page open in your browser can connect while the app runs.</li>
+<li>Plugins run with full access to the page. Load only code you trust.</li>
+<li>Release and profile builds never emit.</li>
+</ul>
+<h2 id="questions"><a class="anchor" href="#questions">Questions</a></h2>
+<h3 id="how-do-i-see-flutter-network-requests-in-the-browser"><a class="anchor" href="#how-do-i-see-flutter-network-requests-in-the-browser">How do I see Flutter network requests in the browser?</a></h3>
+<p>Add the devpul package and an HTTP adapter (devpul_dio for Dio, devpul_http for package:http), run the app in debug mode and paste the VM service URL that <code>flutter run</code> prints into DevPul. Requests, responses and errors appear live.</p>
+<h3 id="does-devpul-send-my-data-anywhere"><a class="anchor" href="#does-devpul-send-my-data-anywhere">Does DevPul send my data anywhere?</a></h3>
+<p>No. DevPul runs entirely in your browser and reads events from your app over 127.0.0.1. Requests, headers and bodies are never sent to a server. History stays in the browser&#39;s local storage.</p>
+<h3 id="does-devpul-need-a-proxy-certificates-or-a-server"><a class="anchor" href="#does-devpul-need-a-proxy-certificates-or-a-server">Does DevPul need a proxy, certificates or a server?</a></h3>
+<p>No. The app posts events with <code>dart:developer</code> <code>postEvent</code>, and the browser reads them from the Dart Development Service websocket on 127.0.0.1.</p>
+<h3 id="does-devpul-run-in-release-builds"><a class="anchor" href="#does-devpul-run-in-release-builds">Does DevPul run in release builds?</a></h3>
+<p>No. Release and profile builds have no VM service and DevPul never emits in them, so there is nothing to strip before shipping.</p>
+<h3 id="how-is-devpul-different-from-the-flutter-devtools-network-tab"><a class="anchor" href="#how-is-devpul-different-from-the-flutter-devtools-network-tab">How is DevPul different from the Flutter DevTools network tab?</a></h3>
+<p>DevPul works with any HTTP client through adapters, including on Flutter web, shows errors, logs and custom events next to requests, filters by tags, fields and app runs, watches several apps at once, keeps history across reloads, exports HAR and takes plugins.</p>
+<h3 id="can-i-share-what-i-see-with-a-teammate"><a class="anchor" href="#can-i-share-what-i-see-with-a-teammate">Can I share what I see with a teammate?</a></h3>
+<p>Yes. Export a session file and they can open it in DevPul without the app, or export HAR for other tools. Exports contain everything the app sent, so redact secrets first.</p>
+<h3 id="does-it-work-with-riverpod-bloc-or-getx"><a class="anchor" href="#does-it-work-with-riverpod-bloc-or-getx">Does it work with Riverpod, Bloc or GetX?</a></h3>
+<p>DevPul does not depend on state management. Send state changes as custom events, or write a plugin that renders them.</p>
+<h3 id="can-i-trigger-things-in-the-app-from-devpul"><a class="anchor" href="#can-i-trigger-things-in-the-app-from-devpul">Can I trigger things in the app from DevPul?</a></h3>
+<p>Yes. Register actions with <code>Devpul.action</code> and they show in the Actions menu. Plugins can call any service extension the app registers.</p>
+
+        <nav class="pager" aria-label="Pages"><a href="../docs/events/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Event contract</a><span></span></nav>
+      </main>
+    </div>
+    <footer class="foot">
+      <a href="https://github.com/ictsolved/devpul">Source</a> · <a href="https://github.com/ictsolved/devpul/issues">Issues</a>
+    </footer>
+    <script>(() => {
+  const root = document.documentElement;
+  const next = { system: 'light', light: 'dark', dark: 'system' };
+  const label = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
+  const button = document.querySelector('.theme');
+  let theme = root.dataset.theme ?? 'system';
+  const show = () => {
+    button.dataset.current = theme;
+    button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
+  };
+  show();
+  button.addEventListener('click', () => {
+    theme = next[theme];
+    try {
+      localStorage.setItem('devpul:theme', JSON.stringify(theme));
+    } catch {}
+    if (theme === 'system') delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    show();
+  });
+
+  for (const pre of document.querySelectorAll('.doc pre')) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.textContent ?? '');
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Failed';
+      }
+      setTimeout(() => (copy.textContent = 'Copy'), 1200);
+    });
+    pre.append(copy);
+  }
+})();
+</script>
+  </body>
+</html>

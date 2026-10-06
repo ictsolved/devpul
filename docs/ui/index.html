@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Using the UI - DevPul</title>
+    <meta name="description" content="Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR, session files and app actions in DevPul." />
+    <link rel="canonical" href="https://devpul.saradgajurel.com.np/docs/ui/" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="Using the UI - DevPul" />
+    <meta property="og:description" content="Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR, session files and app actions in DevPul." />
+    <meta property="og:url" content="https://devpul.saradgajurel.com.np/docs/ui/" />
+    <meta property="og:image" content="https://devpul.saradgajurel.com.np/og.png" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <style>/* Shared by the app and the static pages. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f9f9, #0b1416);
+  --panel: light-dark(#ffffff, #111d20);
+  --panel-2: light-dark(#f0f4f4, #16262a);
+  --border: light-dark(#dbe3e4, #23383c);
+  --text: light-dark(#13201f, #e2ecec);
+  --muted: light-dark(#5d6f70, #8aa0a2);
+  --accent: light-dark(#0f766e, #2dd4bf);
+  --accent-soft: light-dark(#ccfbf1, #134e4a);
+  --select: light-dark(#e0f2f1, #173a3a);
+  --ok: light-dark(#15803d, #4ade80);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fef3c7, #3d2e0a);
+  --bad: light-dark(#b91c1c, #f87171);
+  --bad-soft: light-dark(#fee2e2, #3b1414);
+  --j-key: light-dark(#0f5b8a, #7dd3fc);
+  --j-str: light-dark(#0f766e, #5eead4);
+  --j-num: light-dark(#9a3412, #fdba74);
+  --j-lit: light-dark(#7c3aed, #c4b5fd);
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.top nav a:hover,
+.top nav a[aria-current] {
+  color: var(--text);
+}
+
+.theme,
+.open {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
+.open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.side {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.side h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side a {
+  display: block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.side a:hover {
+  background: var(--panel-2);
+}
+
+.side a[aria-current] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.doc {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.doc h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.doc h2 {
+  font-size: 21px;
+  margin: 36px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.doc h3 {
+  font-size: 16px;
+  margin: 24px 0 6px;
+}
+
+.doc .anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc .anchor:hover::after {
+  content: ' #';
+  color: var(--muted);
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+
+.doc pre {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
+.doc pre .copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 1px 7px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.doc pre:hover .copy,
+.doc pre .copy:focus-visible {
+  opacity: 1;
+}
+
+.doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px 6px 0;
+}
+
+.doc td:first-child {
+  white-space: nowrap;
+}
+
+.doc td:first-child code {
+  overflow-wrap: normal;
+}
+
+.doc th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc blockquote {
+  margin: 16px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc blockquote p {
+  margin: 4px 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 12px;
+  }
+
+  .side {
+    position: static;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .side nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+
+  .side h2 {
+    display: none;
+  }
+
+  .side ul {
+    display: contents;
+  }
+
+  .side a {
+    padding: 2px 0;
+  }
+
+  .side a[aria-current] {
+    background: none;
+    color: var(--accent);
+  }
+
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 16px;
+  }
+
+  .top nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .brand {
+    flex: 1;
+  }
+}
+</style>
+    
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="../../"><img src="../../favicon.svg" alt="" width="20" height="20" />DevPul</a>
+      <nav>
+        <a href="../../docs/" aria-current="page">Docs</a>
+        <a href="../../docs/plugins/">Plugins</a>
+        <a href="../../help/">Help</a>
+        <a href="https://github.com/ictsolved/devpul">GitHub</a>
+      </nav>
+      <button type="button" class="theme" aria-label="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor for-system" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun for-light" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon for-dark" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path></svg></button>
+      <a class="open" href="../../">Open DevPul</a>
+    </header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/">Connecting</a></li><li><a href="../../docs/ui/" aria-current="page">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/plugins/">Plugins</a></li><li><a href="../../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
+      <main class="doc">
+        <h1>Using the UI</h1>
+<h2 id="tabs"><a class="anchor" href="#tabs">Tabs</a></h2>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Shows</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HTTP</td>
+<td>Requests from the HTTP adapters, newest first, with live pending rows.</td>
+</tr>
+<tr>
+<td>Errors</td>
+<td><code>Devpul.error</code>, Flutter errors and uncaught platform errors.</td>
+</tr>
+<tr>
+<td>Logs</td>
+<td><code>Devpul.log</code> and captured <code>debugPrint</code>. Appears once there are logs.</td>
+</tr>
+<tr>
+<td>Events</td>
+<td>Everything else sent with <code>Devpul.emit</code>.</td>
+</tr>
+<tr>
+<td>Plugin tabs</td>
+<td>Events claimed by a <a href="../../docs/plugins/">plugin</a>.</td>
+</tr>
+</tbody></table>
+<p>The header shows the latest <code>Devpul.session</code> fields; pick which ones in Settings.</p>
+<h2 id="filtering"><a class="anchor" href="#filtering">Filtering</a></h2>
+<p>Type in the filter box. Plain words must all match; <code>-word</code> excludes. In HTTP, words match the URL, id, status, bodies and error messages.</p>
+<p>Fields narrow further. A comma means any of them, and a leading <code>-</code> negates.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Tab</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>status:</code></td>
+<td>HTTP</td>
+<td><code>status:4xx,5xx</code>, <code>status:&gt;=400</code>, <code>status:404</code>, <code>status:err</code>, <code>status:pending</code></td>
+</tr>
+<tr>
+<td><code>method:</code></td>
+<td>HTTP</td>
+<td><code>method:post</code>, <code>-method:options</code></td>
+</tr>
+<tr>
+<td><code>host:</code></td>
+<td>HTTP</td>
+<td><code>host:api.example.com</code>, <code>-host:cdn</code></td>
+</tr>
+<tr>
+<td><code>ms:</code></td>
+<td>HTTP</td>
+<td><code>ms:&gt;500</code>, <code>ms:&lt;=100</code></td>
+</tr>
+<tr>
+<td><code>size:</code></td>
+<td>HTTP</td>
+<td><code>size:&gt;100k</code>, <code>size:&lt;1mb</code></td>
+</tr>
+<tr>
+<td><code>tag:</code></td>
+<td>all</td>
+<td><code>tag:env=qa</code>, <code>tag:user</code> (any value)</td>
+</tr>
+<tr>
+<td><code>kind:</code></td>
+<td>lists</td>
+<td><code>kind:cart</code>, <code>-kind:route</code></td>
+</tr>
+<tr>
+<td><code>source:</code>, <code>type:</code></td>
+<td>Errors</td>
+<td><code>source:flutter</code>, <code>type:StateError</code></td>
+</tr>
+<tr>
+<td><code>level:</code>, <code>name:</code></td>
+<td>Logs</td>
+<td><code>level:warn,error</code>, <code>name:auth</code></td>
+</tr>
+</tbody></table>
+<p>Chips do the same for values seen in the data: status classes, methods, hosts, tags, app runs, sources, levels and kinds. Filters are remembered per tab.</p>
+<h2 id="sorting"><a class="anchor" href="#sorting">Sorting</a></h2>
+<p>Click a column header in HTTP to sort by it; click again to flip the direction. Rows without a value, such as pending requests when sorting by duration, go last either way. Sorting by time, newest first, shows a divider between app runs.</p>
+<h2 id="details"><a class="anchor" href="#details">Details</a></h2>
+<p>Select a row to see it on the right. Headers and params show as tables, bodies as a JSON tree; switch to raw JSON with the Raw button. Copy the URL, any section, a curl command or a <code>fetch()</code> call for the browser console.</p>
+<p>In Errors, <strong>Group repeats</strong> folds identical errors into one row with a count, and each error lists the requests made in the 10 seconds before it. Click one to open it in HTTP.</p>
+<p><strong>Pause</strong> freezes which rows are listed; rows already shown still update. Resume shows how many arrived meanwhile.</p>
+<h2 id="keyboard"><a class="anchor" href="#keyboard">Keyboard</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/</code></td>
+<td>Focus the filter</td>
+</tr>
+<tr>
+<td><code>j</code> <code>k</code> or arrows</td>
+<td>Move the selection</td>
+</tr>
+<tr>
+<td><code>Esc</code></td>
+<td>Close the detail or leave the filter</td>
+</tr>
+<tr>
+<td><code>1</code> to <code>9</code></td>
+<td>Switch tabs</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>Shortcut list</td>
+</tr>
+</tbody></table>
+<h2 id="actions"><a class="anchor" href="#actions">Actions</a></h2>
+<p>Code the app registers with <code>Devpul.action</code> shows in the <strong>Actions</strong> menu. Clicking one runs it in the app and shows the result. See <a href="../../docs/api/#actions">Core API</a>.</p>
+<h2 id="export-and-import"><a class="anchor" href="#export-and-import">Export and import</a></h2>
+<p><strong>Export</strong> offers:</p>
+<ul>
+<li><strong>HTTP as HAR</strong>: every request as HAR 1.2, for browser devtools, Charles, Proxyman and bug reports.</li>
+<li><strong>Session file</strong>: every event as JSON. Open it later with &quot;Open a session file&quot;, or drop it on the page, to look at it without the app.</li>
+</ul>
+<p>Exports contain whatever the app sent, tokens included. Use <a href="../../docs/api/#redaction">redaction</a> before sharing.</p>
+<h2 id="history"><a class="anchor" href="#history">History</a></h2>
+<p>Events are kept in the browser (IndexedDB, 20,000 events and 200 MB by default, oldest dropped first), so a reload keeps them. Change the limit, turn it off or clear it in Settings. Nothing leaves the browser.</p>
+
+        <nav class="pager" aria-label="Pages"><a href="../../docs/connecting/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Connecting</a><a href="../../docs/api/">Core API<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
+      </main>
+    </div>
+    <footer class="foot">
+      <a href="https://github.com/ictsolved/devpul">Source</a> · <a href="https://github.com/ictsolved/devpul/issues">Issues</a>
+    </footer>
+    <script>(() => {
+  const root = document.documentElement;
+  const next = { system: 'light', light: 'dark', dark: 'system' };
+  const label = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
+  const button = document.querySelector('.theme');
+  let theme = root.dataset.theme ?? 'system';
+  const show = () => {
+    button.dataset.current = theme;
+    button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
+  };
+  show();
+  button.addEventListener('click', () => {
+    theme = next[theme];
+    try {
+      localStorage.setItem('devpul:theme', JSON.stringify(theme));
+    } catch {}
+    if (theme === 'system') delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    show();
+  });
+
+  for (const pre of document.querySelectorAll('.doc pre')) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.textContent ?? '');
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Failed';
+      }
+      setTimeout(() => (copy.textContent = 'Copy'), 1200);
+    });
+    pre.append(copy);
+  }
+})();
+</script>
+  </body>
+</html>

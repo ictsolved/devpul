@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Plugins - DevPul</title>
+    <meta name="description" content="Write a DevPul plugin, an ES module that adds a tab for your own event kinds, can render each event and call into the app." />
+    <link rel="canonical" href="https://devpul.saradgajurel.com.np/docs/plugins/" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="Plugins - DevPul" />
+    <meta property="og:description" content="Write a DevPul plugin, an ES module that adds a tab for your own event kinds, can render each event and call into the app." />
+    <meta property="og:url" content="https://devpul.saradgajurel.com.np/docs/plugins/" />
+    <meta property="og:image" content="https://devpul.saradgajurel.com.np/og.png" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+    <style>/* Shared by the app and the static pages. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f9f9, #0b1416);
+  --panel: light-dark(#ffffff, #111d20);
+  --panel-2: light-dark(#f0f4f4, #16262a);
+  --border: light-dark(#dbe3e4, #23383c);
+  --text: light-dark(#13201f, #e2ecec);
+  --muted: light-dark(#5d6f70, #8aa0a2);
+  --accent: light-dark(#0f766e, #2dd4bf);
+  --accent-soft: light-dark(#ccfbf1, #134e4a);
+  --select: light-dark(#e0f2f1, #173a3a);
+  --ok: light-dark(#15803d, #4ade80);
+  --warn: light-dark(#b45309, #fbbf24);
+  --warn-soft: light-dark(#fef3c7, #3d2e0a);
+  --bad: light-dark(#b91c1c, #f87171);
+  --bad-soft: light-dark(#fee2e2, #3b1414);
+  --j-key: light-dark(#0f5b8a, #7dd3fc);
+  --j-str: light-dark(#0f766e, #5eead4);
+  --j-num: light-dark(#9a3412, #fdba74);
+  --j-lit: light-dark(#7c3aed, #c4b5fd);
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.top nav a:hover,
+.top nav a[aria-current] {
+  color: var(--text);
+}
+
+.theme,
+.open {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.theme {
+  display: inline-flex;
+  padding: 5px 7px;
+}
+
+.theme svg {
+  display: none;
+}
+
+.theme[data-current='system'] .for-system,
+.theme[data-current='light'] .for-light,
+.theme[data-current='dark'] .for-dark {
+  display: block;
+}
+
+.open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.side {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.side h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side a {
+  display: block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.side a:hover {
+  background: var(--panel-2);
+}
+
+.side a[aria-current] {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.doc {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.doc h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.doc h2 {
+  font-size: 21px;
+  margin: 36px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.doc h3 {
+  font-size: 16px;
+  margin: 24px 0 6px;
+}
+
+.doc .anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc .anchor:hover::after {
+  content: ' #';
+  color: var(--muted);
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  overflow-wrap: anywhere;
+}
+
+.doc pre {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-literal {
+  color: var(--j-lit);
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: var(--j-str);
+}
+
+.hljs-number {
+  color: var(--j-num);
+}
+
+.hljs-title,
+.hljs-type,
+.hljs-attr {
+  color: var(--j-key);
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: var(--muted);
+}
+
+.doc pre .copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 1px 7px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.doc pre:hover .copy,
+.doc pre .copy:focus-visible {
+  opacity: 1;
+}
+
+.doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px 6px 0;
+}
+
+.doc td:first-child {
+  white-space: nowrap;
+}
+
+.doc td:first-child code {
+  overflow-wrap: normal;
+}
+
+.doc th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc blockquote {
+  margin: 16px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc blockquote p {
+  margin: 4px 0;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 12px;
+  }
+
+  .side {
+    position: static;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .side nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+
+  .side h2 {
+    display: none;
+  }
+
+  .side ul {
+    display: contents;
+  }
+
+  .side a {
+    padding: 2px 0;
+  }
+
+  .side a[aria-current] {
+    background: none;
+    color: var(--accent);
+  }
+
+  .top {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 16px;
+  }
+
+  .top nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .brand {
+    flex: 1;
+  }
+}
+</style>
+    
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="../../"><img src="../../favicon.svg" alt="" width="20" height="20" />DevPul</a>
+      <nav>
+        <a href="../../docs/">Docs</a>
+        <a href="../../docs/plugins/" aria-current="page">Plugins</a>
+        <a href="../../help/">Help</a>
+        <a href="https://github.com/ictsolved/devpul">GitHub</a>
+      </nav>
+      <button type="button" class="theme" aria-label="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor for-system" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun for-light" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon for-dark" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path></svg></button>
+      <a class="open" href="../../">Open DevPul</a>
+    </header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/">Connecting</a></li><li><a href="../../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/plugins/" aria-current="page">Plugins</a></li><li><a href="../../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
+      <main class="doc">
+        <h1>Plugins</h1>
+<p>A plugin adds a tab for some event kinds. It is an ES module served from a URL: add the URL in Settings &gt; Plugins and the tab appears. The tab lists the plugin&#39;s events with the same filter, pause and keyboard navigation as the built-in tabs, and the plugin decides what the list says and what the detail pane shows.</p>
+<h2 id="a-minimal-plugin"><a class="anchor" href="#a-minimal-plugin">A minimal plugin</a></h2>
+<pre><code><span class="hljs-comment">// cart.js</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> {
+  <span class="hljs-attr">id</span>: <span class="hljs-string">&#x27;cart&#x27;</span>,
+  <span class="hljs-attr">label</span>: <span class="hljs-string">&#x27;Cart&#x27;</span>,
+  <span class="hljs-attr">kinds</span>: [<span class="hljs-string">&#x27;cart.updated&#x27;</span>, <span class="hljs-string">&#x27;cart.cleared&#x27;</span>],
+  <span class="hljs-attr">summarize</span>: <span class="hljs-function">(<span class="hljs-params">e</span>) =&gt;</span> <span class="hljs-string">`<span class="hljs-subst">${e.data.items}</span> items, <span class="hljs-subst">${e.data.total}</span>`</span>,
+  <span class="hljs-title function_">render</span>(<span class="hljs-params">el, e</span>) {
+    el.<span class="hljs-property">textContent</span> = <span class="hljs-string">`Total: <span class="hljs-subst">${e.data.total}</span>`</span>;
+  },
+};</code></pre>
+<p>The app side is plain events:</p>
+<pre><code><span class="hljs-title class_">Devpul</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;cart.updated&#x27;</span>, {<span class="hljs-string">&#x27;items&#x27;</span>: <span class="hljs-number">3</span>, <span class="hljs-string">&#x27;total&#x27;</span>: <span class="hljs-number">42.5</span>});</code></pre>
+<h2 id="api"><a class="anchor" href="#api">API</a></h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td>string</td>
+<td>Unique. Registering the same id again replaces the plugin.</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>string</td>
+<td>Tab name.</td>
+</tr>
+<tr>
+<td><code>kinds</code></td>
+<td>string[] or <code>(kind) =&gt; boolean</code></td>
+<td>Event kinds the tab takes. Claimed kinds leave the Events tab.</td>
+</tr>
+<tr>
+<td><code>summarize</code></td>
+<td><code>(event) =&gt; string</code></td>
+<td>Optional. One line in the list.</td>
+</tr>
+<tr>
+<td><code>render</code></td>
+<td><code>(el, event, context) =&gt; void | (() =&gt; void)</code></td>
+<td>Optional. Fills <code>el</code> for the selected event. May return a cleanup function. Without it, the detail shows the event as a JSON tree.</td>
+</tr>
+</tbody></table>
+<p>An event is <code>{key, kind, data, ts, session, run}</code>. <code>data</code> holds the fields the app sent plus the envelope (<code>v</code>, <code>session</code>, <code>seq</code>, <code>ts</code>, <code>tags</code>). <code>run</code> identifies one launch or hot restart of one app.</p>
+<p><code>context</code> gives:</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>context.events</code></td>
+<td>Every event the plugin matches, oldest first. Read it in <code>render</code>; it is current at the time you read it.</td>
+</tr>
+<tr>
+<td><code>context.call(method, params)</code></td>
+<td>Calls a VM service method on the app that sent the event and returns the result. Service extensions (<code>ext.*</code>) get the event&#39;s isolate unless you pass <code>isolateId</code>.</td>
+</tr>
+</tbody></table>
+<p><code>render</code> runs again when the selection changes. Use the page&#39;s CSS variables, such as <code>var(--muted)</code>, <code>var(--accent)</code> and <code>var(--border)</code>, and the <code>code</code> class for preformatted text, so the plugin follows the theme.</p>
+<h2 id="talking-to-the-app"><a class="anchor" href="#talking-to-the-app">Talking to the app</a></h2>
+<p><code>context.call</code> reaches any service extension the app registers with <code>dart:developer</code>:</p>
+<pre><code><span class="hljs-title function_">registerExtension</span>(<span class="hljs-string">&#x27;ext.myapp.flags&#x27;</span>, (method, params) <span class="hljs-keyword">async</span> {
+  <span class="hljs-keyword">if</span> (params[<span class="hljs-string">&#x27;set&#x27;</span>] != <span class="hljs-keyword">null</span>) flags.<span class="hljs-title function_">toggle</span>(params[<span class="hljs-string">&#x27;set&#x27;</span>]!);
+  <span class="hljs-keyword">return</span> <span class="hljs-title class_">ServiceExtensionResponse</span>.<span class="hljs-title function_">result</span>(<span class="hljs-title function_">jsonEncode</span>(flags.<span class="hljs-title function_">toJson</span>()));
+});</code></pre>
+<pre><code><span class="hljs-title function_">render</span>(<span class="hljs-params">el, e, context</span>) {
+  <span class="hljs-keyword">const</span> button = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&#x27;button&#x27;</span>);
+  button.<span class="hljs-property">textContent</span> = <span class="hljs-string">&#x27;Toggle beta&#x27;</span>;
+  button.<span class="hljs-property">onclick</span> = <span class="hljs-title function_">async</span> () =&gt; {
+    <span class="hljs-keyword">const</span> flags = <span class="hljs-keyword">await</span> context.<span class="hljs-title function_">call</span>(<span class="hljs-string">&#x27;ext.myapp.flags&#x27;</span>, { <span class="hljs-attr">set</span>: <span class="hljs-string">&#x27;beta&#x27;</span> });
+    button.<span class="hljs-property">textContent</span> = <span class="hljs-string">`beta: <span class="hljs-subst">${flags.beta}</span>`</span>;
+  };
+  el.<span class="hljs-title function_">append</span>(button);
+}</code></pre>
+<p>For plain buttons with no custom UI, <a href="../../docs/api/#actions"><code>Devpul.action</code></a> is simpler.</p>
+<h2 id="example-routes"><a class="anchor" href="#example-routes">Example: Routes</a></h2>
+<p>DevPul serves one example, a plugin that shows the navigation stack after each event from <a href="../../docs/flutter/#routes"><code>DevpulNavigatorObserver</code></a>. Add this URL in Settings &gt; Plugins:</p>
+<pre><code>https://devpul.saradgajurel.com.np/plugins/routes.js</code></pre>
+<p>The <a href="https://github.com/ictsolved/devpul/blob/main/app/public/plugins/routes.js">source</a> is a good starting point.</p>
+<h2 id="other-module-shapes"><a class="anchor" href="#other-module-shapes">Other module shapes</a></h2>
+<p>The default export can be one plugin, a list of plugins, or a function that receives the API and registers plugins itself:</p>
+<pre><code><span class="hljs-keyword">export</span> <span class="hljs-title function_">default</span> (devpul) =&gt; {
+  devpul.<span class="hljs-title function_">register</span>({ <span class="hljs-attr">id</span>: <span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-attr">kinds</span>: [<span class="hljs-string">&#x27;a&#x27;</span>] });
+  devpul.<span class="hljs-title function_">register</span>({ <span class="hljs-attr">id</span>: <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&#x27;B&#x27;</span>, <span class="hljs-attr">kinds</span>: <span class="hljs-function">(<span class="hljs-params">k</span>) =&gt;</span> k.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&#x27;b.&#x27;</span>) });
+};</code></pre>
+<p>The same API is on <code>window.devpul</code> (<code>{version, register}</code>), so you can try a plugin from the browser console. <code>version</code> is 2.</p>
+<h2 id="developing-a-plugin"><a class="anchor" href="#developing-a-plugin">Developing a plugin</a></h2>
+<p>Serve the folder with any static server that sets CORS headers, then add the file&#39;s URL in Settings:</p>
+<pre><code>npx http-server --cors -p 8090
+<span class="hljs-comment"># Settings &gt; Plugins: http://127.0.0.1:8090/cart.js</span></code></pre>
+<p>Plugins load once per page; reload DevPul after editing. Load errors show under the plugin URLs in Settings.</p>
+<h2 id="security"><a class="anchor" href="#security">Security</a></h2>
+<p>A plugin runs with full access to the page: every event, header and body DevPul has seen. Load only code you trust, from hosts you control.</p>
+
+        <nav class="pager" aria-label="Pages"><a href="../../docs/flutter/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Flutter</a><a href="../../docs/adapters/">Writing an HTTP adapter<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
+      </main>
+    </div>
+    <footer class="foot">
+      <a href="https://github.com/ictsolved/devpul">Source</a> · <a href="https://github.com/ictsolved/devpul/issues">Issues</a>
+    </footer>
+    <script>(() => {
+  const root = document.documentElement;
+  const next = { system: 'light', light: 'dark', dark: 'system' };
+  const label = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
+  const button = document.querySelector('.theme');
+  let theme = root.dataset.theme ?? 'system';
+  const show = () => {
+    button.dataset.current = theme;
+    button.setAttribute('aria-label', label[theme]);
+    button.title = label[theme];
+  };
+  show();
+  button.addEventListener('click', () => {
+    theme = next[theme];
+    try {
+      localStorage.setItem('devpul:theme', JSON.stringify(theme));
+    } catch {}
+    if (theme === 'system') delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    show();
+  });
+
+  for (const pre of document.querySelectorAll('.doc pre')) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.textContent ?? '');
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Failed';
+      }
+      setTimeout(() => (copy.textContent = 'Copy'), 1200);
+    });
+    pre.append(copy);
+  }
+})();
+</script>
+  </body>
+</html>
