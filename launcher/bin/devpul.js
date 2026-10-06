@@ -2,7 +2,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HELP = `Usage: devpul [--port <n>] [--no-open]
@@ -27,30 +27,44 @@ if (!Number.isInteger(wanted) || wanted < 0 || wanted > 65535) {
 const open = !args.includes('--no-open');
 
 const here = dirname(fileURLToPath(import.meta.url));
-const find = (...candidates) => candidates.map((p) => join(here, p)).find((p) => existsSync(p));
-// Packed: next to bin/. In the repo: the app build.
-const htmlPath = find('../devpul.html', '../../app/dist/index.html');
-if (!htmlPath) {
+// Packed: ui/ next to bin/. In the repo: the app build.
+const root = [join(here, '../ui'), join(here, '../../app/dist')].find((p) =>
+  existsSync(join(p, 'index.html')),
+);
+if (!root) {
   console.error('devpul: UI build not found. Run `npm run build` in the repo first.');
   process.exit(1);
 }
-const html = readFileSync(htmlPath);
-const iconPath = find('../favicon.svg', '../../app/public/favicon.svg');
-const icon = iconPath ? readFileSync(iconPath) : null;
+
+const types = {
+  '.html': 'text/html; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.webmanifest': 'application/manifest+json',
+  '.js': 'text/javascript',
+  '.txt': 'text/plain; charset=utf-8',
+};
 
 const server = createServer((req, res) => {
-  const path = (req.url ?? '/').split('?')[0];
   const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
-  if (path === '/' || path === '/index.html') {
-    res.writeHead(200, { ...headers, 'content-type': 'text/html; charset=utf-8' });
-    res.end(html);
-  } else if (path === '/favicon.svg' && icon) {
-    res.writeHead(200, { ...headers, 'content-type': 'image/svg+xml' });
-    res.end(icon);
-  } else {
+  let path;
+  try {
+    path = decodeURIComponent((req.url ?? '/').split('?')[0]);
+  } catch {
+    res.writeHead(400, headers);
+    res.end();
+    return;
+  }
+  if (path.endsWith('/')) path += 'index.html';
+  const file = normalize(join(root, path));
+  const type = types[extname(file)];
+  if (!file.startsWith(root + sep) || !type || !existsSync(file)) {
     res.writeHead(404, headers);
     res.end();
+    return;
   }
+  res.writeHead(200, { ...headers, 'content-type': type });
+  res.end(readFileSync(file));
 });
 
 function listen(port, triesLeft) {

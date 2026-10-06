@@ -26,14 +26,13 @@
   },
   "files": [
     "bin",
-    "devpul.html",
-    "favicon.svg",
+    "ui",
     "LICENSE"
   ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "prepack": "npm run build -w devpul-app --prefix .. && node -e \"const f=require('fs');f.copyFileSync('../app/dist/index.html','devpul.html');f.copyFileSync('../app/public/favicon.svg','favicon.svg')\""
+    "prepack": "npm run build -w devpul-app --prefix .. && node -e \"const f=require('fs');f.rmSync('ui',{recursive:true,force:true});f.cpSync('../app/dist','ui',{recursive:true});for(const x of ['CNAME','robots.txt','sitemap.xml','llms.txt','sw.js'])f.rmSync('ui/'+x,{force:true})\""
   }
 }
