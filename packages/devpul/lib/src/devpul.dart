@@ -127,7 +127,7 @@ abstract final class Devpul {
   static String _randomId() {
     final random = Random();
     final time = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-    final suffix = random.nextInt(1 << 32).toRadixString(36);
+    final suffix = random.nextInt(0x3fffffff).toRadixString(36);
     return '$time$suffix';
   }
 }

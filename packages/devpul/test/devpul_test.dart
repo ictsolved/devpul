@@ -12,6 +12,10 @@ void main() {
     debugOnPost = (kind, event) => events.add((kind, event));
   });
 
+  test('session id is usable on every platform', () {
+    expect(Devpul.sessionId, matches(RegExp(r'^[0-9a-z]{8,}$')));
+  });
+
   test('adds the envelope', () {
     Devpul.emit('custom', {'a': 1});
     final (kind, event) = events.single;

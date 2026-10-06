@@ -8,7 +8,12 @@ Future<List<String>> capture(void Function() body) async {
   await runZoned(
     () async {
       body();
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // Browsers clamp nested timers to 4 ms, so wait for the queue to drain.
+      var last = -1;
+      while (lines.length != last) {
+        last = lines.length;
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
     },
     zoneSpecification: ZoneSpecification(
       print: (_, __, ___, line) => lines.add(line),
