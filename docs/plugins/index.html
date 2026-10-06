@@ -435,10 +435,11 @@ pre {
       <a class="open" href="../../">Open DevPul</a>
     </header>
     <div class="layout">
-      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/">Connecting</a></li><li><a href="../../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/plugins/" aria-current="page">Plugins</a></li><li><a href="../../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../../docs/">Getting started</a></li><li><a href="../../docs/connecting/">Connecting</a></li><li><a href="../../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../../docs/api/">Core API</a></li><li><a href="../../docs/dio/">Dio</a></li><li><a href="../../docs/http/">package:http</a></li><li><a href="../../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../../docs/extend/">Extending DevPul</a></li><li><a href="../../docs/plugins/" aria-current="page">Plugins</a></li><li><a href="../../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../../help/">Help and FAQ</a></li></ul></nav></aside>
       <main class="doc">
         <h1>Plugins</h1>
 <p>A plugin adds a tab for some event kinds. It is an ES module served from a URL: add the URL in Settings &gt; Plugins and the tab appears. The tab lists the plugin&#39;s events with the same filter, pause and keyboard navigation as the built-in tabs, and the plugin decides what the list says and what the detail pane shows.</p>
+<p>Plugins run in the browser and only change how events look; the app sends them with <code>Devpul.emit</code>. <a href="../../docs/extend/">Extending DevPul</a> shows the whole path with Riverpod and Bloc.</p>
 <h2 id="a-minimal-plugin"><a class="anchor" href="#a-minimal-plugin">A minimal plugin</a></h2>
 <pre><code><span class="hljs-comment">// cart.js</span>
 <span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> {
@@ -538,10 +539,12 @@ pre {
 <pre><code>npx http-server --cors -p 8090
 <span class="hljs-comment"># Settings &gt; Plugins: http://127.0.0.1:8090/cart.js</span></code></pre>
 <p>Plugins load once per page; reload DevPul after editing. Load errors show under the plugin URLs in Settings.</p>
+<h2 id="sharing-a-plugin"><a class="anchor" href="#sharing-a-plugin">Sharing a plugin</a></h2>
+<p>Any static host that sends CORS headers and a JavaScript content type works: GitHub Pages, your own site, or a CDN that mirrors GitHub, such as <code>https://cdn.jsdelivr.net/gh/&lt;user&gt;/&lt;repo&gt;/state.js</code>. <code>raw.githubusercontent.com</code> serves files as plain text, which browsers refuse to run as modules.</p>
 <h2 id="security"><a class="anchor" href="#security">Security</a></h2>
 <p>A plugin runs with full access to the page: every event, header and body DevPul has seen. Load only code you trust, from hosts you control.</p>
 
-        <nav class="pager" aria-label="Pages"><a href="../../docs/flutter/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Flutter</a><a href="../../docs/adapters/">Writing an HTTP adapter<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
+        <nav class="pager" aria-label="Pages"><a href="../../docs/extend/"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Extending DevPul</a><a href="../../docs/adapters/">Writing an HTTP adapter<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></nav>
       </main>
     </div>
     <footer class="foot">

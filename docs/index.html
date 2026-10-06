@@ -435,7 +435,7 @@ pre {
       <a class="open" href="../">Open DevPul</a>
     </header>
     <div class="layout">
-      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../docs/" aria-current="page">Getting started</a></li><li><a href="../docs/connecting/">Connecting</a></li><li><a href="../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../docs/api/">Core API</a></li><li><a href="../docs/dio/">Dio</a></li><li><a href="../docs/http/">package:http</a></li><li><a href="../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../docs/plugins/">Plugins</a></li><li><a href="../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../help/">Help and FAQ</a></li></ul></nav></aside>
+      <aside class="side"><nav aria-label="Docs"><h2>Guide</h2><ul><li><a href="../docs/" aria-current="page">Getting started</a></li><li><a href="../docs/connecting/">Connecting</a></li><li><a href="../docs/ui/">Using the UI</a></li></ul><h2>Packages</h2><ul><li><a href="../docs/api/">Core API</a></li><li><a href="../docs/dio/">Dio</a></li><li><a href="../docs/http/">package:http</a></li><li><a href="../docs/flutter/">Flutter</a></li></ul><h2>Extend</h2><ul><li><a href="../docs/extend/">Extending DevPul</a></li><li><a href="../docs/plugins/">Plugins</a></li><li><a href="../docs/adapters/">Writing an HTTP adapter</a></li><li><a href="../docs/events/">Event contract</a></li></ul><h2>Help</h2><ul><li><a href="../help/">Help and FAQ</a></li></ul></nav></aside>
       <main class="doc">
         <h1>Getting started</h1>
 <p>DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls with headers and bodies, errors with stack traces, logs, route changes and your own events. The app posts them on the VM service that every debug run already has, and this page reads them over <code>127.0.0.1</code>.</p>
@@ -475,7 +475,7 @@ dart run --enable-vm-service bin/main.dart</code></pre>
 <li><strong>HTTP</strong>: every call with method, status, duration and size, live pending rows, filters, sortable columns, headers and bodies as tables and JSON trees, and copy as curl or fetch.</li>
 <li><strong>Errors</strong>: Flutter and uncaught errors with stack traces and Flutter&#39;s diagnostics, grouped by repeat, with the requests made just before.</li>
 <li><strong>Logs</strong>: <code>Devpul.log</code> and <code>debugPrint</code> output with level and logger filters.</li>
-<li><strong>Events</strong>: anything you send with <code>Devpul.emit</code>.</li>
+<li><strong>Events</strong>: anything you send with <code>Devpul.emit</code>, such as state changes from Riverpod or Bloc. See <a href="../docs/extend/">Extending DevPul</a>.</li>
 <li><strong>Actions</strong>: buttons that run code in the app, such as clearing a cache or signing out.</li>
 <li><strong>Plugins</strong>: your own tabs for your own events. See <a href="../docs/plugins/">Plugins</a>.</li>
 </ul>

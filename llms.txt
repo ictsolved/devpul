@@ -11,6 +11,7 @@ The hosted UI is at https://devpul.saradgajurel.com.np/. It also runs locally wi
 - [Using the UI](https://devpul.saradgajurel.com.np/docs/ui/): filter syntax (`status:4xx ms:>500 host: tag:`), sorting, shortcuts, HAR and session export, actions.
 - [Core API](https://devpul.saradgajurel.com.np/docs/api/): `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, `DevpulConfig`, redaction.
 - [Dio](https://devpul.saradgajurel.com.np/docs/dio/), [package:http](https://devpul.saradgajurel.com.np/docs/http/), [Flutter](https://devpul.saradgajurel.com.np/docs/flutter/): adapters and hooks.
+- [Extending DevPul](https://devpul.saradgajurel.com.np/docs/extend/): send any data with `Devpul.emit`, Riverpod `ProviderObserver` and Bloc `BlocObserver` examples, a State plugin, actions.
 - [Plugins](https://devpul.saradgajurel.com.np/docs/plugins/): ES module tabs for custom event kinds, with a render context that can call the app.
 - [Writing an HTTP adapter](https://devpul.saradgajurel.com.np/docs/adapters/) and [Event contract](https://devpul.saradgajurel.com.np/docs/events/): `DevpulHttp` and the `devpul.*` event schema.
 - [Help and FAQ](https://devpul.saradgajurel.com.np/help/): troubleshooting and privacy.
