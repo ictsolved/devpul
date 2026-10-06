@@ -192,7 +192,6 @@ export function renderPage(path: string, site: Site): string | null {
       </main>
     </div>
     <footer class="foot">
-      DevPul runs only in your browser; nothing you inspect is sent anywhere. MIT licensed.
       <a href="${site.repo}">Source</a> · <a href="${site.repo}/issues">Issues</a>
     </footer>
     <script>${read('page.js')}</script>
