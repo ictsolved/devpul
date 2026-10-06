@@ -64,7 +64,7 @@ export function HelpDialog({ open, onClose }: Props) {
         <Code>{SETUP}</Code>
         <Code>{MAIN}</Code>
         <p>
-          Run the app with <code>flutter run</code> or <code>dart run --observe</code> and paste the
+          Run the app with <code>flutter run</code> or <code>dart run --enable-vm-service</code> and paste the
           VM service URL it prints (<code>http://127.0.0.1:PORT/TOKEN=/</code>) into the bar above.
           DevTools links and <code>ws://</code> URLs work too. Add one URL per app to watch several
           at once.
@@ -132,6 +132,11 @@ export function HelpDialog({ open, onClose }: Props) {
             app&apos;s own buffer on connect, up to <code>backlogSize</code>.
           </li>
           <li>Release and profile builds never emit.</li>
+          <li>
+            Plain Dart: use <code>--enable-vm-service</code>. <code>--observe</code> also pauses
+            isolates on exit, which stalls <code>Isolate.run</code> and Dio&apos;s background JSON
+            decoding.
+          </li>
         </ul>
       </div>
     </dialog>

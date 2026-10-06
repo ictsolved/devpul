@@ -14,10 +14,28 @@ interface Props {
   onClose: () => void;
 }
 
-const int = (v: string, fallback: number) => {
-  const n = Number.parseInt(v, 10);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-};
+/** Digits only, no spinner; commits on blur or Enter. Key it by value to reset. */
+function NumberField(props: { value: number; min: number; onCommit: (v: number) => void }) {
+  const { value, min, onCommit } = props;
+  const [text, setText] = useState(String(value));
+  const commit = () => {
+    const n = Number.parseInt(text, 10);
+    if (Number.isFinite(n) && n >= min) onCommit(n);
+    else setText(String(value));
+  };
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={text}
+      onChange={(e) => setText(e.target.value.replace(/\D/g, ''))}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit();
+      }}
+    />
+  );
+}
 
 export function SettingsDialog(props: Props) {
   const { open, settings, sessionKeys, usage, pluginErrors, onChange, onClear, onClose } = props;
@@ -55,33 +73,17 @@ export function SettingsDialog(props: Props) {
         <h3>Slow requests</h3>
         <label>
           Amber from (ms)
-          <input
-            type="number"
-            min={1}
-            value={settings.slowMs}
-            onChange={(e) => set('slowMs', int(e.target.value, settings.slowMs))}
-          />
+          <NumberField key={settings.slowMs} value={settings.slowMs} min={1} onCommit={(v) => set('slowMs', v)} />
         </label>
         <label>
           Red from (ms)
-          <input
-            type="number"
-            min={1}
-            value={settings.verySlowMs}
-            onChange={(e) => set('verySlowMs', int(e.target.value, settings.verySlowMs))}
-          />
+          <NumberField key={settings.verySlowMs} value={settings.verySlowMs} min={1} onCommit={(v) => set('verySlowMs', v)} />
         </label>
 
         <h3>Storage</h3>
         <label>
           Events kept
-          <input
-            type="number"
-            min={100}
-            step={1000}
-            value={settings.maxEvents}
-            onChange={(e) => set('maxEvents', int(e.target.value, settings.maxEvents))}
-          />
+          <NumberField key={settings.maxEvents} value={settings.maxEvents} min={100} onCommit={(v) => set('maxEvents', v)} />
         </label>
         <label className="check">
           <input

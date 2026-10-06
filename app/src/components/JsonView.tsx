@@ -4,11 +4,16 @@ import { formatBytes, highlight, pretty } from '../lib/json';
 
 const LIMIT = 100_000;
 
+export const isEmptyValue = (value: unknown): boolean =>
+  value === undefined ||
+  value === null ||
+  value === '' ||
+  (Array.isArray(value) && value.length === 0) ||
+  (isObject(value) && Object.keys(value).length === 0);
+
 function JsonViewInner({ value }: { value: unknown }) {
   const [all, setAll] = useState(false);
-  if (value === undefined || value === null || value === '') {
-    return <div className="muted empty">empty</div>;
-  }
+  if (isEmptyValue(value)) return <div className="muted">empty</div>;
   if (isObject(value) && isObject(value[TRUNCATED])) {
     const marker = value[TRUNCATED];
     const size = typeof marker.size === 'number' ? formatBytes(marker.size) : 'unknown size';

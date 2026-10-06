@@ -9,6 +9,12 @@
       content="Open source debug bridge for Dart and Flutter. See HTTP requests, responses, errors and custom events from a running debug app live in your browser. No proxy, no certificates, no server."
     />
     <link rel="canonical" href="%SITE_URL%" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('devpul:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
     <meta name="theme-color" content="#0f766e" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -130,7 +136,7 @@
             <h3>Run and connect</h3>
             <p>
               Run the app in debug mode with <code>flutter run</code> or
-              <code>dart run --observe</code>. Paste the VM service URL it prints, for example
+              <code>dart run --enable-vm-service</code>. Paste the VM service URL it prints, for example
               <code>http://127.0.0.1:41234/AbCdEf12=/</code>, into the bar above.
             </p>
           </li>

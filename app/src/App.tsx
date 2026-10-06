@@ -8,6 +8,7 @@ import { HttpTab } from './components/HttpTab';
 import { PluginTab } from './components/PluginTab';
 import { SessionHeader, sessionFields } from './components/SessionHeader';
 import { SettingsDialog } from './components/SettingsDialog';
+import { ThemeToggle } from './components/ThemeToggle';
 import { Tooltip } from './components/Tooltip';
 import { type DevEvent, str } from './lib/events';
 import { formatTime } from './lib/json';
@@ -153,8 +154,11 @@ export function App() {
         setHelpOpen(true);
       } else if (e.key === '/') {
         e.preventDefault();
-        setTab('http');
-        requestAnimationFrame(() => filterRef.current?.focus());
+        if (filterRef.current) filterRef.current.focus();
+        else {
+          setTab('http');
+          requestAnimationFrame(() => filterRef.current?.focus());
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -267,6 +271,7 @@ export function App() {
             <SettingsIcon size={14} />
             <span className="label">Settings</span>
           </button>
+          <ThemeToggle />
           <button type="button" className="btn" onClick={() => setHelpOpen(true)}>
             <CircleHelp size={14} />
             <span className="label">Help</span>

@@ -18,7 +18,7 @@ The hosted UI is at %SITE_URL%. It also runs locally with `npx devpul` or as a d
 
 ## Key facts
 
-- Connect by pasting the VM service URL printed by `flutter run`, `flutter attach` or `dart run --observe`. Optional fixed URL: run with `--dds-port=8181 --disable-service-auth-codes` and use `ws://127.0.0.1:8181/ws`.
+- Connect by pasting the VM service URL printed by `flutter run`, `flutter attach` or `dart run --enable-vm-service`. Optional fixed URL: run with `--dds-port=8181 --disable-service-auth-codes` and use `ws://127.0.0.1:8181/ws`.
 - Events are named `devpul.<kind>` on the VM service Extension stream. Kinds: `http.request`, `http.response`, `http.error`, `app.session`, `error`, and any custom kind.
 - Chrome and Firefox ask for permission before a hosted page connects to 127.0.0.1 (local network access). Safari blocks it; use the local version.
-- Works on Flutter Android, iOS, desktop and web, and plain Dart with `--observe`.
+- Works on Flutter Android, iOS, desktop and web, and plain Dart with `dart run --enable-vm-service`.

@@ -4,7 +4,7 @@ import { isObject, str } from '../lib/events';
 import { formatBytes, formatTime, pretty } from '../lib/json';
 import type { HttpRow } from '../lib/store';
 import { CopyButton } from './Copy';
-import { JsonView } from './JsonView';
+import { isEmptyValue, JsonView } from './JsonView';
 import { Section } from './Section';
 
 const count = (v: unknown): string | undefined => {
@@ -80,7 +80,7 @@ function DetailPanelInner({ row, onClose }: Props) {
 
 function Part(props: { id: string; title: string; value: unknown; summary?: string }) {
   const { id, title, value, summary } = props;
-  const empty = value === undefined || value === null;
+  const empty = isEmptyValue(value);
   return (
     <Section
       id={id}

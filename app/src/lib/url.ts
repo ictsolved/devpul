@@ -1,4 +1,4 @@
-// Accepts what `flutter run`, `flutter attach`, `dart run --observe` and
+// Accepts what `flutter run`, `flutter attach`, `dart run --enable-vm-service` and
 // DevTools print, and returns the DDS websocket URL.
 export function toWsUrl(input: string): string | null {
   let text = input.trim();
