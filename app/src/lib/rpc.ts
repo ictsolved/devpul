@@ -12,7 +12,6 @@ export type ConnStatus = 'connecting' | 'open' | 'closed';
 export interface ConnState {
   status: ConnStatus;
   everOpened: boolean;
-  since: number;
 }
 
 interface Pending {
@@ -24,7 +23,7 @@ const RETRY_MS = 2000;
 const BACKLOG = 'ext.devpul.backlog';
 
 export class Connection {
-  state: ConnState = { status: 'closed', everOpened: false, since: Date.now() };
+  state: ConnState = { status: 'closed', everOpened: false };
 
   private ws: WebSocket | null = null;
   private nextId = 1;
@@ -71,7 +70,6 @@ export class Connection {
     this.state = {
       status,
       everOpened: this.state.everOpened || status === 'open',
-      since: Date.now(),
     };
     this.onState();
   }
