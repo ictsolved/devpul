@@ -1,6 +1,6 @@
 {
   "name": "devpul",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Serve the DevPul UI on 127.0.0.1: inspect Dart and Flutter HTTP calls, errors, logs and events in your browser.",
   "keywords": [
     "flutter",
