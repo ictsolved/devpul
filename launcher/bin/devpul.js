@@ -5,10 +5,11 @@ import { createServer } from 'node:http';
 import { dirname, extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const HELP = `Usage: devpul [--port <n>] [--no-open]
+const HELP = `Usage: devpul [vm-service-url] [--port <n>] [--no-open]
 
 Serves the DevPul UI on http://127.0.0.1 and opens it in the browser.
 The port stays fixed by default so settings and history persist.
+With a VM service URL, the opened page connects to it.
 
   --port <n>  port to listen on (default 7171, next free one if taken)
   --no-open   do not open a browser`;
@@ -25,6 +26,7 @@ if (!Number.isInteger(wanted) || wanted < 0 || wanted > 65535) {
   process.exit(1);
 }
 const open = !args.includes('--no-open');
+const connect = args.find((a, i) => !a.startsWith('-') && args[i - 1] !== '--port');
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Packed: ui/ next to bin/. In the repo: the app build.
@@ -55,6 +57,11 @@ const server = createServer((req, res) => {
     res.end();
     return;
   }
+  if (!extname(path) && !path.endsWith('/') && existsSync(join(root, path, 'index.html'))) {
+    res.writeHead(301, { ...headers, location: `${path}/` });
+    res.end();
+    return;
+  }
   if (path.endsWith('/')) path += 'index.html';
   const file = normalize(join(root, path));
   const type = types[extname(file)];
@@ -78,7 +85,7 @@ function listen(port, triesLeft) {
   server.listen(port, '127.0.0.1', () => {
     const url = `http://127.0.0.1:${server.address().port}/`;
     console.log(`DevPul UI at ${url}  (Ctrl+C to stop)`);
-    if (open) openBrowser(url);
+    if (open) openBrowser(connect ? `${url}#connect=${encodeURIComponent(connect)}` : url);
   });
 }
 
