@@ -108,6 +108,10 @@ npx http-server --cors -p 8090
 
 Plugins load once per page; reload DevPul after editing. Load errors show under the plugin URLs in Settings.
 
+## Sharing a plugin
+
+Any static host that sends CORS headers and a JavaScript content type works: GitHub Pages, your own site, or a CDN that mirrors GitHub, such as `https://cdn.jsdelivr.net/gh/<user>/<repo>/state.js`. `raw.githubusercontent.com` serves files as plain text, which browsers refuse to run as modules.
+
 ## Security
 
 A plugin runs with full access to the page: every event, header and body DevPul has seen. Load only code you trust, from hosts you control.
