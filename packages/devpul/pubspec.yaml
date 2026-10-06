@@ -1,0 +1,17 @@
+name: devpul
+description: Stream HTTP calls, errors and custom events from a running Dart or Flutter app to a browser UI over the Dart VM service. Debug builds only.
+version: 0.1.0
+homepage: https://devpul.saradgajurel.com.np
+repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul
+issue_tracker: https://github.com/ictsolved/devpul/issues
+topics: [debugging, network, logging, http, devtools]
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.25.0
