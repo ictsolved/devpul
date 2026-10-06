@@ -1,0 +1,21 @@
+name: devpul_dio
+description: Dio interceptor for DevPul. Shows Dio requests, responses and errors live in the DevPul browser UI, with curl commands.
+version: 0.1.0
+homepage: https://devpul.saradgajurel.com.np
+repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_dio
+issue_tracker: https://github.com/ictsolved/devpul/issues
+topics: [debugging, network, dio, http, devtools]
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  devpul: ^0.1.0
+  dio: ^5.0.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.25.0
