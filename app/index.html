@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevPul - inspect Dart and Flutter HTTP calls, errors and events in the browser</title>
+    <meta
+      name="description"
+      content="Open source debug bridge for Dart and Flutter. See HTTP requests, responses, errors and custom events from a running debug app live in your browser. No proxy, no certificates, no server."
+    />
+    <link rel="canonical" href="%SITE_URL%" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DevPul" />
+    <meta property="og:title" content="DevPul - Dart and Flutter debug bridge for the browser" />
+    <meta
+      property="og:description"
+      content="See HTTP calls, errors and custom events from a running Dart or Flutter debug app live in your browser."
+    />
+    <meta property="og:url" content="%SITE_URL%" />
+    <meta property="og:image" content="%SITE_URL%og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DevPul: a running Flutter app's HTTP calls listed in a browser" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "DevPul",
+        "url": "%SITE_URL%",
+        "description": "Open source debug bridge between a running Dart or Flutter app and a browser UI. Shows HTTP calls, errors, session info and custom events live over the Dart VM service.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any (web browser)",
+        "license": "https://opensource.org/licenses/MIT",
+        "isAccessibleForFree": true,
+        "codeRepository": "%REPO_URL%",
+        "programmingLanguage": ["Dart", "TypeScript"],
+        "keywords": "Flutter network inspector, Dart HTTP logger, Dio interceptor, Flutter debugging, Dart VM service, DevTools alternative",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I see Flutter network requests in the browser?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Add the devpul and devpul_dio packages, add DevpulDioInterceptor to your Dio instance, run the app in debug mode and paste the VM service URL that flutter run prints into DevPul. Requests, responses and errors appear live."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does DevPul need a proxy, certificates or a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The app posts events with dart:developer postEvent. The browser reads them from the Dart Development Service websocket on 127.0.0.1. Nothing leaves your machine."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does DevPul run in release builds?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Release and profile builds have no VM service and DevPul never emits in them."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does the browser ask to access apps on this device?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Chrome and Firefox ask before a hosted page may connect to 127.0.0.1. Allow it once for this site. Safari blocks such connections; use npx devpul or the downloaded HTML file instead."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is DevPul different from the Flutter DevTools network tab?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DevPul works for any HTTP client through adapters, including on Flutter web, shows errors and custom events next to requests, filters by tags and app runs, watches several apps at once and keeps history across reloads."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <main id="intro" class="intro">
+      <section class="hero">
+        <h1>DevPul</h1>
+        <p class="lead">
+          A debug bridge between a running Dart or Flutter app and your browser. See HTTP calls,
+          errors, session info and custom events live. No proxy, no certificates, no server.
+        </p>
+        <p class="muted">Pul means bridge in Nepali. Open source, MIT licensed.</p>
+      </section>
+
+      <section>
+        <h2>Get started</h2>
+        <ol class="steps">
+          <li>
+            <h3>Add the packages</h3>
+            <pre class="code">dependencies:
+  devpul: ^0.1.0
+  devpul_dio: ^0.1.0      # for Dio
+  devpul_flutter: ^0.1.0  # for Flutter error hooks</pre>
+          </li>
+          <li>
+            <h3>Hook them up</h3>
+            <pre class="code">void main() {
+  DevpulFlutter.install();
+  Devpul.session({'name': 'My app', 'version': '1.0.0'});
+  dio.interceptors.add(DevpulDioInterceptor());
+  runApp(const MyApp());
+}</pre>
+          </li>
+          <li>
+            <h3>Run and connect</h3>
+            <p>
+              Run the app in debug mode with <code>flutter run</code> or
+              <code>dart run --observe</code>. Paste the VM service URL it prints, for example
+              <code>http://127.0.0.1:41234/AbCdEf12=/</code>, into the bar above.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>What you get</h2>
+        <ul class="features">
+          <li>HTTP table with live pending rows, status and method filters, slow request highlighting and copy as curl.</li>
+          <li>Request and response headers and bodies with JSON highlighting, even for large payloads.</li>
+          <li>Flutter and uncaught errors with stack traces.</li>
+          <li>Custom events from <code>Devpul.emit</code>, tag filters and a plugin API for your own panels.</li>
+          <li>Several apps at once, history kept across page reloads, keyboard navigation.</li>
+          <li>Works with Flutter on Android, iOS, desktop and web, and with plain Dart programs.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Questions</h2>
+        <dl class="faq">
+          <dt>How do I see Flutter network requests in the browser?</dt>
+          <dd>
+            Add the devpul and devpul_dio packages, add <code>DevpulDioInterceptor</code> to your
+            Dio instance, run the app in debug mode and paste the VM service URL that
+            <code>flutter run</code> prints into DevPul. Requests, responses and errors appear live.
+          </dd>
+          <dt>Does DevPul need a proxy, certificates or a server?</dt>
+          <dd>
+            No. The app posts events with <code>dart:developer</code> <code>postEvent</code>. The
+            browser reads them from the Dart Development Service websocket on 127.0.0.1. Nothing
+            leaves your machine.
+          </dd>
+          <dt>Does DevPul run in release builds?</dt>
+          <dd>No. Release and profile builds have no VM service and DevPul never emits in them.</dd>
+          <dt>Why does the browser ask to access apps on this device?</dt>
+          <dd>
+            Chrome and Firefox ask before a hosted page may connect to 127.0.0.1. Allow it once for
+            this site. Safari blocks such connections; use <code>npx devpul</code> or the downloaded
+            HTML file instead.
+          </dd>
+          <dt>How is DevPul different from the Flutter DevTools network tab?</dt>
+          <dd>
+            DevPul works for any HTTP client through adapters, including on Flutter web, shows
+            errors and custom events next to requests, filters by tags and app runs, watches several
+            apps at once and keeps history across reloads.
+          </dd>
+        </dl>
+      </section>
+
+      <footer class="intro-foot">
+        <a href="%REPO_URL%">Source on GitHub</a>
+        <a href="%REPO_URL%#readme">Documentation</a>
+        <a href="%REPO_URL%/issues">Issues</a>
+      </footer>
+    </main>
+    <noscript><p class="intro">DevPul needs JavaScript to connect to your app.</p></noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+# DevPul
+
+> Open source debug bridge between a running Dart or Flutter app and a browser UI. The app posts HTTP calls, errors, session info and custom events with `dart:developer` `postEvent`; the browser reads them live from the Dart Development Service (DDS) websocket on 127.0.0.1. No proxy, no certificates, no server. Debug builds only. MIT licensed.
+
+The hosted UI is at %SITE_URL%. It also runs locally with `npx devpul` or as a downloaded single HTML file.
+
+## Packages
+
+- [devpul](%REPO_URL%/tree/main/packages/devpul): pure Dart core. `Devpul.emit`, `Devpul.session`, `Devpul.error`, `Devpul.tags`, `DevpulConfig`, `DevpulHttp` for HTTP adapters.
+- [devpul_dio](%REPO_URL%/tree/main/packages/devpul_dio): `DevpulDioInterceptor` for Dio.
+- [devpul_flutter](%REPO_URL%/tree/main/packages/devpul_flutter): `DevpulFlutter.install()` reports FlutterError and uncaught platform errors.
+- [launcher](%REPO_URL%/tree/main/launcher): `npx devpul` serves the UI on 127.0.0.1.
+
+## Docs
+
+- [README](%REPO_URL%#readme): setup, configuration, event schema, UI plugins, browser support, security notes.
+- [Example app](%REPO_URL%/tree/main/examples/devpul_example)
+
+## Key facts
+
+- Connect by pasting the VM service URL printed by `flutter run`, `flutter attach` or `dart run --observe`. Optional fixed URL: run with `--dds-port=8181 --disable-service-auth-codes` and use `ws://127.0.0.1:8181/ws`.
+- Events are named `devpul.<kind>` on the VM service Extension stream. Kinds: `http.request`, `http.response`, `http.error`, `app.session`, `error`, and any custom kind.
+- Chrome and Firefox ask for permission before a hosted page connects to 127.0.0.1 (local network access). Safari blocks it; use the local version.
+- Works on Flutter Android, iOS, desktop and web, and plain Dart with `--observe`.

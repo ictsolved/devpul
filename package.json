@@ -1,0 +1,14 @@
+{
+  "name": "devpul-monorepo",
+  "private": true,
+  "workspaces": [
+    "app",
+    "launcher"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w app",
+    "build": "npm run build -w app",
+    "check": "npm run check -w app",
+    "deploy": "npm run deploy -w app"
+  }
+}
