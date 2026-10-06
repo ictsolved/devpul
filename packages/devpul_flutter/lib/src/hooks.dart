@@ -1,6 +1,7 @@
 import 'package:devpul/devpul.dart';
 import 'package:flutter/foundation.dart';
 
+/// Reports Flutter framework errors and uncaught platform errors to DevPul.
 abstract final class DevpulFlutter {
   static bool _installed = false;
 
