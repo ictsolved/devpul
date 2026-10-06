@@ -1,0 +1,20 @@
+name: devpul_example
+description: Example Flutter app using devpul, devpul_dio and devpul_flutter.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  devpul: ^0.1.0
+  devpul_dio: ^0.1.0
+  devpul_flutter: ^0.1.0
+  dio: ^5.0.0
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
