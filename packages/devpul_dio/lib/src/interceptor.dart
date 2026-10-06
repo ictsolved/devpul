@@ -29,6 +29,7 @@ class DevpulDioInterceptor extends Interceptor {
         statusMessage: response.statusMessage,
         headers: response.headers.map,
         body: _body(response.data),
+        finalUrl: response.realUri,
       );
     }
     handler.next(response);

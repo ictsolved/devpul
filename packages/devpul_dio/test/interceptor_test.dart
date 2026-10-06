@@ -80,6 +80,30 @@ void main() {
     expect(req['curl'], contains("-F 'file=@a.png'"));
   });
 
+  test('records where redirects ended', () async {
+    await dio(
+      (_) => ResponseBody(
+        Stream.value(Uint8List.fromList(utf8.encode('{}'))),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+        isRedirect: true,
+        redirects: [
+          RedirectRecord(302, 'GET', Uri.parse('/new')),
+        ],
+      ),
+    ).get<Object?>('/old');
+    final res = events.last.$2;
+    expect(res['url'], 'https://example.com/api/old');
+    expect(res['finalUrl'], 'https://example.com/new');
+  });
+
+  test('omits finalUrl without redirects', () async {
+    await dio((_) => _json({}, 200)).get<Object?>('/same');
+    expect(events.last.$2.containsKey('finalUrl'), isFalse);
+  });
+
   test('reports bad responses as http.error with status and body', () async {
     await expectLater(
       dio((_) => _json({'error': 'nope'}, 404)).get<Object?>('/missing'),
