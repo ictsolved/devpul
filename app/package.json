@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "oxlint src vite.config.ts",
+    "lint": "oxlint src pages vite.config.ts",
     "test": "vitest run",
     "check": "npm run lint && npm run test && npm run build",
     "deploy": "npm run build && gh-pages -d dist"
@@ -23,6 +23,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "gh-pages": "^6.3.0",
+    "marked": "^18.1.0",
     "oxlint": "^1.87.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.3",
