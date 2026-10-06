@@ -1,0 +1,39 @@
+{
+  "name": "devpul",
+  "version": "0.1.0",
+  "description": "Serve the DevPul UI on 127.0.0.1: inspect Dart and Flutter HTTP calls, errors and events in your browser.",
+  "keywords": [
+    "flutter",
+    "dart",
+    "debugging",
+    "network-inspector",
+    "http",
+    "dio",
+    "devtools",
+    "vm-service"
+  ],
+  "homepage": "https://devpul.saradgajurel.com.np",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ictsolved/devpul.git",
+    "directory": "launcher"
+  },
+  "bugs": "https://github.com/ictsolved/devpul/issues",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "devpul": "bin/devpul.js"
+  },
+  "files": [
+    "bin",
+    "devpul.html",
+    "favicon.svg",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "prepack": "npm run build -w devpul-app --prefix .. && node -e \"const f=require('fs');f.copyFileSync('../app/dist/index.html','devpul.html');f.copyFileSync('../app/public/favicon.svg','favicon.svg')\""
+  }
+}

@@ -9,3 +9,5 @@ coverage/
 .idea/
 *.iml
 pubspec.lock
+launcher/devpul.html
+launcher/favicon.svg
