@@ -79,7 +79,7 @@ Yes. Export a session file and they can open it in DevPul without the app, or ex
 
 ### Does it work with Riverpod, Bloc or GetX?
 
-DevPul does not depend on state management. Send state changes as custom events, or write a plugin that renders them.
+Yes. A short `ProviderObserver` or `BlocObserver` sends every state change as an event; [Extending DevPul](%ROOT%docs/extend/) has both, plus a plugin that puts them in a State tab. With GetX or anything else, call `Devpul.emit` where state changes.
 
 ### Can I trigger things in the app from DevPul?
 

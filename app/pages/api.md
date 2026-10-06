@@ -32,7 +32,7 @@ Tags are added to every event from then on and become filter chips and `tag:` fi
 Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 ```
 
-Any JSON-like value works; other objects become their `toString()`. Kinds that no plugin claims show in Events. Prefer dotted names, such as `cart.updated`, so `kind:cart` finds the family.
+Any JSON-like value works; other objects become their `toString()`. Kinds that no plugin claims show in Events. Prefer dotted names, such as `cart.updated`, so `kind:cart` finds the family. [Extending DevPul](%ROOT%docs/extend/) has observers that send Riverpod and Bloc state this way.
 
 ## Logs
 

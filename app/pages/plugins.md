@@ -7,6 +7,8 @@ description: Write a DevPul plugin, an ES module that adds a tab for your own ev
 
 A plugin adds a tab for some event kinds. It is an ES module served from a URL: add the URL in Settings > Plugins and the tab appears. The tab lists the plugin's events with the same filter, pause and keyboard navigation as the built-in tabs, and the plugin decides what the list says and what the detail pane shows.
 
+Plugins run in the browser and only change how events look; the app sends them with `Devpul.emit`. [Extending DevPul](%ROOT%docs/extend/) shows the whole path with Riverpod and Bloc.
+
 ## A minimal plugin
 
 ```js

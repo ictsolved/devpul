@@ -11,13 +11,13 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
 
-**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/help/).** The same pages are in [app/pages](app/pages).
+**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/help/).** The same pages are in [app/pages](app/pages).
 
 ## How it works
 
 The app posts events with `dart:developer` `postEvent`. They travel on the VM service Extension stream that every debug run already has. The browser connects to the Dart Development Service (DDS) websocket on `127.0.0.1` and reads them. Release and profile builds have no VM service, and DevPul never emits in them.
 
-Works with Flutter on Android, iOS, desktop and web, and with plain Dart programs. Any state management, any HTTP client through adapters.
+Works with Flutter on Android, iOS, desktop and web, and with plain Dart programs. Any state management through [observers](https://devpul.saradgajurel.com.np/docs/extend/), any HTTP client through adapters.
 
 ## Quick start
 

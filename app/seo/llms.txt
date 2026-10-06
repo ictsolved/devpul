@@ -11,6 +11,7 @@ The hosted UI is at %SITE_URL%. It also runs locally with `npx devpul` or as a d
 - [Using the UI](%SITE_URL%docs/ui/): filter syntax (`status:4xx ms:>500 host: tag:`), sorting, shortcuts, HAR and session export, actions.
 - [Core API](%SITE_URL%docs/api/): `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, `DevpulConfig`, redaction.
 - [Dio](%SITE_URL%docs/dio/), [package:http](%SITE_URL%docs/http/), [Flutter](%SITE_URL%docs/flutter/): adapters and hooks.
+- [Extending DevPul](%SITE_URL%docs/extend/): send any data with `Devpul.emit`, Riverpod `ProviderObserver` and Bloc `BlocObserver` examples, a State plugin, actions.
 - [Plugins](%SITE_URL%docs/plugins/): ES module tabs for custom event kinds, with a render context that can call the app.
 - [Writing an HTTP adapter](%SITE_URL%docs/adapters/) and [Event contract](%SITE_URL%docs/events/): `DevpulHttp` and the `devpul.*` event schema.
 - [Help and FAQ](%SITE_URL%help/): troubleshooting and privacy.

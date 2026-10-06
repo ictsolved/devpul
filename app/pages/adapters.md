@@ -5,7 +5,7 @@ description: Report requests from any Dart HTTP client to DevPul with DevpulHttp
 
 # Writing an HTTP adapter
 
-The Dio and `package:http` adapters are thin layers over `DevpulHttp` in the core package. Use it to report calls from any other client: GraphQL clients, gRPC gateways, or your own wrapper.
+The Dio and `package:http` adapters are thin layers over `DevpulHttp` in the core package. Use it to report calls from any other client: GraphQL clients, gRPC gateways, or your own wrapper. Adapters are for HTTP calls only; state, analytics and other data go through `Devpul.emit`, as in [Extending DevPul](%ROOT%docs/extend/).
 
 ## The calls
 

@@ -31,6 +31,7 @@ export const PAGES: Entry[] = [
   { path: 'docs/dio/', file: 'dio.md', group: 'Packages' },
   { path: 'docs/http/', file: 'http.md', group: 'Packages' },
   { path: 'docs/flutter/', file: 'flutter.md', group: 'Packages' },
+  { path: 'docs/extend/', file: 'extend.md', group: 'Extend' },
   { path: 'docs/plugins/', file: 'plugins.md', group: 'Extend' },
   { path: 'docs/adapters/', file: 'adapters.md', group: 'Extend' },
   { path: 'docs/events/', file: 'events.md', group: 'Extend' },
