@@ -22,6 +22,12 @@
           "**/*.css"
         ]
       }
+    ],
+    "react/no-unstable-nested-components": [
+      "warn",
+      {
+        "allowAsProps": true
+      }
     ]
   }
 }

@@ -93,6 +93,14 @@ export function SettingsDialog(props: Props) {
           />
           Keep events in this browser across reloads (IndexedDB, oldest dropped first, 200 MB max)
         </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.clearOnRestart}
+            onChange={(e) => set('clearOnRestart', e.target.checked)}
+          />
+          Clear an app&apos;s earlier events when it restarts or its URL is replaced
+        </label>
         {usage && (
           <p className="muted">
             Stored: {usage.count} events, {formatBytes(usage.bytes)}

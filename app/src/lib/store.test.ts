@@ -98,3 +98,29 @@ describe('Store', () => {
     expect(fromVm({ extensionKind: 'Flutter.Frame', extensionData: {} }, 'c', 1)).toBeNull();
   });
 });
+
+describe('Store rows', () => {
+  it('derives host and response size', () => {
+    const store = new Store();
+    store.add([
+      req(1, 1, 100),
+      vmEvent('http.response', { session: 's1', seq: 2, ts: 110, id: 1, status: 200, body: { a: 'é' } }),
+      req(2, 3, 120),
+      vmEvent('http.response', { session: 's1', seq: 4, ts: 130, id: 2, status: 200, headers: { 'Content-Length': '512' }, body: 'x' }),
+      req(3, 5, 140),
+      vmEvent('http.response', { session: 's1', seq: 6, ts: 150, id: 3, status: 200, body: '<2048 bytes>' }),
+    ]);
+    const byId = Object.fromEntries(store.httpRows.map((r) => [r.id, r]));
+    expect(byId['1']).toMatchObject({ host: 'example.com', size: 10 });
+    expect(byId['2']?.size).toBe(512);
+    expect(byId['3']?.size).toBe(2048);
+  });
+
+  it('removes events by predicate', () => {
+    const store = new Store();
+    store.add([req(1, 1, 100, { tags: { a: 'x' } }), vmEvent('error', { session: 's2', seq: 1, ts: 1 }, { conn: 'c2' })]);
+    expect(store.remove((e) => e.conn === 'c2')).toHaveLength(1);
+    expect(store.errors).toHaveLength(0);
+    expect(store.httpRows).toHaveLength(1);
+  });
+});

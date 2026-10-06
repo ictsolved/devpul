@@ -24,6 +24,8 @@ export interface DevEvent {
   /** Hot restart or app launch. Isolate group on native, session on web. */
   run: string;
   isolate: string;
+  /** VM service isolate id, needed to call the app's service extensions. */
+  isolateId?: string;
   conn: string;
   ts: number;
   /** Arrival order, increasing across reloads. */
@@ -60,6 +62,7 @@ export function fromVm(
     seq,
     run: group ? `${conn}|${group}` : session,
     isolate: raw.isolate?.name ?? '',
+    isolateId: isolateId || undefined,
     conn,
     ts,
     n,

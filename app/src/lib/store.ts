@@ -1,4 +1,4 @@
-import { type DevEvent, num, str, tagsOf } from './events';
+import { type DevEvent, isObject, type JsonObject, num, str, tagsOf, TRUNCATED } from './events';
 
 export type HttpState = 'pending' | 'done' | 'error';
 
@@ -9,6 +9,7 @@ export interface HttpRow {
   id: string;
   method: string;
   url: string;
+  host: string;
   request?: DevEvent;
   response?: DevEvent;
   error?: DevEvent;
@@ -16,6 +17,8 @@ export interface HttpRow {
   seq: number;
   status?: number;
   durationMs?: number;
+  /** Response body bytes, from content-length or the body itself. */
+  size?: number;
   state: HttpState;
 }
 
@@ -25,6 +28,8 @@ export interface RunInfo {
   first: number;
   last: number;
   session?: DevEvent;
+  /** Latest `app.actions` event of the run. */
+  actions?: DevEvent;
 }
 
 const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) =>
@@ -42,6 +47,8 @@ export class Store {
   private errorsSnapshot: DevEvent[] | null = null;
   private otherList: DevEvent[] = [];
   private otherSnapshot: DevEvent[] | null = null;
+  private logList: DevEvent[] = [];
+  private logsSnapshot: DevEvent[] | null = null;
   private runMap = new Map<string, RunInfo>();
   private runsSnapshot: Map<string, RunInfo> | null = null;
   private tagMap = new Map<string, Set<string>>();
@@ -75,6 +82,17 @@ export class Store {
     return added;
   }
 
+  /** Drops matching events; returns their keys. */
+  remove(pred: (e: DevEvent) => boolean): string[] {
+    const gone = this.order.filter(pred);
+    if (!gone.length) return [];
+    this.order = this.order.filter((e) => !pred(e));
+    for (const e of gone) this.events.delete(e.key);
+    this.reindex();
+    this.changed();
+    return gone.map((e) => e.key);
+  }
+
   clear(): void {
     this.events.clear();
     this.order = [];
@@ -99,6 +117,11 @@ export class Store {
   get other(): DevEvent[] {
     this.otherSnapshot ??= this.otherList.toReversed();
     return this.otherSnapshot;
+  }
+
+  get logs(): DevEvent[] {
+    this.logsSnapshot ??= this.logList.toReversed();
+    return this.logsSnapshot;
   }
 
   /** A new Map whenever a run changes. */
@@ -137,11 +160,17 @@ export class Store {
     if (e.kind === 'app.session' && (!run.session || e.ts >= run.session.ts)) {
       run.session = e;
     }
+    if (e.kind === 'app.actions' && (!run.actions || e.ts >= run.actions.ts)) {
+      run.actions = e;
+    }
     this.runMap.set(e.run, run);
     this.runsSnapshot = null;
 
-    if (e.kind === 'app.session') {
+    if (e.kind === 'app.session' || e.kind === 'app.actions') {
       return;
+    } else if (e.kind === 'log') {
+      this.logList.push(e);
+      this.logsSnapshot = null;
     } else if (e.kind.startsWith('http.')) {
       this.indexHttp(e);
     } else if (e.kind === 'error') {
@@ -166,6 +195,7 @@ export class Store {
           id,
           method: '',
           url: '',
+          host: '',
           ts: e.ts,
           seq: e.seq ?? 0,
           state: 'pending',
@@ -184,9 +214,11 @@ export class Store {
     const src = row.request ?? row.response ?? row.error;
     row.method = str(src?.data.method) ?? row.method;
     row.url = str(src?.data.url) ?? row.url;
+    row.host = hostOf(row.url);
     const end = row.response ?? row.error;
     row.status = num(end?.data.status);
     row.durationMs = num(end?.data.durationMs);
+    row.size = end ? bodySize(end.data) : undefined;
     row.state = row.error ? 'error' : row.response ? 'done' : 'pending';
     this.http.set(key, row);
     this.httpSorted = null;
@@ -197,6 +229,10 @@ export class Store {
     const dropped = this.order.slice(0, this.order.length - keep);
     this.order = this.order.slice(this.order.length - keep);
     for (const e of dropped) this.events.delete(e.key);
+    this.reindex();
+  }
+
+  private reindex(): void {
     this.reset();
     for (const e of this.order) this.index(e);
   }
@@ -208,6 +244,8 @@ export class Store {
     this.errorsSnapshot = null;
     this.otherList = [];
     this.otherSnapshot = null;
+    this.logList = [];
+    this.logsSnapshot = null;
     this.runMap.clear();
     this.runsSnapshot = null;
     this.tagMap.clear();
@@ -226,3 +264,35 @@ export class Store {
 
 const eventNewest = (a: DevEvent, b: DevEvent) =>
   b.ts - a.ts || (b.seq ?? 0) - (a.seq ?? 0);
+
+const hostOf = (url: string): string => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return '';
+  }
+};
+
+const encoder = new TextEncoder();
+const BYTES = /^<(\d+) bytes>$/;
+
+export function bodySize(data: JsonObject): number {
+  const headers = data.headers;
+  if (isObject(headers)) {
+    for (const [k, v] of Object.entries(headers)) {
+      if (k.toLowerCase() !== 'content-length') continue;
+      const n = Number(Array.isArray(v) ? v[0] : v);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  const body = data.body;
+  if (body === undefined || body === null) return 0;
+  if (typeof body === 'string') {
+    const m = BYTES.exec(body);
+    return m ? Number(m[1]) : encoder.encode(body).length;
+  }
+  if (isObject(body) && isObject(body[TRUNCATED]) && typeof body[TRUNCATED].size === 'number') {
+    return body[TRUNCATED].size;
+  }
+  return encoder.encode(JSON.stringify(body)).length;
+}

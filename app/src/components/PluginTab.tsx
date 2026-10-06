@@ -1,70 +1,62 @@
-import { X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 import type { DevEvent } from '../lib/events';
-import { formatTime } from '../lib/json';
-import { type DevpulPlugin, matches, toPluginEvent } from '../lib/plugins';
+import { formatTime, pretty } from '../lib/json';
+import { type DevpulPlugin, type PluginContext, toPluginEvent } from '../lib/plugins';
+import { CopyButton } from './Copy';
+import { EventList } from './EventList';
 import { JsonView } from './JsonView';
-import { VirtualList } from './VirtualList';
 
-const ROW = 26;
+export type AppCall = (
+  e: DevEvent,
+  method: string,
+  params?: Record<string, unknown>,
+) => Promise<unknown>;
 
 interface Props {
   plugin: DevpulPlugin;
+  /** The plugin's events, newest first. */
   events: DevEvent[];
+  runLabel: (run: string) => string;
+  filterRef: RefObject<HTMLInputElement | null>;
+  call: AppCall;
 }
 
-export function PluginTab({ plugin, events }: Props) {
-  const mine = useMemo(() => events.filter((e) => matches(plugin, e.kind)), [plugin, events]);
-  const [selected, setSelected] = useState<DevEvent | null>(null);
-
+export function PluginTab({ plugin, events, runLabel, filterRef, call }: Props) {
   return (
-    <div className={`pane-split ${selected ? 'has-detail' : ''}`}>
-      <div className="pane-main">
-        {mine.length === 0 ? (
-          <div className="muted empty">No events for {plugin.label} yet.</div>
-        ) : (
-          <VirtualList
-            items={mine}
-            rowHeight={ROW}
-            render={(e) => (
-              <div
-                key={e.key}
-                className={`event-row ${selected?.key === e.key ? 'selected' : ''}`}
-                style={{ height: ROW }}
-                onClick={() => setSelected(e)}
-              >
-                <span className="muted">{formatTime(e.ts)}</span>
-                <span className="kind">{e.kind}</span>
-                <span className="ellipsis">{summary(plugin, e)}</span>
-              </div>
-            )}
-          />
-        )}
-      </div>
-      {selected && (
-        <aside className="detail" aria-label={`${plugin.label} detail`}>
-          <div className="detail-head">
-            <span className="kind">{selected.kind}</span>
-            <span className="grow" />
-            <button
-              type="button"
-              className="btn small icon"
-              onClick={() => setSelected(null)}
-              aria-label="Close detail"
-            >
-              <X size={14} />
-            </button>
-          </div>
-          <div className="detail-scroll">
-            {plugin.render ? (
-              <PluginView key={selected.key} plugin={plugin} event={selected} />
-            ) : (
-              <JsonView value={selected.data} />
-            )}
-          </div>
-        </aside>
+    <EventList
+      key={plugin.id}
+      id={`plugin:${plugin.id}`}
+      events={events}
+      filterRef={filterRef}
+      placeholder="Filter, e.g. words -word kind: tag:k=v"
+      columns="96px minmax(120px, 200px) minmax(0, 160px) minmax(0, 1fr)"
+      empty={`No events for ${plugin.label} yet.`}
+      cells={(e) => (
+        <>
+          <span className="muted">{formatTime(e.ts)}</span>
+          <span className="kind ellipsis">{e.kind}</span>
+          <span className="muted ellipsis">{runLabel(e.run)}</span>
+          <span className="ellipsis">{summary(plugin, e)}</span>
+        </>
       )}
-    </div>
+      head={(e) => (
+        <>
+          <span className="kind">{e.kind}</span>
+          <span className="muted">{formatTime(e.ts)}</span>
+          <span className="grow" />
+          <CopyButton text={() => pretty(e.data)} />
+        </>
+      )}
+      body={(e) =>
+        plugin.render ? (
+          <PluginView key={e.key} plugin={plugin} event={e} events={events} call={call} />
+        ) : (
+          <div className="detail-pad">
+            <JsonView value={e.data} mode="tree" />
+          </div>
+        )
+      }
+    />
   );
 }
 
@@ -76,14 +68,31 @@ function summary(plugin: DevpulPlugin, e: DevEvent): string {
   }
 }
 
-function PluginView({ plugin, event }: { plugin: DevpulPlugin; event: DevEvent }) {
+function PluginView(props: {
+  plugin: DevpulPlugin;
+  event: DevEvent;
+  events: DevEvent[];
+  call: AppCall;
+}) {
+  const { plugin, event, events, call } = props;
   const ref = useRef<HTMLDivElement>(null);
+  // Read when the plugin asks, so new events do not re-render it.
+  const all = useRef(events);
+  useEffect(() => {
+    all.current = events;
+  }, [events]);
   useEffect(() => {
     const el = ref.current;
     if (!el || !plugin.render) return;
+    const context: PluginContext = {
+      get events() {
+        return all.current.toReversed().map(toPluginEvent);
+      },
+      call: (method, params) => call(event, method, params),
+    };
     let cleanup: void | (() => void);
     try {
-      cleanup = plugin.render(el, toPluginEvent(event));
+      cleanup = plugin.render(el, toPluginEvent(event), context);
     } catch (err) {
       el.textContent = `Plugin error: ${String(err)}`;
     }
@@ -95,6 +104,6 @@ function PluginView({ plugin, event }: { plugin: DevpulPlugin; event: DevEvent }
       }
       el.replaceChildren();
     };
-  }, [plugin, event]);
-  return <div ref={ref} />;
+  }, [plugin, event, call]);
+  return <div ref={ref} className="detail-pad plugin-view" />;
 }

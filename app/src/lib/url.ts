@@ -40,6 +40,30 @@ export function connectionLabel(wsUrl: string): string {
   }
 }
 
+/** URLs with an auth token die with their run; tokenless ones (fixed port) do not. */
+export function hasToken(wsUrl: string): boolean {
+  try {
+    return new URL(wsUrl).pathname.split('/').filter(Boolean).length > 1;
+  } catch {
+    return false;
+  }
+}
+
+/** The `#connect=<url>` part of a link, as a websocket URL. */
+export function connectParam(hash: string): string | null {
+  const m = /^#connect=(.+)$/.exec(hash);
+  if (!m?.[1]) return null;
+  try {
+    return toWsUrl(decodeURIComponent(m[1]));
+  } catch {
+    return null;
+  }
+}
+
+/** Pasted text that is clearly a VM service link, not just any text. */
+export const pastedUrl = (text: string): string | null =>
+  /^\s*(https?|wss?):\/\/\S+\s*$/i.test(text) ? toWsUrl(text) : null;
+
 export const isLocalOrigin = (location: Location): boolean =>
   location.protocol === 'file:' ||
   ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);

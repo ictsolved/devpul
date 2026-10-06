@@ -71,6 +71,21 @@ export class Persist {
     this.bytes = 0;
   }
 
+  async delete(keys: string[]): Promise<void> {
+    if (!keys.length) return;
+    const gone = new Set(keys);
+    this.queue = this.queue.filter((e) => !gone.has(e.key));
+    try {
+      const tx = this.db.transaction(STORE, 'readwrite');
+      const store = tx.objectStore(STORE);
+      for (const key of keys) store.delete(key);
+      await done(tx);
+      this.count = Math.max(0, this.count - keys.length);
+    } catch {
+      // Removed from memory anyway; stale rows age out.
+    }
+  }
+
   private async flush(): Promise<void> {
     this.timer = null;
     const batch = this.queue;

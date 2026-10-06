@@ -13,13 +13,15 @@ interface Props {
   states: Record<string, ConnState>;
   names: Record<string, string>;
   localOrigin: boolean;
+  hero?: boolean;
   onAdd: (wsUrl: string) => void;
   onRemove: (id: string) => void;
 }
 
 export const FIXED_URL = 'ws://127.0.0.1:8181/ws';
 
-export function ConnectionBar({ connections, states, names, localOrigin, onAdd, onRemove }: Props) {
+export function ConnectionBar(props: Props) {
+  const { connections, states, names, localOrigin, hero, onAdd, onRemove } = props;
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +43,7 @@ export function ConnectionBar({ connections, states, names, localOrigin, onAdd, 
   });
 
   return (
-    <div className="connbar">
+    <div className={`connbar ${hero ? 'hero' : ''}`}>
       <form
         className="connform"
         onSubmit={(e) => {
@@ -53,7 +55,8 @@ export function ConnectionBar({ connections, states, names, localOrigin, onAdd, 
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/"
+          placeholder={hero ? 'http://127.0.0.1:41234/AbCdEf12=/' : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'}
+          autoFocus={hero}
           aria-label="VM service URL"
           spellCheck={false}
           autoComplete="off"
@@ -99,7 +102,7 @@ export function ConnectionBar({ connections, states, names, localOrigin, onAdd, 
       {stuck.length > 0 && (
         <div className="hint">
           Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the
-          URL changes on every run, so paste the new one after a restart.
+          URL changes on every run; pasting the new one replaces the old.
           {!localOrigin &&
             ' This page is hosted, so the browser may ask to allow access to apps on this device: allow it, or check the site settings for local network access. Safari blocks this; use the local version.'}
         </div>

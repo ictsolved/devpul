@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 const PREFIX = 'devpul:';
 
 export function load<T>(key: string, fallback: T): T {
@@ -19,6 +21,16 @@ export function save(key: string, value: unknown): void {
   }
 }
 
+/** State mirrored to localStorage. */
+export function useStored<T>(key: string, fallback: T): [T, (next: T) => void] {
+  const [value, setValue] = useState(() => load(key, fallback));
+  const set = (next: T) => {
+    setValue(next);
+    save(key, next);
+  };
+  return [value, set];
+}
+
 // Stored values may be partial or written by another version.
 function mergeShape<T>(fallback: T, value: unknown): T {
   if (typeof fallback !== typeof value || value === null) return fallback;
@@ -35,6 +47,8 @@ export interface Settings {
   verySlowMs: number;
   maxEvents: number;
   persist: boolean;
+  /** Drop an app's earlier events when it restarts or its URL is replaced. */
+  clearOnRestart: boolean;
   /** Keys of app.session info shown in the header. Empty means the first few. */
   headerFields: string[];
   pluginUrls: string[];
@@ -45,6 +59,7 @@ export const defaultSettings: Settings = {
   verySlowMs: 5000,
   maxEvents: 20000,
   persist: true,
+  clearOnRestart: false,
   headerFields: [],
   pluginUrls: [],
 };

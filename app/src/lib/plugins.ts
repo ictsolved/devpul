@@ -1,11 +1,23 @@
 import type { DevEvent, JsonObject } from './events';
 
 export interface PluginEvent {
+  /** Unique per event; stable across reloads. */
+  key: string;
   kind: string;
   data: JsonObject;
   ts: number;
   session: string;
   run: string;
+}
+
+export interface PluginContext {
+  /** Every event the plugin matches, oldest first. */
+  readonly events: PluginEvent[];
+  /**
+   * Calls a VM service method on the app that sent the event. Service
+   * extensions (`ext.*`) get the event's isolateId unless one is given.
+   */
+  call: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
 }
 
 /** Adds a tab listing the events it matches. */
@@ -16,11 +28,11 @@ export interface DevpulPlugin {
   /** One line shown in the list. Defaults to the kind. */
   summarize?: (event: PluginEvent) => string;
   /** Renders the selected event. May return a cleanup function. */
-  render?: (el: HTMLElement, event: PluginEvent) => void | (() => void);
+  render?: (el: HTMLElement, event: PluginEvent, context: PluginContext) => void | (() => void);
 }
 
 export interface DevpulApi {
-  version: 1;
+  version: 2;
   register: (plugin: DevpulPlugin) => void;
 }
 
@@ -50,6 +62,7 @@ export const matches = (p: DevpulPlugin, kind: string): boolean =>
   Array.isArray(p.kinds) ? p.kinds.includes(kind) : p.kinds(kind);
 
 export const toPluginEvent = (e: DevEvent): PluginEvent => ({
+  key: e.key,
   kind: e.kind,
   data: e.data,
   ts: e.ts,
@@ -59,7 +72,7 @@ export const toPluginEvent = (e: DevEvent): PluginEvent => ({
 
 export const registry = new Registry();
 
-export const api: DevpulApi = { version: 1, register: registry.register };
+export const api: DevpulApi = { version: 2, register: registry.register };
 
 declare global {
   interface Window {
