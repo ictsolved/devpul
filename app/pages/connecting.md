@@ -54,10 +54,27 @@ Run with a fixed DDS port and no token, then paste `127.0.0.1:8181` once. DevPul
 flutter run --dds-port=8181 --disable-service-auth-codes
 ```
 
-VS Code, in `settings.json`:
+VS Code, for every run in `settings.json`:
 
 ```json
 "dart.flutterRunAdditionalArgs": ["--dds-port=8181", "--disable-service-auth-codes"]
+```
+
+Or as a launch configuration in `.vscode/launch.json`:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter (DevPul)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dds-port=8181", "--disable-service-auth-codes"]
+    }
+  ]
+}
 ```
 
 Android Studio: add the same flags under Run > Edit Configurations > Additional run args.
