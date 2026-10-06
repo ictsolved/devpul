@@ -931,23 +931,36 @@ kbd {
 
 .tooltip {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 100;
-  display: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s;
   pointer-events: none;
   background: var(--text);
   color: var(--bg);
-  font-family: var(--mono);
-  font-size: 12px;
-  padding: 5px 8px;
+  font: 12px/1.45 var(--sans);
+  padding: 6px 9px;
   border-radius: 6px;
-  white-space: pre-wrap;
-  word-break: break-all;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+  max-width: min(320px, calc(100vw - 16px));
   max-height: 60vh;
   overflow: hidden;
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+.tooltip.code {
+  font-family: var(--mono);
+  max-width: min(640px, calc(100vw - 16px));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .tooltip.show {
-  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 
 /* Home: one screen, centered connect field */

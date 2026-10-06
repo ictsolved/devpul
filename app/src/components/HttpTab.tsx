@@ -113,6 +113,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
             type="search"
             placeholder="Filter, e.g. login -health status:4xx ms:>500"
             data-tip={SYNTAX}
+            data-tip-code
             value={filter.text}
             onChange={(e) => setFilter({ ...filter, text: e.target.value })}
             aria-label="Filter requests"
@@ -199,7 +200,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
                   <span className="num muted">
                     {item.row.size === undefined ? '' : formatBytes(item.row.size)}
                   </span>
-                  <span className="url" data-tip={item.row.url}>
+                  <span className="url" data-tip={item.row.url} data-tip-code>
                     {item.row.url}
                   </span>
                 </div>

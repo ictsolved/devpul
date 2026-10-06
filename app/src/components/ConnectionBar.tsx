@@ -70,7 +70,7 @@ export function ConnectionBar(props: Props) {
             const s = states[c.id];
             const status = s?.status ?? 'closed';
             return (
-              <li key={c.id} className="conn" data-tip={c.url}>
+              <li key={c.id} className="conn" data-tip={c.url} data-tip-code>
                 <span className={`dot ${status}`} aria-label={status} />
                 <span>{names[c.id] ?? connectionLabel(c.url)}</span>
                 <button

@@ -23,7 +23,7 @@ export function SessionHeader({ session, fields, runs }: Props) {
     : all.slice(0, DEFAULT_COUNT);
   const tip = JSON.stringify(Object.fromEntries(all), null, 2);
   return (
-    <div className="session" data-tip={tip}>
+    <div className="session" data-tip={tip} data-tip-code>
       {shown.map(([k, v]) => (
         <span key={k} className="field">
           <span className="muted">{k}</span> {typeof v === 'string' ? v : JSON.stringify(v)}
