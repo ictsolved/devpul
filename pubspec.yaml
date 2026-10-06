@@ -7,6 +7,7 @@ environment:
 workspace:
   - packages/devpul
   - packages/devpul_dio
+  - packages/devpul_http
   - packages/devpul_flutter
   - examples/devpul_example
 

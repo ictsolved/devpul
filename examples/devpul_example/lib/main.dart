@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:devpul/devpul.dart';
 import 'package:devpul_dio/devpul_dio.dart';
 import 'package:devpul_flutter/devpul_flutter.dart';
+import 'package:devpul_http/devpul_http.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,15 +15,22 @@ const baseUrl = 'https://httpbin.org';
 void main() {
   Devpul.configure(const DevpulConfig(redactHeaders: _maskAuthorization));
   DevpulFlutter.install();
+  DevpulFlutter.captureDebugPrint();
   Devpul.session(
     {
       'name': 'DevPul example',
-      'version': '0.1.0',
+      'version': '0.2.0',
       'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
       'baseUrl': baseUrl,
     },
     tags: {'env': 'demo'},
   );
+  Devpul.action('Clear token', () {
+    dio.options.headers.remove('Authorization');
+    return 'signed out';
+  });
+  Devpul.action(
+      'Ping', () async => (await dio.get<Object?>('/get')).statusCode);
   runApp(const ExampleApp());
 }
 
@@ -42,6 +50,8 @@ final dio = Dio(
   ),
 )..interceptors.add(DevpulDioInterceptor());
 
+final client = DevpulClient();
+
 class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key});
 
@@ -49,6 +59,7 @@ class ExampleApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         title: 'DevPul example',
         theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
+        navigatorObservers: [DevpulNavigatorObserver()],
         home: const HomePage(),
       );
 }
@@ -94,7 +105,16 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
     ),
+    (
+      'package:http GET',
+      () => _run(() => client.get(Uri.parse('$baseUrl/get?client=http'))),
+    ),
     ('404', () => _run(() => dio.get<Object?>('/status/404'))),
+    (
+      'Redirect',
+      () => _run(() => dio.get<Object?>('/redirect-to',
+          queryParameters: {'url': '$baseUrl/get'})),
+    ),
     ('500', () => _run(() => dio.get<Object?>('/status/500'))),
     ('Slow (3 s)', () => _run(() => dio.get<Object?>('/delay/3'))),
     (
@@ -129,6 +149,26 @@ class _HomePageState extends State<HomePage> {
         setState(() => _cart++);
         Devpul.emit('cart.updated', {'items': _cart, 'total': _cart * 9.5});
       },
+    ),
+    (
+      'Logs',
+      () {
+        Devpul.log('Cart opened', name: 'cart');
+        Devpul.log('Retrying sync', level: 'warn', name: 'sync');
+        Devpul.log('Sync failed',
+            level: 'error', name: 'sync', error: const FormatException('x'));
+        debugPrint('debugPrint goes to Logs too');
+      },
+    ),
+    (
+      'Open page',
+      () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: '/details', arguments: 42),
+              builder: (_) =>
+                  Scaffold(appBar: AppBar(title: const Text('Details'))),
+            ),
+          ),
     ),
     ('Flutter error', () => throw StateError('Button handler failed')),
     (

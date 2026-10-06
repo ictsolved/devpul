@@ -1,6 +1,6 @@
 # devpul_example
 
-Flutter app that uses `devpul`, `devpul_dio` and `devpul_flutter` against [httpbin.org](https://httpbin.org) and [JSONPlaceholder](https://jsonplaceholder.typicode.com). Every button sends something to DevPul: requests with every outcome, a form upload, a large response, custom events, Flutter and async errors, and an event from a background isolate.
+Flutter app that uses every DevPul package against [httpbin.org](https://httpbin.org) and [JSONPlaceholder](https://jsonplaceholder.typicode.com). Every button sends something: Dio and `package:http` requests with every outcome, a redirect, a form upload, a large response, logs, route changes, custom events, Flutter and async errors, and an event from a background isolate. The Actions menu in DevPul offers "Clear token" and "Ping".
 
 ```sh
 flutter run
