@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -14,6 +15,9 @@ const _reserved = {'v', 'session', 'seq', 'ts', 'tags'};
 
 /// Receives every posted event. Tests only.
 void Function(String kind, Map<String, Object?> event)? debugOnPost;
+
+/// Runs an action the way `ext.devpul.action` does. Tests only.
+Future<Object?> debugRunAction(String name) => Devpul._runAction(name);
 
 abstract final class Devpul {
   static const schemaVersion = 1;
@@ -34,6 +38,7 @@ abstract final class Devpul {
   static Map<String, Object?>? _sessionInfo;
   static bool _listening = false;
   static final _backlog = _Backlog();
+  static final _actions = <String, FutureOr<Object?> Function()>{};
 
   static void emit(String kind, Map<String, Object?> data) {
     if (!enabled) return;
@@ -61,12 +66,48 @@ abstract final class Devpul {
     emit('app.session', info);
   }
 
+  /// Shows in the Logs tab. [level] is free-form; debug, info, warn and
+  /// error get colors.
+  static void log(
+    String message, {
+    String level = 'info',
+    String? name,
+    Object? error,
+    StackTrace? stack,
+  }) {
+    if (!enabled) return;
+    emit('log', {
+      'level': level,
+      'message': message,
+      if (name != null) 'name': name,
+      if (error != null) 'error': error.toString(),
+      if (stack != null) 'stack': stack.toString(),
+    });
+  }
+
+  /// Adds a button to the UI's Actions menu that runs [run] in the app. The
+  /// result, if any, is shown as text. Registering a name again replaces it.
+  static void action(String name, FutureOr<Object?> Function() run) {
+    if (!enabled) return;
+    _actions[name] = run;
+    _backlog.registerAction();
+    emit('app.actions', {'actions': _actions.keys.toList()});
+  }
+
+  static Future<Object?> _runAction(String name) async {
+    final run = _actions[name];
+    if (run == null) throw ArgumentError.value(name, 'name', 'unknown action');
+    return toJsonSafe(await run());
+  }
+
   static void error(
     Object error,
     StackTrace? stack, {
     String source = 'app',
     String? library,
     String? context,
+    String? information,
+    bool silent = false,
   }) {
     if (!enabled) return;
     try {
@@ -85,6 +126,8 @@ abstract final class Devpul {
         'message': message,
         'library': library,
         'context': context,
+        'information': information,
+        if (silent) 'silent': true,
         'stack': stack?.toString(),
       });
     } catch (_) {
@@ -119,6 +162,9 @@ abstract final class Devpul {
       size += key.length + length;
     }
     final fullKind = 'devpul.$kind';
+    if (kind == 'app.session' || kind == 'app.actions') {
+      _backlog.latest[kind] = event;
+    }
     _backlog.add(fullKind, event, size, _config.backlogSize);
     developer.postEvent(fullKind, event);
     debugOnPost?.call(kind, event);
@@ -136,6 +182,10 @@ final class _Backlog {
   final _events = Queue<(String, Map<String, Object?>, int)>();
   int _size = 0;
   bool _registered = false;
+  bool _actionRegistered = false;
+
+  /// Session and actions survive eviction; the UI drops duplicates.
+  final latest = <String, Map<String, Object?>>{};
 
   void add(String kind, Map<String, Object?> event, int size, int max) {
     _register();
@@ -152,11 +202,35 @@ final class _Backlog {
     try {
       developer.registerExtension('ext.devpul.backlog', (_, __) async {
         final events = [
+          for (final MapEntry(:key, :value) in latest.entries)
+            {'kind': 'devpul.$key', 'data': value},
           for (final (kind, event, _) in _events) {'kind': kind, 'data': event},
         ];
         return developer.ServiceExtensionResponse.result(
           jsonEncode({'events': events}),
         );
+      });
+    } catch (_) {
+      // Already registered in this isolate.
+    }
+  }
+
+  void registerAction() {
+    if (_actionRegistered) return;
+    _actionRegistered = true;
+    try {
+      developer.registerExtension('ext.devpul.action', (_, params) async {
+        try {
+          final result = await Devpul._runAction(params['name'] ?? '');
+          return developer.ServiceExtensionResponse.result(
+            jsonEncode({'result': result}),
+          );
+        } catch (e) {
+          return developer.ServiceExtensionResponse.error(
+            developer.ServiceExtensionResponse.extensionError,
+            e.toString(),
+          );
+        }
       });
     } catch (_) {
       // Already registered in this isolate.

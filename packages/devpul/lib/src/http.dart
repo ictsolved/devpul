@@ -99,23 +99,28 @@ final class DevpulHttpCall {
   final Uri url;
   final Stopwatch _watch;
 
+  /// [finalUrl] is where redirects ended, if the client followed any.
   void response({
     int? status,
     String? statusMessage,
     Map<String, Object?> headers = const {},
     Object? body,
+    Uri? finalUrl,
   }) {
     try {
       final config = Devpul.config;
       final ms = _watch.elapsedMilliseconds;
       final h = DevpulHttp._headers(config, url, normalizeHeaders(headers));
       final b = DevpulHttp._body(config, url, body);
+      // Location headers may be relative.
+      final landed = finalUrl == null ? null : url.resolveUri(finalUrl);
       Devpul.emit('http.response', {
         'id': id,
         'method': method,
         'url': url.toString(),
         'status': status,
         'statusMessage': statusMessage,
+        if (landed != null && landed != url) 'finalUrl': landed.toString(),
         'durationMs': ms,
         'headers': h,
         'body': normalizeBody(b),
