@@ -26,6 +26,7 @@ pre {
 
 a {
   color: var(--accent);
+  text-decoration: none;
 }
 
 button {
@@ -835,7 +836,6 @@ body.has-data .app {
   padding: 0;
   color: var(--accent);
   cursor: pointer;
-  text-decoration: underline;
 }
 
 /* Dialogs */
