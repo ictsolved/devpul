@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://devpul.saradgajurel.com.np/sitemap.xml
