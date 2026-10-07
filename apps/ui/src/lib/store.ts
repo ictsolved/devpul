@@ -28,8 +28,8 @@ export interface RunInfo {
   first: number;
   last: number;
   session?: DevEvent;
-  /** Latest `app.actions` event of the run. */
-  actions?: DevEvent;
+  /** Latest `app.info` event of the run. */
+  info?: DevEvent;
 }
 
 const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) => b.ts - a.ts || b.seq - a.seq;
@@ -156,16 +156,16 @@ export class Store {
     const run: RunInfo = prev
       ? { ...prev, first: Math.min(prev.first, e.ts), last: Math.max(prev.last, e.ts) }
       : { run: e.run, conn: e.conn, first: e.ts, last: e.ts };
-    if (e.kind === 'app.session' && (!run.session || e.ts >= run.session.ts)) {
+    if (e.kind === 'app.session' && (!run.session || byNewest(e, run.session) <= 0)) {
       run.session = e;
     }
-    if (e.kind === 'app.actions' && (!run.actions || e.ts >= run.actions.ts)) {
-      run.actions = e;
+    if (e.kind === 'app.info' && (!run.info || byNewest(e, run.info) <= 0)) {
+      run.info = e;
     }
     this.runMap.set(e.run, run);
     this.runsSnapshot = null;
 
-    if (e.kind === 'app.session' || e.kind === 'app.actions') {
+    if (e.kind === 'app.session' || e.kind === 'app.info') {
       return;
     } else if (e.kind === 'log') {
       this.logList.push(e);

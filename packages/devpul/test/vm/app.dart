@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:isolate';
 
 import 'package:devpul/devpul.dart';
@@ -6,13 +7,19 @@ import 'package:devpul/devpul.dart';
 void main() {
   Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
   Devpul.session({'name': 'e2e'}, tags: {'flavor': 'test'});
-  Devpul.action('ping', () => 'pong');
+  Devpul.action(
+    'echo',
+    (args) => args['text'],
+    params: const [DevpulParam.text('text', initial: 'pong')],
+  );
+  Devpul.plugin('e2e', () => 'export default {}');
   Devpul.log('hello', level: 'warn');
   DevpulHttp.request(
     method: 'get',
     url: Uri.parse('https://example.com/items'),
   )?.response(status: 200, body: {'ok': true});
-  Devpul.error(StateError('boom'), StackTrace.current);
-  // Stay alive for backlog and action calls; the test kills the process.
+  // After the info event, which goes out in a microtask.
+  scheduleMicrotask(() => Devpul.error(StateError('boom'), StackTrace.current));
+  // Stay alive for service extension calls; the test kills the process.
   ReceivePort();
 }

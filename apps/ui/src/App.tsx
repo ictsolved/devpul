@@ -1,7 +1,7 @@
 import { CircleHelp, Download, FileDown, Settings as SettingsIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { version } from '../package.json';
-import { ActionsMenu, type AppActions } from './components/ActionsMenu';
+import { ActionsMenu, type AppActions, type RunAction } from './components/ActionsMenu';
 import { ConnectionBar, type ConnEntry } from './components/ConnectionBar';
 import { ErrorsTab } from './components/ErrorsTab';
 import { EventsTab } from './components/EventsTab';
@@ -17,6 +17,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { Tooltip } from './components/Tooltip';
 import { type DevEvent, str } from './lib/events';
 import { download, fromSession, toHar, toSession } from './lib/export';
+import { parseInfo } from './lib/info';
 import { formatTime } from './lib/json';
 import { pageUrl } from './lib/links';
 import { Persist } from './lib/persist';
@@ -282,8 +283,8 @@ export function App() {
     return conn.call(method, withIsolate);
   }, []);
 
-  const runAction = (e: DevEvent, name: string) => {
-    callApp(e, 'ext.devpul.action', { name }).then(
+  const runAction: RunAction = (e, name, args) => {
+    callApp(e, 'ext.devpul.action', { name, ...(args && { args: JSON.stringify(args) }) }).then(
       (result) => {
         const value = result && typeof result === 'object' ? (result as { result?: unknown }).result : undefined;
         flash(`${name}: ${value === undefined || value === null ? 'done' : String(value)}`);
@@ -326,9 +327,9 @@ export function App() {
       if (!prev || r.last > prev.last) best.set(r.conn, r);
     }
     return [...best.values()].flatMap((r) => {
-      const list = r.actions?.data.actions;
-      if (!r.actions || !Array.isArray(list) || !list.length || states[r.conn]?.status !== 'open') return [];
-      return [{ app: appName(r.session) ?? r.conn, event: r.actions, names: list.map(String) }];
+      if (!r.info || states[r.conn]?.status !== 'open') return [];
+      const list = parseInfo(r.info.data).actions;
+      return list.length ? [{ app: appName(r.session) ?? r.conn, event: r.info, actions: list }] : [];
     });
   }, [runs, states]);
 

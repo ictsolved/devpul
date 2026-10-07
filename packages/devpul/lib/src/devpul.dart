@@ -4,9 +4,12 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:math';
 
+import 'action.dart';
 import 'config.dart';
 import 'console.dart';
 import 'encode.dart';
+import 'limits.dart';
+import 'version.dart';
 
 const _off =
     bool.fromEnvironment('dart.vm.product') ||
@@ -19,7 +22,21 @@ const protocolVersion = 1;
 void Function(String kind, Map<String, Object?> event)? debugOnPost;
 
 /// Runs an action the way `ext.devpul.action` does. Tests only.
-Future<Object?> debugRunAction(String name) => Devpul._runAction(name);
+Future<Object?> debugRunAction(String name, [Map<String, Object?>? args]) =>
+    Devpul._runAction(name, args);
+
+/// What `ext.devpul.info` returns. Tests only.
+Map<String, Object?> debugInfo() => Devpul._info();
+
+/// What `ext.devpul.plugin` returns. Tests only.
+String debugPluginSource(String id) => Devpul._pluginSource(id);
+
+typedef _Action = ({
+  List<DevpulParam> params,
+  FutureOr<Object?> Function(Map<String, Object?> args) run,
+});
+
+typedef _Plugin = ({String Function() source, String? version});
 
 abstract final class Devpul {
   static DevpulConfig _config = const DevpulConfig();
@@ -29,23 +46,27 @@ abstract final class Devpul {
   /// Merged into every event. The UI builds filters from them.
   static final Map<String, String> tags = {};
 
-  // Random per isolate, so ids stay unique across hot restarts and isolates.
-  static final String _session = _randomId();
-
   static bool get enabled => !_off && _config.enabled;
 
+  // Random per isolate, so ids stay unique across hot restarts and isolates.
+  static final String _session = _randomId();
   static int _seq = 0;
   static Map<String, Object?>? _sessionInfo;
   static bool _listening = false;
+  static bool _infoQueued = false;
   static final _backlog = _Backlog();
-  static final _actions = <String, FutureOr<Object?> Function()>{};
+  static final _limits = Limits();
+  static final _actions = <String, _Action>{};
+  static final _plugins = <String, _Plugin>{};
 
   static void emit(String kind, Map<String, Object?> data) {
     if (!enabled) return;
     try {
-      _emit(kind, data);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (!kind.startsWith('app.') && !_limits.allow(kind, now)) return;
+      _emit(kind, data, now);
       if (_config.console == ConsoleMode.verbose &&
-          kind != 'app.session' &&
+          !kind.startsWith('app.') &&
           kind != 'error' &&
           !kind.startsWith('http.')) {
         DevpulConsole.write(
@@ -85,21 +106,6 @@ abstract final class Devpul {
     });
   }
 
-  /// Adds a button to the UI's Actions menu that runs [run] in the app. The
-  /// result, if any, is shown as text. Registering a name again replaces it.
-  static void action(String name, FutureOr<Object?> Function() run) {
-    if (!enabled) return;
-    _actions[name] = run;
-    _backlog.registerAction();
-    emit('app.actions', {'actions': _actions.keys.toList()});
-  }
-
-  static Future<Object?> _runAction(String name) async {
-    final run = _actions[name];
-    if (run == null) throw ArgumentError.value(name, 'name', 'unknown action');
-    return toJsonSafe(await run());
-  }
-
   static void error(
     Object error,
     StackTrace? stack, {
@@ -135,14 +141,95 @@ abstract final class Devpul {
     }
   }
 
-  static void _emit(String kind, Map<String, Object?> data) {
+  /// Adds an item to the UI's Actions menu that runs [run] in the app.
+  /// [params] become a form; [run] gets their values by name. The result,
+  /// if any, is shown as text. Registering a name again replaces it.
+  static void action(
+    String name,
+    FutureOr<Object?> Function(Map<String, Object?> args) run, {
+    List<DevpulParam> params = const [],
+  }) {
+    if (!enabled) return;
+    _actions[name] = (params: params, run: run);
+    _infoChanged();
+  }
+
+  /// Offers a browser plugin to the UI, which runs it after the user
+  /// approves it. [id] is the Dart package that ships it. [source] is an ES
+  /// module, read when the UI asks for it.
+  static void plugin(String id, String Function() source, {String? version}) {
+    if (!enabled) return;
+    _plugins[id] = (source: source, version: version);
+    _infoChanged();
+  }
+
+  /// Caps events of [kind] and its dotted children, such as `http` for
+  /// `http.request`, at [perSecond]; the rest are dropped. 0 mutes, null
+  /// removes the cap. The UI can change these too.
+  static void limit(String kind, int? perSecond) {
+    if (!enabled) return;
+    _limits.set(kind, perSecond);
+    _infoChanged();
+  }
+
+  static Future<Object?> _runAction(
+    String name,
+    Map<String, Object?>? args,
+  ) async {
+    final action = _actions[name];
+    if (action == null) {
+      throw ArgumentError.value(name, 'name', 'unknown action');
+    }
+    final values = {
+      for (final p in action.params) p.name: p.read(args?[p.name]),
+    };
+    return toJsonSafe(await action.run(values));
+  }
+
+  static String _pluginSource(String id) {
+    final plugin = _plugins[id];
+    if (plugin == null) throw ArgumentError.value(id, 'id', 'unknown plugin');
+    return plugin.source();
+  }
+
+  static Map<String, Object?> _info() => {
+    'protocol': protocolVersion,
+    'version': packageVersion,
+    'capabilities': const <String>[],
+    'actions': [
+      for (final MapEntry(:key, :value) in _actions.entries)
+        {
+          'name': key,
+          'params': [for (final p in value.params) p.toJson()],
+        },
+    ],
+    'plugins': [
+      for (final MapEntry(:key, :value) in _plugins.entries)
+        {'id': key, 'version': ?value.version},
+    ],
+    'limits': _limits.all,
+    'dropped': Map.of(_limits.dropped),
+  };
+
+  // Several registrations in a row post one event.
+  static void _infoChanged() {
+    if (_infoQueued) return;
+    _infoQueued = true;
+    scheduleMicrotask(() {
+      _infoQueued = false;
+      emit('app.info', _info());
+    });
+  }
+
+  static void _emit(String kind, Map<String, Object?> data, int now) {
+    _backlog.register();
     // A listener that shows up late (flutter attach) still learns which app
     // this is.
     final listening = developer.extensionStreamHasListener;
     final info = _sessionInfo;
     if (listening && !_listening && info != null && kind != 'app.session') {
       _listening = true;
-      _emit('app.session', info);
+      _emit('app.session', info, now);
     }
     _listening = listening;
 
@@ -160,12 +247,12 @@ abstract final class Devpul {
       'v': protocolVersion,
       'session': _session,
       'seq': ++_seq,
-      'ts': DateTime.now().millisecondsSinceEpoch,
+      'ts': now,
       if (tags.isNotEmpty) 'tags': Map.of(tags),
       'data': payload,
     };
     final fullKind = 'devpul.$kind';
-    if (kind == 'app.session' || kind == 'app.actions') {
+    if (kind == 'app.session' || kind == 'app.info') {
       _backlog.latest[kind] = event;
     }
     _backlog.add(fullKind, event, size, _config.backlogSize);
@@ -185,13 +272,11 @@ final class _Backlog {
   final _events = Queue<(String, Map<String, Object?>, int)>();
   int _size = 0;
   bool _registered = false;
-  bool _actionRegistered = false;
 
-  /// Session and actions survive eviction; the UI drops duplicates.
+  /// Session and info survive eviction; the UI drops duplicates.
   final latest = <String, Map<String, Object?>>{};
 
   void add(String kind, Map<String, Object?> event, int size, int max) {
-    _register();
     _events.add((kind, event, size));
     _size += size;
     while (_size > max && _events.isNotEmpty) {
@@ -199,34 +284,52 @@ final class _Backlog {
     }
   }
 
-  void _register() {
+  List<Map<String, Object?>> get events => [
+    for (final MapEntry(:key, :value) in latest.entries)
+      {'kind': 'devpul.$key', 'data': value},
+    for (final (kind, event, _) in _events) {'kind': kind, 'data': event},
+  ];
+
+  // The UI waits for ext.devpul.info, so it goes last.
+  void register() {
     if (_registered) return;
     _registered = true;
-    try {
-      developer.registerExtension('ext.devpul.backlog', (_, _) async {
-        final events = [
-          for (final MapEntry(:key, :value) in latest.entries)
-            {'kind': 'devpul.$key', 'data': value},
-          for (final (kind, event, _) in _events) {'kind': kind, 'data': event},
-        ];
-        return developer.ServiceExtensionResponse.result(
-          jsonEncode({'events': events}),
-        );
-      });
-    } catch (_) {
-      // Already registered in this isolate.
-    }
+    _extension('backlog', (_) => {'events': events});
+    _extension('action', (params) async {
+      final args = params['args'];
+      return {
+        'result': await Devpul._runAction(
+          params['name'] ?? '',
+          args == null ? null : (jsonDecode(args) as Map).cast(),
+        ),
+      };
+    });
+    _extension(
+      'plugin',
+      (params) => {'source': Devpul._pluginSource(params['id'] ?? '')},
+    );
+    _extension('limit', (params) {
+      final kind = params['kind'] ?? '';
+      if (kind.isEmpty) throw ArgumentError.value(kind, 'kind');
+      final perSecond = params['perSecond'];
+      Devpul.limit(
+        kind,
+        perSecond == null || perSecond.isEmpty ? null : int.parse(perSecond),
+      );
+      return Devpul._info();
+    });
+    _extension('info', (_) => Devpul._info());
   }
 
-  void registerAction() {
-    if (_actionRegistered) return;
-    _actionRegistered = true;
+  static void _extension(
+    String name,
+    FutureOr<Object?> Function(Map<String, String> params) handle,
+  ) {
     try {
-      developer.registerExtension('ext.devpul.action', (_, params) async {
+      developer.registerExtension('ext.devpul.$name', (_, params) async {
         try {
-          final result = await Devpul._runAction(params['name'] ?? '');
           return developer.ServiceExtensionResponse.result(
-            jsonEncode({'result': result}),
+            jsonEncode(await handle(params)),
           );
         } catch (e) {
           return developer.ServiceExtensionResponse.error(

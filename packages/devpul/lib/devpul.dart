@@ -2,6 +2,7 @@
 /// DevPul browser UI over the Dart VM service.
 library;
 
+export 'src/action.dart';
 export 'src/config.dart';
 export 'src/devpul.dart' show Devpul;
 export 'src/encode.dart' show toJsonSafe, truncatedKey;

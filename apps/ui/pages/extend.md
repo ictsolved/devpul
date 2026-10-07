@@ -157,7 +157,7 @@ Actions need a handle on what they change. With Riverpod, create the container y
 
 ```dart
 final container = ProviderContainer(observers: [DevpulProviderObserver()]);
-Devpul.action('Reset cart', () => container.invalidate(cartProvider));
+Devpul.action('Reset cart', (_) => container.invalidate(cartProvider));
 runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 ```
 

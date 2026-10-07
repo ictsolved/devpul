@@ -3,6 +3,10 @@
 - Requires Dart 3.8.
 - Events carry their fields in `data`: `{v, session, seq, ts, tags?, data}`. The UI asks apps on older versions to update.
 - Removed `Devpul.sessionId` and `Devpul.schemaVersion`.
+- `ext.devpul.info` handshake with the protocol version, actions, plugins and limits; `app.info` events replace `app.actions`.
+- `Devpul.action` takes `params` (`DevpulParam.text`, `number`, `flag`, `choice`); the callback receives their values.
+- `Devpul.limit` mutes or rate-limits a kind; the UI can set limits through `ext.devpul.limit`.
+- `Devpul.plugin` offers a browser plugin to the UI.
 
 ## 0.2.0
 

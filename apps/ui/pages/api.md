@@ -71,16 +71,35 @@ try {
 ## Actions
 
 ```dart
-Devpul.action('Clear cache', () async {
+Devpul.action('Clear cache', (_) async {
   final n = await cache.clear();
   return 'removed $n entries';
 });
-Devpul.action('Sign out', () => auth.signOut());
+Devpul.action(
+  'Seed cart',
+  (args) => cart.seed(args['items']! as num, clear: args['clear']! as bool),
+  params: const [
+    DevpulParam.number('items', initial: 3),
+    DevpulParam.flag('clear'),
+  ],
+);
 ```
 
 Each action becomes an item in the UI's **Actions** menu. It runs in the app when clicked, and the return value, if any, shows as text. Exceptions show as the failure message. Registering a name again replaces it.
 
+Params open a form first. `DevpulParam.text`, `number`, `flag` and `choice` give a `String`, `num`, `bool` and one of the choice's options; `args` holds every param by name.
+
 Actions are debug tools: keep them to things that are safe to trigger at any time.
+
+## Limits
+
+```dart
+Devpul.limit('frame', 0);    // mute
+Devpul.limit('route', 20);   // at most 20 per second
+Devpul.limit('route', null); // no cap
+```
+
+A limit covers the kind and its dotted children: `http` covers `http.request`. Events over the cap are dropped in the app before they are converted or kept in the backlog. `app.*` kinds are never limited.
 
 ## Configuration
 

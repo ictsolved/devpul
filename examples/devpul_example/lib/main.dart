@@ -25,13 +25,22 @@ void main() {
     },
     tags: {'env': 'demo'},
   );
-  Devpul.action('Clear token', () {
+  Devpul.action('Clear token', (_) {
     dio.options.headers.remove('Authorization');
     return 'signed out';
   });
   Devpul.action(
     'Ping',
-    () async => (await dio.get<Object?>('/get')).statusCode,
+    (_) async => (await dio.get<Object?>('/get')).statusCode,
+  );
+  Devpul.action(
+    'Get status',
+    (args) async => (await client.get(
+      Uri.parse('$baseUrl/status/${args['code']}'),
+    )).statusCode,
+    params: const [
+      DevpulParam.choice('code', ['200', '404', '500']),
+    ],
   );
   runApp(const ExampleApp());
 }

@@ -1,5 +1,7 @@
 import 'package:devpul/devpul.dart';
-import 'package:devpul/src/devpul.dart' show debugOnPost, debugRunAction;
+import 'package:devpul/src/devpul.dart'
+    show debugInfo, debugOnPost, debugPluginSource, debugRunAction;
+import 'package:devpul/src/version.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -87,14 +89,88 @@ void main() {
     expect(events[1].$2.containsKey('name'), isFalse);
   });
 
-  test('actions announce their names and run by name', () async {
-    Devpul.action('Clear cache', () => 3);
-    Devpul.action('Sign out', () async => DateTime.utc(2026));
-    expect(events.last.$1, 'app.actions');
-    expect(events.last.$2['actions'], ['Clear cache', 'Sign out']);
-    expect(await debugRunAction('Clear cache'), 3);
+  test('info reports protocol, version, actions, plugins and limits', () async {
+    Devpul.action('Clear cache', (_) => 3);
+    Devpul.plugin('my_plugin', () => 'export default {}', version: '1.2.0');
+    Devpul.limit('frame', 0);
+    await pumpEventQueue();
+    expect(events.map((e) => e.$1), ['app.info']);
+    final info = debugInfo();
+    expect(events.single.$2, info);
+    expect(info['protocol'], 1);
+    expect(info['version'], packageVersion);
+    expect(info['capabilities'], isEmpty);
+    expect(
+      info['actions'],
+      contains(equals({'name': 'Clear cache', 'params': <Object?>[]})),
+    );
+    expect(
+      info['plugins'],
+      contains(equals({'id': 'my_plugin', 'version': '1.2.0'})),
+    );
+    expect(info['limits'], {'frame': 0});
+    expect(debugPluginSource('my_plugin'), 'export default {}');
+    expect(() => debugPluginSource('nope'), throwsArgumentError);
+    Devpul.limit('frame', null);
+  });
+
+  test('actions run by name with params', () async {
+    Devpul.action('Sign out', (_) async => DateTime.utc(2026));
+    Devpul.action(
+      'Seed',
+      (args) => args,
+      params: const [
+        DevpulParam.text('name', initial: 'demo'),
+        DevpulParam.number('count', initial: 3),
+        DevpulParam.flag('clear'),
+        DevpulParam.choice('env', ['dev', 'prod']),
+      ],
+    );
+    await pumpEventQueue();
+    final actions = (debugInfo()['actions']! as List)
+        .cast<Map<String, Object?>>();
+    expect(actions.firstWhere((a) => a['name'] == 'Seed')['params'], [
+      {'name': 'name', 'type': 'text', 'initial': 'demo'},
+      {'name': 'count', 'type': 'number', 'initial': 3},
+      {'name': 'clear', 'type': 'flag', 'initial': false},
+      {
+        'name': 'env',
+        'type': 'choice',
+        'initial': 'dev',
+        'options': ['dev', 'prod'],
+      },
+    ]);
     expect(await debugRunAction('Sign out'), '2026-01-01T00:00:00.000Z');
+    expect(await debugRunAction('Seed'), {
+      'name': 'demo',
+      'count': 3,
+      'clear': false,
+      'env': 'dev',
+    });
+    expect(
+      await debugRunAction('Seed', {'count': 2.5, 'env': 'prod', 'x': 1}),
+      {'name': 'demo', 'count': 2.5, 'clear': false, 'env': 'prod'},
+    );
+    expect(() => debugRunAction('Seed', {'env': 'qa'}), throwsArgumentError);
+    expect(() => debugRunAction('Seed', {'clear': 'yes'}), throwsArgumentError);
     expect(() => debugRunAction('nope'), throwsArgumentError);
+  });
+
+  test('limits mute a kind and its children, never app kinds', () async {
+    Devpul.limit('cart', 0);
+    Devpul.limit('app', 0);
+    await pumpEventQueue();
+    events.clear();
+    Devpul.emit('cart.updated', {});
+    Devpul.emit('cart', {});
+    Devpul.emit('cartx', {});
+    Devpul.session({'name': 'x'});
+    expect(events.map((e) => e.$1), ['cartx', 'app.session']);
+    expect(debugInfo()['dropped'], containsPair('cart', 2));
+    Devpul.limit('cart', null);
+    Devpul.limit('app', null);
+    Devpul.emit('cart', {});
+    expect(events.last.$1, 'cart');
   });
 
   test('disabled emits nothing', () {
@@ -102,7 +178,7 @@ void main() {
     Devpul.emit('custom', {});
     Devpul.error('x', null);
     Devpul.log('x');
-    Devpul.action('x', () => null);
+    Devpul.action('x', (_) => null);
     expect(events, isEmpty);
   });
 }

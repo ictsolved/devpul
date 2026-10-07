@@ -61,10 +61,10 @@ void main() {
   test('streams events with the envelope', () {
     expect(events.keys, [
       'devpul.app.session',
-      'devpul.app.actions',
       'devpul.log',
       'devpul.http.request',
       'devpul.http.response',
+      'devpul.app.info',
       'devpul.error',
     ]);
     final session = events['devpul.app.session']!['session'];
@@ -90,12 +90,52 @@ void main() {
     expect(backlog.map((e) => e['kind']), containsAll(events.keys));
   });
 
-  test('runs actions', () async {
-    final response = await service.callServiceExtension(
-      'ext.devpul.action',
-      isolateId: isolateId,
-      args: {'name': 'ping'},
+  Future<Map<String, dynamic>> call(
+    String method, [
+    Map<String, String>? args,
+  ]) async => (await service.callServiceExtension(
+    'ext.devpul.$method',
+    isolateId: isolateId,
+    args: args,
+  )).json!;
+
+  test('answers the handshake', () async {
+    final info = await call('info');
+    expect(info['protocol'], 1);
+    expect(info['actions'], [
+      {
+        'name': 'echo',
+        'params': [
+          {'name': 'text', 'type': 'text', 'initial': 'pong'},
+        ],
+      },
+    ]);
+    expect(info['plugins'], [
+      {'id': 'e2e'},
+    ]);
+  });
+
+  test('runs actions with args', () async {
+    expect((await call('action', {'name': 'echo'}))['result'], 'pong');
+    final result = await call('action', {
+      'name': 'echo',
+      'args': jsonEncode({'text': 'hi'}),
+    });
+    expect(result['result'], 'hi');
+    expect(call('action', {'name': 'missing'}), throwsA(isA<RPCError>()));
+  });
+
+  test('serves plugin sources', () async {
+    expect(
+      (await call('plugin', {'id': 'e2e'}))['source'],
+      'export default {}',
     );
-    expect(response.json!['result'], 'pong');
+  });
+
+  test('sets limits', () async {
+    final info = await call('limit', {'kind': 'log', 'perSecond': '0'});
+    expect(info['limits'], {'log': 0});
+    final cleared = await call('limit', {'kind': 'log'});
+    expect(cleared['limits'], isEmpty);
   });
 }

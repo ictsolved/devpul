@@ -35,6 +35,7 @@ button {
 }
 
 input,
+select,
 textarea {
   font: inherit;
   color: var(--text);

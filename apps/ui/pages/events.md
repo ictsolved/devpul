@@ -47,7 +47,7 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 | `http.response` | `id`, `method`, `url`, `status`, `statusMessage`, `finalUrl`, `durationMs`, `headers`, `body` |
 | `http.error`    | `id`, `method`, `url`, `status`, `errorType`, `message`, `durationMs`, `headers`, `body`      |
 | `app.session`   | free-form                                                                                     |
-| `app.actions`   | `actions`: names, in registration order                                                       |
+| `app.info`      | the handshake, below; posted when actions, plugins or limits change                           |
 | `error`         | `source`, `type`, `message`, `library`, `context`, `information`, `silent`, `stack`           |
 | `log`           | `level`, `message`, `name`, `error`, `stack`                                                  |
 | `route`         | `action` (`push`, `pop`, `replace`, `remove`), `route`, `previous`, `arguments`               |
@@ -57,14 +57,43 @@ HTTP events pair on `session` + `id`. A response may arrive before its request; 
 
 ## Service extensions
 
-Each isolate that emits registers:
+Each isolate registers these with its first event, `ext.devpul.info` last:
 
-| Method               | Params | Returns                                                                                                                                      |
-| -------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ext.devpul.backlog` | none   | `{"events": [{"kind": "devpul.http.request", "data": {...}}, ...]}`: recent events up to `backlogSize`, plus the latest session and actions. |
-| `ext.devpul.action`  | `name` | `{"result": ...}` from the action, or an extension error with the exception text. Registered with the first `Devpul.action`.                 |
+| Method               | Params              | Returns                                                                                                                          |
+| -------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `ext.devpul.info`    | none                | The handshake, below.                                                                                                            |
+| `ext.devpul.backlog` | none                | `{"events": [{"kind": "devpul.log", "data": {...}}, ...]}`: recent events up to `backlogSize`, plus the latest session and info. |
+| `ext.devpul.action`  | `name`, `args`      | `{"result": ...}` from the action. `args` is a JSON object of param values; missing ones take their initial value.               |
+| `ext.devpul.plugin`  | `id`                | `{"source": "..."}`: the plugin's ES module.                                                                                     |
+| `ext.devpul.limit`   | `kind`, `perSecond` | The handshake after the change. `0` mutes; no `perSecond` removes the cap.                                                       |
 
-The UI calls `ext.devpul.backlog` on connect and whenever an isolate registers it, because DDS keeps only the last 10,000 Extension events, shared with Flutter's per-frame events.
+Failures, such as an unknown action or an invalid argument, are extension errors with the exception text.
+
+The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, then `ext.devpul.backlog`, because DDS keeps only the last 10,000 Extension events, shared with Flutter's per-frame events.
+
+## Handshake
+
+```json
+{
+  "protocol": 1,
+  "version": "1.0.0",
+  "capabilities": [],
+  "actions": [{ "name": "Seed cart", "params": [{ "name": "items", "type": "number", "initial": 3 }] }],
+  "plugins": [{ "id": "devpul_flutter", "version": "1.0.0" }],
+  "limits": { "frame": 0 },
+  "dropped": { "frame": 1520 }
+}
+```
+
+| Field          |                                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| `protocol`     | `1`. The UI compares it, not package versions.                                                        |
+| `version`      | The `devpul` package version.                                                                         |
+| `capabilities` | Features added after protocol 1, by name.                                                             |
+| `actions`      | In registration order. Param `type` is `text`, `number`, `flag` or `choice`; choices carry `options`. |
+| `plugins`      | Browser plugins from `Devpul.plugin`, by package.                                                     |
+| `limits`       | Events per second by kind; `0` is muted.                                                              |
+| `dropped`      | Events dropped by each limit so far.                                                                  |
 
 ## Versioning
 

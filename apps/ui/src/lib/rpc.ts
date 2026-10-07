@@ -1,4 +1,12 @@
-import { type DevEvent, fromVm, type IsolateRef, isObject, type JsonObject, type VmExtensionEvent } from './events';
+import {
+  type DevEvent,
+  fromVm,
+  type IsolateRef,
+  isObject,
+  type JsonObject,
+  PROTOCOL,
+  type VmExtensionEvent,
+} from './events';
 
 export type ConnStatus = 'connecting' | 'open' | 'closed';
 
@@ -16,6 +24,7 @@ interface Pending {
 
 const RETRY_MS = 2000;
 const BACKLOG = 'ext.devpul.backlog';
+const INFO = 'ext.devpul.info';
 
 export class Connection {
   state: ConnState = { status: 'closed', everOpened: false };
@@ -127,27 +136,52 @@ export class Connection {
       const vm = await this.call('getVM');
       const isolates = isObject(vm) && Array.isArray(vm.isolates) ? vm.isolates : [];
       for (const iso of isolates) {
-        if (isObject(iso)) await this.fetchBacklog(iso as IsolateRef);
+        if (isObject(iso)) await this.attach(iso as IsolateRef);
       }
     } catch {
       // The live stream still works.
     }
   }
 
+  /** Handshake, then backlog. Apps register `ext.devpul.info` last. */
+  private async attach(iso: IsolateRef): Promise<void> {
+    if (!iso.id) return;
+    let info: unknown;
+    try {
+      info = await this.call(INFO, { isolateId: iso.id });
+    } catch {
+      // Not a DevPul isolate yet, or one older than the handshake.
+      try {
+        const full = await this.call('getIsolate', { isolateId: iso.id });
+        if (isObject(full) && Array.isArray(full.extensionRPCs) && full.extensionRPCs.includes(BACKLOG)) {
+          this.incompatible('app');
+        }
+      } catch {
+        // Gone.
+      }
+      return;
+    }
+    const protocol = isObject(info) ? info.protocol : undefined;
+    if (protocol !== PROTOCOL) {
+      this.incompatible(typeof protocol === 'number' && protocol > PROTOCOL ? 'ui' : 'app');
+      return;
+    }
+    await this.fetchBacklog(iso, iso.id);
+  }
+
   // DDS keeps only the last 10k Extension events, shared with Flutter's own
   // per-frame events. The app keeps its own buffer of DevPul events.
-  private async fetchBacklog(iso: IsolateRef): Promise<void> {
-    if (!iso.id) return;
+  private async fetchBacklog(iso: IsolateRef, id: string): Promise<void> {
     let result: unknown;
     try {
-      result = await this.call(BACKLOG, { isolateId: iso.id });
+      result = await this.call(BACKLOG, { isolateId: id });
     } catch {
       return;
     }
     let group = iso.isolateGroupId;
     if (group === undefined) {
       try {
-        const full = await this.call('getIsolate', { isolateId: iso.id });
+        const full = await this.call('getIsolate', { isolateId: id });
         if (isObject(full) && typeof full.isolateGroupId === 'string') {
           group = full.isolateGroupId;
         }
@@ -198,10 +232,10 @@ export class Connection {
     } else if (
       streamId === 'Isolate' &&
       event.kind === 'ServiceExtensionAdded' &&
-      event.extensionRPC === BACKLOG &&
+      event.extensionRPC === INFO &&
       isObject(event.isolate)
     ) {
-      void this.fetchBacklog(event.isolate as IsolateRef);
+      void this.attach(event.isolate as IsolateRef);
     }
   }
 }
