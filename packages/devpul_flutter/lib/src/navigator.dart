@@ -1,12 +1,23 @@
 import 'package:devpul/devpul.dart';
 import 'package:flutter/widgets.dart';
 
-/// Emits a `route` event for each push, pop, replace and remove.
+import 'routes_plugin.dart';
+
+/// Emits a `route` event for each push, pop, replace and remove, and offers
+/// the UI a Routes tab that shows the stack after each one.
 ///
 /// ```dart
 /// MaterialApp(navigatorObservers: [DevpulNavigatorObserver()])
 /// ```
 class DevpulNavigatorObserver extends NavigatorObserver {
+  DevpulNavigatorObserver() {
+    if (_offered) return;
+    _offered = true;
+    Devpul.plugin('devpul_flutter', () => routesPlugin);
+  }
+
+  static bool _offered = false;
+
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
       _emit('push', route, previousRoute);

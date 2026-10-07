@@ -1,6 +1,7 @@
 ## 1.0.0-dev.1
 
 - Requires Dart 3.8 and Flutter 3.32.
+- `DevpulNavigatorObserver` offers the UI a Routes tab.
 
 ## 0.2.0
 

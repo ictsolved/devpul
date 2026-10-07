@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:devpul/devpul.dart';
-import 'package:devpul/src/devpul.dart' show debugOnPost;
+import 'package:devpul/src/devpul.dart' show debugOnPost, debugPluginSource;
 import 'package:devpul_flutter/devpul_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -104,5 +104,11 @@ void main() {
       ['pop', '/cart', '/'],
     ]);
     expect(routes.elementAt(1)['arguments'], {'id': 3});
+
+    final info = events.lastWhere((e) => e.$1 == 'app.info').$2;
+    expect(info['plugins'], [
+      {'id': 'devpul_flutter'},
+    ]);
+    expect(debugPluginSource('devpul_flutter'), contains("id: 'routes'"));
   });
 }

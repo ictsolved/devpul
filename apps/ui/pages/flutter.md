@@ -44,4 +44,4 @@ MaterialApp(
 )
 ```
 
-Each push, pop, replace and remove becomes a `route` event with `action`, `route`, `previous` and `arguments`. Routes without a name show their type. Add the [Routes plugin](%ROOT%docs/plugins/#example-routes) to see the navigation stack at each step. With `go_router`, pass the observer in `GoRouter(observers: [...])`.
+Each push, pop, replace and remove becomes a `route` event with `action`, `route`, `previous` and `arguments`. Routes without a name show their type. The observer also offers a Routes tab with the navigation stack at each step; allow it when DevPul asks. With `go_router`, pass the observer in `GoRouter(observers: [...])`.
