@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "ignorePaths": ["**/node_modules/**", "examples/devpul_example/android/**"],
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    { "matchManagers": ["pub"], "rangeStrategy": "widen" },
+    { "matchManagers": ["pub"], "matchPackageNames": ["devpul", "devpul_*"], "enabled": false },
+    {
+      "description": "The SDK floor job",
+      "matchManagers": ["github-actions"],
+      "matchDepNames": ["flutter"],
+      "enabled": false
+    },
+    { "matchManagers": ["npm"], "matchUpdateTypes": ["minor", "patch"], "groupName": "npm minor and patch" },
+    { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" }
+  ]
+}
