@@ -9,9 +9,7 @@ export function TagChips({ tags, selected, onChange }: Props) {
   if (!tags.size) return null;
   const toggle = (key: string, value: string) => {
     const current = selected[key] ?? [];
-    const next = current.includes(value)
-      ? current.filter((v) => v !== value)
-      : [...current, value];
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
     onChange({ ...selected, [key]: next });
   };
   return (

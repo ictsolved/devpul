@@ -32,8 +32,7 @@ export interface RunInfo {
   actions?: DevEvent;
 }
 
-const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) =>
-  b.ts - a.ts || b.seq - a.seq;
+const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) => b.ts - a.ts || b.seq - a.seq;
 
 export class Store {
   maxEvents: number;
@@ -262,8 +261,7 @@ export class Store {
   }
 }
 
-const eventNewest = (a: DevEvent, b: DevEvent) =>
-  b.ts - a.ts || (b.seq ?? 0) - (a.seq ?? 0);
+const eventNewest = (a: DevEvent, b: DevEvent) => b.ts - a.ts || (b.seq ?? 0) - (a.seq ?? 0);
 
 const hostOf = (url: string): string => {
   try {

@@ -65,5 +65,4 @@ export const pastedUrl = (text: string): string | null =>
   /^\s*(https?|wss?):\/\/\S+\s*$/i.test(text) ? toWsUrl(text) : null;
 
 export const isLocalOrigin = (location: Location): boolean =>
-  location.protocol === 'file:' ||
-  ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);

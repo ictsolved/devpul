@@ -32,21 +32,14 @@ function field(e: DevEvent, key: string, value: string): boolean {
 
 function report(e: DevEvent): string {
   const d = e.data;
-  return [
-    `${typeOf(e)}: ${str(d.message) ?? ''}`,
-    str(d.context),
-    str(d.information),
-    str(d.stack),
-  ]
+  return [`${typeOf(e)}: ${str(d.message) ?? ''}`, str(d.context), str(d.information), str(d.stack)]
     .filter(Boolean)
     .join('\n\n');
 }
 
 export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest }: Props) {
   const near = (e: DevEvent) =>
-    requests
-      .filter((r) => r.run === e.run && r.ts >= e.ts - NEAR_BEFORE && r.ts <= e.ts + NEAR_AFTER)
-      .slice(0, 8);
+    requests.filter((r) => r.run === e.run && r.ts >= e.ts - NEAR_BEFORE && r.ts <= e.ts + NEAR_AFTER).slice(0, 8);
 
   return (
     <EventList

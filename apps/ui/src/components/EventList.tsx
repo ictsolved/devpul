@@ -113,8 +113,7 @@ export function EventList(props: Props) {
   const rowKeys = useMemo(() => rows.map(keyOf), [rows, keyOf]);
   useListKeys(rowKeys, selected, setSelected);
   const current = selected ? rows.find((e) => keyOf(e) === selected) : undefined;
-  const values = (f: Facet) =>
-    [...new Set(events.map(f.of).filter((v): v is string => v !== undefined))].toSorted();
+  const values = (f: Facet) => [...new Set(events.map(f.of).filter((v): v is string => v !== undefined))].toSorted();
 
   return (
     <div className={`pane-split ${current ? 'has-detail' : ''}`}>

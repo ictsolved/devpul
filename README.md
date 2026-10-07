@@ -26,9 +26,9 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
    ```yaml
    dependencies:
      devpul: ^0.2.0
-     devpul_dio: ^0.2.0      # Dio
-     devpul_http: ^0.2.0     # package:http
-     devpul_flutter: ^0.2.0  # Flutter errors, debugPrint and routes
+     devpul_dio: ^0.2.0 # Dio
+     devpul_http: ^0.2.0 # package:http
+     devpul_flutter: ^0.2.0 # Flutter errors, debugPrint and routes
    ```
 
 2. Hook them up:
@@ -48,13 +48,13 @@ The [example app](examples/devpul_example) uses every package.
 
 ## Packages
 
-| Package | What it does |
-| --- | --- |
-| [devpul](packages/devpul) | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible. |
-| [devpul_dio](packages/devpul_dio) | `DevpulDioInterceptor` for Dio. |
-| [devpul_http](packages/devpul_http) | `DevpulClient` for package:http. |
-| [devpul_flutter](packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`. |
-| [devpul (npm)](launcher) | `npx devpul` serves the UI on 127.0.0.1. |
+| Package                                   | What it does                                                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [devpul](packages/devpul)                 | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible. |
+| [devpul_dio](packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                |
+| [devpul_http](packages/devpul_http)       | `DevpulClient` for package:http.                                                                                               |
+| [devpul_flutter](packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`.                                              |
+| [devpul (npm)](launcher)                  | `npx devpul` serves the UI on 127.0.0.1.                                                                                       |
 
 ## In the browser
 
@@ -73,16 +73,12 @@ The [example app](examples/devpul_example) uses every package.
 ## Development
 
 ```sh
-flutter pub get
-dart analyze --fatal-infos
-(cd packages/devpul && dart test && dart test -p chrome)
-(cd packages/devpul_dio && dart test)
-(cd packages/devpul_http && dart test)
-(cd packages/devpul_flutter && flutter test)
-
 npm install
-npm run dev      # UI on http://localhost:5173
-npm run check    # oxlint, vitest, tsc, build
+npm run dev          # UI on http://localhost:5173
+npm run check        # everything below
+npm run check:dart   # dart format, analyze, tests (Chrome for the web tests)
+npm run check:web    # prettier, oxlint, vitest, tsc, build
+npm run format       # prettier --write
 ```
 
 The site URL and repository link live in `site.json`. Docs are markdown in `apps/ui/pages`, rendered to static pages by the build and by the dev server. `npm run deploy` builds the UI and publishes `apps/ui/dist` to the `gh-pages` branch.

@@ -76,13 +76,7 @@ function DetailPanelInner({ row, onClose }: Props) {
           </Section>
         )}
         <Part id="params" title="Params" value={req?.params} summary={count(req?.params)} table />
-        <Part
-          id="req-headers"
-          title="Request headers"
-          value={req?.headers}
-          summary={count(req?.headers)}
-          table
-        />
+        <Part id="req-headers" title="Request headers" value={req?.headers} summary={count(req?.headers)} table />
         <Part id="req-body" title="Request body" value={req?.body} summary={size(req?.body)} mode={mode} />
         <Part
           id="res-headers"
@@ -132,15 +126,7 @@ export function StatusBadge({ row }: { row: HttpRow }) {
     return <span className="status s-pending">cancel</span>;
   }
   const cls =
-    code === undefined
-      ? 's-err'
-      : code >= 500
-        ? 's-5xx'
-        : code >= 400
-          ? 's-4xx'
-          : code >= 300
-            ? 's-3xx'
-            : 's-2xx';
+    code === undefined ? 's-err' : code >= 500 ? 's-5xx' : code >= 400 ? 's-4xx' : code >= 300 ? 's-3xx' : 's-2xx';
   return <span className={`status ${cls}`}>{code ?? 'ERR'}</span>;
 }
 

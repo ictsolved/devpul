@@ -14,9 +14,9 @@ DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls wit
 ```yaml
 dependencies:
   devpul: ^0.2.0
-  devpul_dio: ^0.2.0      # if you use Dio
-  devpul_http: ^0.2.0     # if you use package:http
-  devpul_flutter: ^0.2.0  # Flutter errors, debugPrint and routes
+  devpul_dio: ^0.2.0 # if you use Dio
+  devpul_http: ^0.2.0 # if you use package:http
+  devpul_flutter: ^0.2.0 # Flutter errors, debugPrint and routes
 ```
 
 Only `devpul` is required. It is pure Dart and works on every platform, including the web.

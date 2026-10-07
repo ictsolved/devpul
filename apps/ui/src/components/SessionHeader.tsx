@@ -18,9 +18,7 @@ interface Props {
 export function SessionHeader({ session, fields, runs }: Props) {
   if (!session) return null;
   const all = sessionFields(session);
-  const shown = fields.length
-    ? all.filter(([k]) => fields.includes(k))
-    : all.slice(0, DEFAULT_COUNT);
+  const shown = fields.length ? all.filter(([k]) => fields.includes(k)) : all.slice(0, DEFAULT_COUNT);
   const tip = JSON.stringify(Object.fromEntries(all), null, 2);
   return (
     <div className="session" data-tip={tip} data-tip-code>

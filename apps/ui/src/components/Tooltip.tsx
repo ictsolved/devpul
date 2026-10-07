@@ -47,8 +47,7 @@ export function Tooltip() {
       target = el;
       timer = setTimeout(() => place(el), delay);
     };
-    const over = (e: MouseEvent) =>
-      show((e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tip]'), DELAY);
+    const over = (e: MouseEvent) => show((e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tip]'), DELAY);
     const focus = (e: FocusEvent) => {
       const el = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-tip]');
       if (el?.matches(':focus-visible')) show(el, 0);

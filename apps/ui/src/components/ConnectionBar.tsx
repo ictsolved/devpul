@@ -53,7 +53,9 @@ export function ConnectionBar(props: Props) {
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={hero ? 'http://127.0.0.1:41234/AbCdEf12=/' : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'}
+          placeholder={
+            hero ? 'http://127.0.0.1:41234/AbCdEf12=/' : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'
+          }
           autoFocus={hero}
           aria-label="VM service URL"
           spellCheck={false}
@@ -73,12 +75,7 @@ export function ConnectionBar(props: Props) {
               <li key={c.id} className="conn" data-tip={c.url} data-tip-code>
                 <span className={`dot ${status}`} aria-label={status} />
                 <span>{names[c.id] ?? connectionLabel(c.url)}</span>
-                <button
-                  type="button"
-                  className="x"
-                  onClick={() => onRemove(c.id)}
-                  aria-label={`Remove ${c.url}`}
-                >
+                <button type="button" className="x" onClick={() => onRemove(c.id)} aria-label={`Remove ${c.url}`}>
                   <X size={12} />
                 </button>
               </li>
@@ -89,8 +86,8 @@ export function ConnectionBar(props: Props) {
       {error && <div className="hint err">{error}</div>}
       {stuck.length > 0 && (
         <div className="hint">
-          Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the
-          URL changes on every run; pasting the new one replaces the old.
+          Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the URL changes on every run;
+          pasting the new one replaces the old.
           {!localOrigin &&
             ' This page is hosted, so the browser may ask to allow access to apps on this device: allow it, or check the site settings for local network access. Safari blocks this; use the local version.'}
         </div>

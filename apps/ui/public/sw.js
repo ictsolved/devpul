@@ -3,7 +3,12 @@ const CACHE = 'devpul-v1';
 const SHELL = ['./', './favicon.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('activate', (event) => {

@@ -60,8 +60,7 @@ export function ShortcutsDialog({ open, onClose }: Props) {
           </tbody>
         </table>
         <p>
-          Paste a VM service URL anywhere outside a text field to connect. Drop a session file on
-          the page to open it.
+          Paste a VM service URL anywhere outside a text field to connect. Drop a session file on the page to open it.
         </p>
         <p>
           <a href={pageUrl('help/')} target="_blank" rel="noopener">

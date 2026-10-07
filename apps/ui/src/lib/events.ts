@@ -36,11 +36,7 @@ export interface DevEvent {
 export const PREFIX = 'devpul.';
 export const TRUNCATED = 'devpul.truncated';
 
-export function fromVm(
-  raw: VmExtensionEvent,
-  conn: string,
-  n: number,
-): DevEvent | null {
+export function fromVm(raw: VmExtensionEvent, conn: string, n: number): DevEvent | null {
   const fullKind = raw.extensionKind;
   if (!fullKind?.startsWith(PREFIX)) return null;
   const data = isObject(raw.extensionData) ? raw.extensionData : {};
@@ -48,14 +44,11 @@ export function fromVm(
   const isolateId = raw.isolate?.id ?? '';
   const session = str(data.session) ?? `${conn}|${isolateId}`;
   const seq = typeof data.seq === 'number' ? data.seq : null;
-  const ts = typeof data.ts === 'number' ? data.ts : raw.timestamp ?? Date.now();
+  const ts = typeof data.ts === 'number' ? data.ts : (raw.timestamp ?? Date.now());
   const group = raw.isolateGroup?.id || raw.isolate?.isolateGroupId || '';
   const size = JSON.stringify(data).length;
   return {
-    key:
-      seq === null
-        ? `${session}|${kind}|${raw.timestamp ?? ts}|${size}`
-        : `${session}|${seq}`,
+    key: seq === null ? `${session}|${kind}|${raw.timestamp ?? ts}|${size}` : `${session}|${seq}`,
     kind,
     data,
     session,
@@ -70,14 +63,12 @@ export function fromVm(
   };
 }
 
-export const isObject = (v: unknown): v is JsonObject =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
+export const isObject = (v: unknown): v is JsonObject => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export const str = (v: unknown): string | undefined =>
   typeof v === 'string' ? v : typeof v === 'number' ? String(v) : undefined;
 
-export const num = (v: unknown): number | undefined =>
-  typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+export const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
 export function tagsOf(e: DevEvent): Record<string, string> {
   const tags = e.data.tags;

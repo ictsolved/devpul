@@ -72,17 +72,11 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
     return out;
   }, [visible, sort, isDefault, multiRun]);
 
-  const keys = useMemo(
-    () => items.flatMap((i) => (i.type === 'row' ? [i.row.key] : [])),
-    [items],
-  );
+  const keys = useMemo(() => items.flatMap((i) => (i.type === 'row' ? [i.row.key] : [])), [items]);
   useListKeys(keys, selected, onSelect);
 
   const methods = useMemo(() => [...new Set(rows.map((r) => r.method))].toSorted(), [rows]);
-  const hosts = useMemo(
-    () => [...new Set(rows.map((r) => r.host).filter(Boolean))].toSorted(),
-    [rows],
-  );
+  const hosts = useMemo(() => [...new Set(rows.map((r) => r.host).filter(Boolean))].toSorted(), [rows]);
   const runs = useMemo(
     () => [...store.runs.values()].toSorted((a, b) => b.last - a.last).map((r) => r.run),
     [store.runs],
@@ -91,9 +85,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
   const selectedIndex = items.findIndex((i) => i.type === 'row' && i.row.key === selected);
 
   const sortBy = (key: SortKey) =>
-    setSort(
-      sort.key === key ? { key, desc: !sort.desc } : { key, desc: !ASCENDING_FIRST.includes(key) },
-    );
+    setSort(sort.key === key ? { key, desc: !sort.desc } : { key, desc: !ASCENDING_FIRST.includes(key) });
 
   const slowClass = (row: HttpRow) => {
     const ms = row.durationMs;
@@ -137,11 +129,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
             onChange={(v) => setFilter({ ...filter, hosts: v })}
             max={6}
           />
-          <TagChips
-            tags={store.tags}
-            selected={filter.tags}
-            onChange={(tags) => setFilter({ ...filter, tags })}
-          />
+          <TagChips tags={store.tags} selected={filter.tags} onChange={(tags) => setFilter({ ...filter, tags })} />
           <ValueChips
             label="App run"
             values={runs}
@@ -168,9 +156,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
           ))}
         </div>
         {items.length === 0 ? (
-          <div className="muted empty">
-            {rows.length ? 'No requests match the filter.' : 'No HTTP requests yet.'}
-          </div>
+          <div className="muted empty">{rows.length ? 'No requests match the filter.' : 'No HTTP requests yet.'}</div>
         ) : (
           <VirtualList
             items={items}
@@ -197,9 +183,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
                     <StatusBadge row={item.row} />
                   </span>
                   <span className="num ms">{item.row.durationMs ?? ''}</span>
-                  <span className="num muted">
-                    {item.row.size === undefined ? '' : formatBytes(item.row.size)}
-                  </span>
+                  <span className="num muted">{item.row.size === undefined ? '' : formatBytes(item.row.size)}</span>
                   <span className="url" data-tip={item.row.url} data-tip-code>
                     {item.row.url}
                   </span>
@@ -209,9 +193,7 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
           />
         )}
       </div>
-      {selectedRow && (
-        <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} />
-      )}
+      {selectedRow && <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} />}
     </div>
   );
 }

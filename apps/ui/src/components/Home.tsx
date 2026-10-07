@@ -37,8 +37,7 @@ export function Home({ icon, connect, tools, waiting, localOrigin, onOpenFile }:
         <img src={icon} alt="" width={44} height={44} />
         <h1>DevPul</h1>
         <p className="lead">
-          HTTP calls, errors, logs and events from a running Dart or Flutter app, live in your
-          browser.
+          HTTP calls, errors, logs and events from a running Dart or Flutter app, live in your browser.
         </p>
         {connect}
         {waiting ? (
@@ -47,15 +46,15 @@ export function Home({ icon, connect, tools, waiting, localOrigin, onOpenFile }:
           </p>
         ) : (
           <p className="home-hint">
-            Run <code>flutter run</code> and paste the VM service URL it prints. Pasting anywhere
-            on this page works too.
+            Run <code>flutter run</code> and paste the VM service URL it prints. Pasting anywhere on this page works
+            too.
           </p>
         )}
         <p className="privacy">
           <ShieldCheck size={15} />
           <span>
-            Runs only in this browser. Requests, headers and bodies go from your app to this tab
-            over 127.0.0.1 and are never sent to a server.
+            Runs only in this browser. Requests, headers and bodies go from your app to this tab over 127.0.0.1 and are
+            never sent to a server.
           </span>
         </p>
         <details className="first-time">
@@ -70,8 +69,7 @@ export function Home({ icon, connect, tools, waiting, localOrigin, onOpenFile }:
               <pre className="code">{MAIN}</pre>
             </li>
             <li>
-              Run the app in debug mode and paste the URL above.{' '}
-              <a href={pageUrl('docs/')}>Full guide</a>
+              Run the app in debug mode and paste the URL above. <a href={pageUrl('docs/')}>Full guide</a>
             </li>
           </ol>
         </details>

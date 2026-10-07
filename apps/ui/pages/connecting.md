@@ -19,12 +19,12 @@ Paste it into the field, or anywhere on the page outside a text field.
 
 Where to find it:
 
-| Tool | Where |
-| --- | --- |
-| `flutter run` | "A Dart VM Service on ... is available at:" |
-| `dart run --enable-vm-service` | "The Dart VM service is listening on" |
-| VS Code | Debug Console, the "Connecting to VM Service at" line, or the command "Dart: Copy VM Service URL" |
-| Android Studio, IntelliJ | Run tool window, the VM service line |
+| Tool                           | Where                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `flutter run`                  | "A Dart VM Service on ... is available at:"                                                       |
+| `dart run --enable-vm-service` | "The Dart VM service is listening on"                                                             |
+| VS Code                        | Debug Console, the "Connecting to VM Service at" line, or the command "Dart: Copy VM Service URL" |
+| Android Studio, IntelliJ       | Run tool window, the VM service line                                                              |
 
 ## Restarts and stale URLs
 
@@ -83,19 +83,19 @@ Android Studio: add the same flags under Run > Edit Configurations > Additional 
 
 ## Runs and platforms
 
-| Run | Notes |
-| --- | --- |
-| `flutter run` on Android, iOS, desktop | Full support. Devices are forwarded to `127.0.0.1` by flutter tools. |
-| `flutter attach` | Always uses a token. Events from before the attach come from the app's own backlog. |
-| Flutter web | Always uses a token. Flutter web does not report uncaught async errors to `PlatformDispatcher.onError` ([flutter#100277](https://github.com/flutter/flutter/issues/100277)); wrap `runApp` in `runZonedGuarded` and call `Devpul.error`. |
-| Plain Dart | `dart run --enable-vm-service`. Avoid `--observe`: it pauses isolates on exit, which stalls `Isolate.run` and Dio's background JSON decoding. |
+| Run                                    | Notes                                                                                                                                                                                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flutter run` on Android, iOS, desktop | Full support. Devices are forwarded to `127.0.0.1` by flutter tools.                                                                                                                                                                     |
+| `flutter attach`                       | Always uses a token. Events from before the attach come from the app's own backlog.                                                                                                                                                      |
+| Flutter web                            | Always uses a token. Flutter web does not report uncaught async errors to `PlatformDispatcher.onError` ([flutter#100277](https://github.com/flutter/flutter/issues/100277)); wrap `runApp` in `runZonedGuarded` and call `Devpul.error`. |
+| Plain Dart                             | `dart run --enable-vm-service`. Avoid `--observe`: it pauses isolates on exit, which stalls `Isolate.run` and Dio's background JSON decoding.                                                                                            |
 
 ## Hosted, local or a file
 
-| Where | How | Notes |
-| --- | --- | --- |
-| Hosted | the site you are on | Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. Installable as an app. |
-| Local server | `npx devpul` | Any browser, Safari included. Serves these docs too. |
-| File | "Download as one HTML file" on the home page | One self-contained file that works from disk. |
+| Where        | How                                          | Notes                                                                                                                                            |
+| ------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hosted       | the site you are on                          | Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. Installable as an app. |
+| Local server | `npx devpul`                                 | Any browser, Safari included. Serves these docs too.                                                                                             |
+| File         | "Download as one HTML file" on the home page | One self-contained file that works from disk.                                                                                                    |
 
 All three run entirely in the browser. The hosted site only serves the page; your app's data goes from the app to the tab.

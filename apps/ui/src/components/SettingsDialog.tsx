@@ -52,8 +52,7 @@ export function SettingsDialog(props: Props) {
     if (!open && d.open) d.close();
   }, [open, settings.pluginUrls]);
 
-  const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
-    onChange({ ...settings, [key]: value });
+  const set = <K extends keyof Settings>(key: K, value: Settings[K]) => onChange({ ...settings, [key]: value });
 
   const toggleField = (k: string) => {
     const base = settings.headerFields.length ? settings.headerFields : sessionKeys.slice(0, 4);
@@ -77,20 +76,26 @@ export function SettingsDialog(props: Props) {
         </label>
         <label>
           Red from (ms)
-          <NumberField key={settings.verySlowMs} value={settings.verySlowMs} min={1} onCommit={(v) => set('verySlowMs', v)} />
+          <NumberField
+            key={settings.verySlowMs}
+            value={settings.verySlowMs}
+            min={1}
+            onCommit={(v) => set('verySlowMs', v)}
+          />
         </label>
 
         <h3>Storage</h3>
         <label>
           Events kept
-          <NumberField key={settings.maxEvents} value={settings.maxEvents} min={100} onCommit={(v) => set('maxEvents', v)} />
+          <NumberField
+            key={settings.maxEvents}
+            value={settings.maxEvents}
+            min={100}
+            onCommit={(v) => set('maxEvents', v)}
+          />
         </label>
         <label className="check">
-          <input
-            type="checkbox"
-            checked={settings.persist}
-            onChange={(e) => set('persist', e.target.checked)}
-          />
+          <input type="checkbox" checked={settings.persist} onChange={(e) => set('persist', e.target.checked)} />
           Keep events in this browser across reloads (IndexedDB, oldest dropped first, 200 MB max)
         </label>
         <label className="check">

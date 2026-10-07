@@ -60,13 +60,10 @@ export function parseQuery(text: string, keys: readonly string[] = []): Query {
   return q;
 }
 
-export const isEmptyQuery = (q: Query): boolean =>
-  !q.include.length && !q.exclude.length && !q.fields.length;
+export const isEmptyQuery = (q: Query): boolean => !q.include.length && !q.exclude.length && !q.fields.length;
 
 export function matchesTerms(haystack: string, q: Pick<Query, 'include' | 'exclude'>): boolean {
-  return (
-    q.include.every((w) => haystack.includes(w)) && !q.exclude.some((w) => haystack.includes(w))
-  );
+  return q.include.every((w) => haystack.includes(w)) && !q.exclude.some((w) => haystack.includes(w));
 }
 
 export function matchesQuery(
@@ -155,10 +152,7 @@ export function matchesStatus(row: HttpRow, status: string): boolean {
   }
 }
 
-export function matchesTags(
-  tags: Record<string, string>,
-  wanted: Record<string, string[]>,
-): boolean {
+export function matchesTags(tags: Record<string, string>, wanted: Record<string, string[]>): boolean {
   for (const [key, values] of Object.entries(wanted)) {
     if (!values.length) continue;
     const v = tags[key];
@@ -247,8 +241,7 @@ export function sortRows(rows: readonly HttpRow[], sort: Sort): HttpRow[] {
     if (x === undefined || y === undefined) {
       if (x !== y) return x === undefined ? 1 : -1;
     } else if (x !== y) {
-      const c =
-        typeof x === 'number' && typeof y === 'number' ? x - y : collator.compare(String(x), String(y));
+      const c = typeof x === 'number' && typeof y === 'number' ? x - y : collator.compare(String(x), String(y));
       if (c) return c * dir;
     }
     return b.ts - a.ts || b.seq - a.seq;

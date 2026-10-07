@@ -32,21 +32,21 @@ Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 
 ## API
 
-| Field | Type | |
-| --- | --- | --- |
-| `id` | string | Unique. Registering the same id again replaces the plugin. |
-| `label` | string | Tab name. |
-| `kinds` | string[] or `(kind) => boolean` | Event kinds the tab takes. Claimed kinds leave the Events tab. |
-| `summarize` | `(event) => string` | Optional. One line in the list. |
-| `render` | `(el, event, context) => void \| (() => void)` | Optional. Fills `el` for the selected event. May return a cleanup function. Without it, the detail shows the event as a JSON tree. |
+| Field       | Type                                           |                                                                                                                                    |
+| ----------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | string                                         | Unique. Registering the same id again replaces the plugin.                                                                         |
+| `label`     | string                                         | Tab name.                                                                                                                          |
+| `kinds`     | string[] or `(kind) => boolean`                | Event kinds the tab takes. Claimed kinds leave the Events tab.                                                                     |
+| `summarize` | `(event) => string`                            | Optional. One line in the list.                                                                                                    |
+| `render`    | `(el, event, context) => void \| (() => void)` | Optional. Fills `el` for the selected event. May return a cleanup function. Without it, the detail shows the event as a JSON tree. |
 
 An event is `{key, kind, data, ts, session, run}`. `data` holds the fields the app sent plus the envelope (`v`, `session`, `seq`, `ts`, `tags`). `run` identifies one launch or hot restart of one app.
 
 `context` gives:
 
-| Member | |
-| --- | --- |
-| `context.events` | Every event the plugin matches, oldest first. Read it in `render`; it is current at the time you read it. |
+| Member                         |                                                                                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `context.events`               | Every event the plugin matches, oldest first. Read it in `render`; it is current at the time you read it.                                                          |
 | `context.call(method, params)` | Calls a VM service method on the app that sent the event and returns the result. Service extensions (`ext.*`) get the event's isolate unless you pass `isolateId`. |
 
 `render` runs again when the selection changes. Use the page's CSS variables, such as `var(--muted)`, `var(--accent)` and `var(--border)`, and the `code` class for preformatted text, so the plugin follows the theme.

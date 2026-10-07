@@ -1,0 +1,6 @@
+packages/
+examples/
+package-lock.json
+pubspec.yaml
+analysis_options.yaml
+.claude/

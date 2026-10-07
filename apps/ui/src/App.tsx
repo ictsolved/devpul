@@ -35,7 +35,13 @@ const pageTitle = document.title;
 function appName(session: DevEvent | undefined): string | undefined {
   if (!session) return undefined;
   const d = session.data;
-  return str(d.name) ?? str(d.app) ?? sessionFields(session).map(([, v]) => str(v)).find(Boolean);
+  return (
+    str(d.name) ??
+    str(d.app) ??
+    sessionFields(session)
+      .map(([, v]) => str(v))
+      .find(Boolean)
+  );
 }
 
 // Service extension errors carry the app's message in data.details.
@@ -101,9 +107,7 @@ export function App() {
         const fresh = new Map<string, DevEvent>();
         for (const e of events) if (!runs.has(e.run) && !fresh.has(e.run)) fresh.set(e.run, e);
         for (const e of fresh.values()) {
-          const old = new Set(
-            [...runs.values()].filter((r) => r.conn === e.conn && r.last <= e.ts).map((r) => r.run),
-          );
+          const old = new Set([...runs.values()].filter((r) => r.conn === e.conn && r.last <= e.ts).map((r) => r.run));
           if (old.size) drop((x) => old.has(x.run));
         }
       }
@@ -159,13 +163,7 @@ export function App() {
     const map = live.current;
     for (const c of connections) {
       if (map.has(c.id)) continue;
-      const conn = new Connection(
-        c.id,
-        c.url,
-        onEvents,
-        () => setStates((s) => ({ ...s, [c.id]: conn.state })),
-        nextN,
-      );
+      const conn = new Connection(c.id, c.url, onEvents, () => setStates((s) => ({ ...s, [c.id]: conn.state })), nextN);
       map.set(c.id, conn);
       conn.start();
     }
@@ -189,9 +187,7 @@ export function App() {
     for (const url of settings.pluginUrls) {
       if (loadedPlugins.current.has(url)) continue;
       loadedPlugins.current.add(url);
-      loadPlugin(url).catch((err: unknown) =>
-        setPluginErrors((e) => ({ ...e, [url]: String(err) })),
-      );
+      loadPlugin(url).catch((err: unknown) => setPluginErrors((e) => ({ ...e, [url]: String(err) })));
     }
   }, [settings.pluginUrls]);
 
@@ -204,9 +200,7 @@ export function App() {
       const now = latest.current;
       if (now.connections.some((c) => c.url === url)) return;
       const stale = new Set(
-        now.connections
-          .filter((c) => hasToken(c.url) && now.states[c.id]?.status !== 'open')
-          .map((c) => c.id),
+        now.connections.filter((c) => hasToken(c.url) && now.states[c.id]?.status !== 'open').map((c) => c.id),
       );
       if (stale.size && now.settings.clearOnRestart) drop((e) => stale.has(e.conn));
       const next = [...now.connections.filter((c) => !stale.has(c.id)), { id: crypto.randomUUID(), url }];
@@ -496,14 +490,10 @@ export function App() {
             )}
             <ActionsMenu apps={actions} onRun={runAction} />
             <Menu label="Export" icon={<FileDown size={13} />}>
-              <MenuItem
-                onClick={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}
-              >
+              <MenuItem onClick={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>
                 HTTP as HAR
               </MenuItem>
-              <MenuItem
-                onClick={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}
-              >
+              <MenuItem onClick={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}>
                 Session file (all events)
               </MenuItem>
               <MenuItem onClick={() => fileRef.current?.click()}>Open a session file</MenuItem>

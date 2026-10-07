@@ -1,5 +1,4 @@
-const escapeHtml = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const TOKEN =
   /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
@@ -10,9 +9,7 @@ export function highlight(json: string): string {
     TOKEN,
     (match, string?: string, colon?: string, literal?: string, number?: string) => {
       if (string !== undefined) {
-        return colon
-          ? `<span class="j-key">${string}</span>${colon}`
-          : `<span class="j-str">${string}</span>`;
+        return colon ? `<span class="j-key">${string}</span>${colon}` : `<span class="j-str">${string}</span>`;
       }
       if (literal !== undefined) return `<span class="j-lit">${literal}</span>`;
       if (number !== undefined) return `<span class="j-num">${number}</span>`;

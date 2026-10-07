@@ -7,13 +7,13 @@ description: Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR
 
 ## Tabs
 
-| Tab | Shows |
-| --- | --- |
-| HTTP | Requests from the HTTP adapters, newest first, with live pending rows. |
-| Errors | `Devpul.error`, Flutter errors and uncaught platform errors. |
-| Logs | `Devpul.log` and captured `debugPrint`. Appears once there are logs. |
-| Events | Everything else sent with `Devpul.emit`. |
-| Plugin tabs | Events claimed by a [plugin](%ROOT%docs/plugins/). |
+| Tab         | Shows                                                                  |
+| ----------- | ---------------------------------------------------------------------- |
+| HTTP        | Requests from the HTTP adapters, newest first, with live pending rows. |
+| Errors      | `Devpul.error`, Flutter errors and uncaught platform errors.           |
+| Logs        | `Devpul.log` and captured `debugPrint`. Appears once there are logs.   |
+| Events      | Everything else sent with `Devpul.emit`.                               |
+| Plugin tabs | Events claimed by a [plugin](%ROOT%docs/plugins/).                     |
 
 The header shows the latest `Devpul.session` fields; pick which ones in Settings.
 
@@ -23,17 +23,17 @@ Type in the filter box. Plain words must all match; `-word` excludes. In HTTP, w
 
 Fields narrow further. A comma means any of them, and a leading `-` negates.
 
-| Field | Tab | Examples |
-| --- | --- | --- |
-| `status:` | HTTP | `status:4xx,5xx`, `status:>=400`, `status:404`, `status:err`, `status:pending` |
-| `method:` | HTTP | `method:post`, `-method:options` |
-| `host:` | HTTP | `host:api.example.com`, `-host:cdn` |
-| `ms:` | HTTP | `ms:>500`, `ms:<=100` |
-| `size:` | HTTP | `size:>100k`, `size:<1mb` |
-| `tag:` | all | `tag:env=qa`, `tag:user` (any value) |
-| `kind:` | lists | `kind:cart`, `-kind:route` |
-| `source:`, `type:` | Errors | `source:flutter`, `type:StateError` |
-| `level:`, `name:` | Logs | `level:warn,error`, `name:auth` |
+| Field              | Tab    | Examples                                                                       |
+| ------------------ | ------ | ------------------------------------------------------------------------------ |
+| `status:`          | HTTP   | `status:4xx,5xx`, `status:>=400`, `status:404`, `status:err`, `status:pending` |
+| `method:`          | HTTP   | `method:post`, `-method:options`                                               |
+| `host:`            | HTTP   | `host:api.example.com`, `-host:cdn`                                            |
+| `ms:`              | HTTP   | `ms:>500`, `ms:<=100`                                                          |
+| `size:`            | HTTP   | `size:>100k`, `size:<1mb`                                                      |
+| `tag:`             | all    | `tag:env=qa`, `tag:user` (any value)                                           |
+| `kind:`            | lists  | `kind:cart`, `-kind:route`                                                     |
+| `source:`, `type:` | Errors | `source:flutter`, `type:StateError`                                            |
+| `level:`, `name:`  | Logs   | `level:warn,error`, `name:auth`                                                |
 
 Chips do the same for values seen in the data: status classes, methods, hosts, tags, app runs, sources, levels and kinds. Filters are remembered per tab.
 
@@ -51,13 +51,13 @@ In Errors, **Group repeats** folds identical errors into one row with a count, a
 
 ## Keyboard
 
-| Key | Does |
-| --- | --- |
-| `/` | Focus the filter |
-| `j` `k` or arrows | Move the selection |
-| `Esc` | Close the detail or leave the filter |
-| `1` to `9` | Switch tabs |
-| `?` | Shortcut list |
+| Key               | Does                                 |
+| ----------------- | ------------------------------------ |
+| `/`               | Focus the filter                     |
+| `j` `k` or arrows | Move the selection                   |
+| `Esc`             | Close the detail or leave the filter |
+| `1` to `9`        | Switch tabs                          |
+| `?`               | Shortcut list                        |
 
 ## Actions
 

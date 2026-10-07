@@ -92,16 +92,16 @@ Devpul.configure(DevpulConfig(
 ));
 ```
 
-| Option | Default | |
-| --- | --- | --- |
-| `enabled` | `true` | Release and profile builds never emit either way. |
-| `console` | `summary` | `off`, `summary` (one line per call, `#12 < 200 GET https://example.com/items 143ms`) or `verbose` (headers and bodies). |
-| `ansiColors` | `true` | Colored console lines. |
-| `maxValueLength` | 1 MB | Longer event fields become a truncation marker with a preview. |
-| `backlogSize` | 16 MB | Events kept in app memory per isolate and served to the UI on connect. |
-| `ignoreUrls`, `ignoreMethods` | none | Calls that are not reported. A string matches as a substring. |
-| `redactHeaders`, `redactBody` | none | See below. |
-| `idGenerator` | counter | Request ids. |
+| Option                        | Default   |                                                                                                                          |
+| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `enabled`                     | `true`    | Release and profile builds never emit either way.                                                                        |
+| `console`                     | `summary` | `off`, `summary` (one line per call, `#12 < 200 GET https://example.com/items 143ms`) or `verbose` (headers and bodies). |
+| `ansiColors`                  | `true`    | Colored console lines.                                                                                                   |
+| `maxValueLength`              | 1 MB      | Longer event fields become a truncation marker with a preview.                                                           |
+| `backlogSize`                 | 16 MB     | Events kept in app memory per isolate and served to the UI on connect.                                                   |
+| `ignoreUrls`, `ignoreMethods` | none      | Calls that are not reported. A string matches as a substring.                                                            |
+| `redactHeaders`, `redactBody` | none      | See below.                                                                                                               |
+| `idGenerator`                 | counter   | Request ids.                                                                                                             |
 
 Configuration is per isolate. Set it again in a long-lived background isolate if you need the same rules there.
 

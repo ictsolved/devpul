@@ -7,11 +7,11 @@ description: Send state changes, analytics or anything else from a Dart app to D
 
 DevPul shows anything the app sends, not only HTTP. Extending it takes up to three pieces; only the first is required.
 
-| Piece | Where | How |
-| --- | --- | --- |
-| Send | App | `Devpul.emit(kind, data)` from wherever the data appears: an observer, a listener, a wrapper. |
-| Show | Browser | Events land in the Events tab with kind chips, filters and a JSON tree. A [plugin](%ROOT%docs/plugins/) gives them their own tab and view. |
-| Act | Both | [`Devpul.action`](%ROOT%docs/api/#actions) adds an item to the Actions menu. A plugin can call any service extension the app registers. |
+| Piece | Where   | How                                                                                                                                        |
+| ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Send  | App     | `Devpul.emit(kind, data)` from wherever the data appears: an observer, a listener, a wrapper.                                              |
+| Show  | Browser | Events land in the Events tab with kind chips, filters and a JSON tree. A [plugin](%ROOT%docs/plugins/) gives them their own tab and view. |
+| Act   | Both    | [`Devpul.action`](%ROOT%docs/api/#actions) adds an item to the Actions menu. A plugin can call any service extension the app registers.    |
 
 [HTTP adapters](%ROOT%docs/adapters/) are for HTTP clients only: they feed the HTTP tab. State, analytics, database calls and everything else go through `Devpul.emit`.
 

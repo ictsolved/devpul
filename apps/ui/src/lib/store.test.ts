@@ -4,9 +4,28 @@ import { Store } from './store';
 import { vmEvent } from './testing';
 
 const req = (id: number, seq: number, ts: number, extra = {}) =>
-  vmEvent('http.request', { v: 1, session: 's1', seq, ts, id, method: 'GET', url: `https://example.com/${id}`, ...extra });
+  vmEvent('http.request', {
+    v: 1,
+    session: 's1',
+    seq,
+    ts,
+    id,
+    method: 'GET',
+    url: `https://example.com/${id}`,
+    ...extra,
+  });
 const res = (id: number, seq: number, ts: number, status = 200) =>
-  vmEvent('http.response', { v: 1, session: 's1', seq, ts, id, method: 'GET', url: `https://example.com/${id}`, status, durationMs: 5 });
+  vmEvent('http.response', {
+    v: 1,
+    session: 's1',
+    seq,
+    ts,
+    id,
+    method: 'GET',
+    url: `https://example.com/${id}`,
+    status,
+    durationMs: 5,
+  });
 
 describe('Store', () => {
   it('pairs out of order responses and keeps pending rows', () => {
@@ -106,7 +125,15 @@ describe('Store rows', () => {
       req(1, 1, 100),
       vmEvent('http.response', { session: 's1', seq: 2, ts: 110, id: 1, status: 200, body: { a: 'é' } }),
       req(2, 3, 120),
-      vmEvent('http.response', { session: 's1', seq: 4, ts: 130, id: 2, status: 200, headers: { 'Content-Length': '512' }, body: 'x' }),
+      vmEvent('http.response', {
+        session: 's1',
+        seq: 4,
+        ts: 130,
+        id: 2,
+        status: 200,
+        headers: { 'Content-Length': '512' },
+        body: 'x',
+      }),
       req(3, 5, 140),
       vmEvent('http.response', { session: 's1', seq: 6, ts: 150, id: 3, status: 200, body: '<2048 bytes>' }),
     ]);
@@ -118,7 +145,10 @@ describe('Store rows', () => {
 
   it('removes events by predicate', () => {
     const store = new Store();
-    store.add([req(1, 1, 100, { tags: { a: 'x' } }), vmEvent('error', { session: 's2', seq: 1, ts: 1 }, { conn: 'c2' })]);
+    store.add([
+      req(1, 1, 100, { tags: { a: 'x' } }),
+      vmEvent('error', { session: 's2', seq: 1, ts: 1 }, { conn: 'c2' }),
+    ]);
     expect(store.remove((e) => e.conn === 'c2')).toHaveLength(1);
     expect(store.errors).toHaveLength(0);
     expect(store.httpRows).toHaveLength(1);

@@ -6,12 +6,36 @@ import { vmEvent } from './testing';
 function rows() {
   const store = new Store();
   store.add([
-    vmEvent('http.request', { session: 's', seq: 1, ts: 1, id: 1, method: 'GET', url: 'https://example.com/items?page=1', tags: { env: 'dev' } }),
+    vmEvent('http.request', {
+      session: 's',
+      seq: 1,
+      ts: 1,
+      id: 1,
+      method: 'GET',
+      url: 'https://example.com/items?page=1',
+      tags: { env: 'dev' },
+    }),
     vmEvent('http.response', { session: 's', seq: 2, ts: 2, id: 1, status: 200, body: { name: 'Widget' } }),
-    vmEvent('http.request', { session: 's', seq: 3, ts: 3, id: 2, method: 'POST', url: 'https://example.com/orders', body: { sku: 'abc-1' }, tags: { env: 'qa' } }),
+    vmEvent('http.request', {
+      session: 's',
+      seq: 3,
+      ts: 3,
+      id: 2,
+      method: 'POST',
+      url: 'https://example.com/orders',
+      body: { sku: 'abc-1' },
+      tags: { env: 'qa' },
+    }),
     vmEvent('http.response', { session: 's', seq: 4, ts: 4, id: 2, status: 503 }),
     vmEvent('http.request', { session: 's', seq: 5, ts: 5, id: 3, method: 'GET', url: 'https://example.com/health' }),
-    vmEvent('http.request', { session: 's', seq: 6, ts: 6, id: 4, method: 'DELETE', url: 'https://example.com/items/9' }),
+    vmEvent('http.request', {
+      session: 's',
+      seq: 6,
+      ts: 6,
+      id: 4,
+      method: 'DELETE',
+      url: 'https://example.com/items/9',
+    }),
     vmEvent('http.error', { session: 's', seq: 7, ts: 7, id: 4, errorType: 'connectionTimeout', message: 'timed out' }),
   ]);
   return store.httpRows;
@@ -21,7 +45,11 @@ const ids = (f: Partial<typeof emptyFilter>) => filterRows(rows(), { ...emptyFil
 
 describe('parseQuery', () => {
   it('splits include and exclude words', () => {
-    expect(parseQuery('  Items -HEALTH page -  ')).toEqual({ include: ['items', 'page'], exclude: ['health'], fields: [] });
+    expect(parseQuery('  Items -HEALTH page -  ')).toEqual({
+      include: ['items', 'page'],
+      exclude: ['health'],
+      fields: [],
+    });
   });
 
   it('reads known keys only', () => {

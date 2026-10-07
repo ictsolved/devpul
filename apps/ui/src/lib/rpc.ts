@@ -1,11 +1,4 @@
-import {
-  type DevEvent,
-  fromVm,
-  type IsolateRef,
-  isObject,
-  type JsonObject,
-  type VmExtensionEvent,
-} from './events';
+import { type DevEvent, fromVm, type IsolateRef, isObject, type JsonObject, type VmExtensionEvent } from './events';
 
 export type ConnStatus = 'connecting' | 'open' | 'closed';
 

@@ -6,11 +6,7 @@ import { CopyButton } from './Copy';
 import { EventList } from './EventList';
 import { JsonView } from './JsonView';
 
-export type AppCall = (
-  e: DevEvent,
-  method: string,
-  params?: Record<string, unknown>,
-) => Promise<unknown>;
+export type AppCall = (e: DevEvent, method: string, params?: Record<string, unknown>) => Promise<unknown>;
 
 interface Props {
   plugin: DevpulPlugin;
@@ -68,12 +64,7 @@ function summary(plugin: DevpulPlugin, e: DevEvent): string {
   }
 }
 
-function PluginView(props: {
-  plugin: DevpulPlugin;
-  event: DevEvent;
-  events: DevEvent[];
-  call: AppCall;
-}) {
+function PluginView(props: { plugin: DevpulPlugin; event: DevEvent; events: DevEvent[]; call: AppCall }) {
   const { plugin, event, events, call } = props;
   const ref = useRef<HTMLDivElement>(null);
   // Read when the plugin asks, so new events do not re-render it.

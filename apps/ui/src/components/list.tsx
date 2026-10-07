@@ -34,10 +34,7 @@ export function useListKeys(
 /** Freezes which items are listed; listed ones still update. */
 export function usePause<T extends { key: string }>(items: readonly T[]) {
   const [frozen, setFrozen] = useState<Set<string> | null>(null);
-  const visible = useMemo(
-    () => (frozen ? items.filter((i) => frozen.has(i.key)) : items),
-    [items, frozen],
-  );
+  const visible = useMemo(() => (frozen ? items.filter((i) => frozen.has(i.key)) : items), [items, frozen]);
   return {
     visible,
     paused: frozen !== null,
@@ -78,9 +75,7 @@ export function ValueChips(props: {
           type="button"
           key={v}
           className={`chip ${selected.includes(v) ? 'on' : ''}`}
-          onClick={() =>
-            onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v])
-          }
+          onClick={() => onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v])}
         >
           {render ? render(v) : v}
         </button>

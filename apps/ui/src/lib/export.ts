@@ -10,7 +10,11 @@ interface NameValue {
 const harHeaders = (headers: Json | undefined): NameValue[] =>
   isObject(headers)
     ? Object.entries(headers).flatMap(([name, v]) =>
-        v === null ? [] : Array.isArray(v) ? v.map((x) => ({ name, value: headerValue(x) })) : [{ name, value: headerValue(v) }],
+        v === null
+          ? []
+          : Array.isArray(v)
+            ? v.map((x) => ({ name, value: headerValue(x) }))
+            : [{ name, value: headerValue(v) }],
       )
     : [];
 

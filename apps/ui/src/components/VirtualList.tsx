@@ -11,14 +11,7 @@ interface Props<T> {
 
 const OVERSCAN = 10;
 
-export function VirtualList<T>({
-  items,
-  rowHeight,
-  render,
-  scrollToIndex,
-  className,
-  listRef,
-}: Props<T>) {
+export function VirtualList<T>({ items, rowHeight, render, scrollToIndex, className, listRef }: Props<T>) {
   const own = useRef<HTMLDivElement>(null);
   const ref = listRef ?? own;
   const [scrollTop, setScrollTop] = useState(0);
@@ -49,15 +42,9 @@ export function VirtualList<T>({
   for (let i = start; i < end; i++) visible.push(render(items[i] as T, i));
 
   return (
-    <div
-      ref={ref}
-      className={`vlist ${className ?? ''}`}
-      onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
-    >
+    <div ref={ref} className={`vlist ${className ?? ''}`} onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}>
       <div style={{ height: items.length * rowHeight, position: 'relative' }}>
-        <div style={{ position: 'absolute', top: start * rowHeight, left: 0, right: 0 }}>
-          {visible}
-        </div>
+        <div style={{ position: 'absolute', top: start * rowHeight, left: 0, right: 0 }}>{visible}</div>
       </div>
     </div>
   );

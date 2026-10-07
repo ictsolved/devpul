@@ -61,9 +61,7 @@ export const JsonView = memo(JsonViewInner);
 
 function Children({ value, depth }: { value: Json[] | { [key: string]: Json }; depth: number }) {
   const [limit, setLimit] = useState(CHILDREN);
-  const entries: [string, Json][] = Array.isArray(value)
-    ? value.map((v, i) => [String(i), v])
-    : Object.entries(value);
+  const entries: [string, Json][] = Array.isArray(value) ? value.map((v, i) => [String(i), v]) : Object.entries(value);
   return (
     <ul>
       {entries.slice(0, limit).map(([k, v]) => (

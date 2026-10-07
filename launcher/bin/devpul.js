@@ -30,9 +30,7 @@ const connect = args.find((a, i) => !a.startsWith('-') && args[i - 1] !== '--por
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Packed: ui/ next to bin/. In the repo: the app build.
-const root = [join(here, '../ui'), join(here, '../../apps/ui/dist')].find((p) =>
-  existsSync(join(p, 'index.html')),
-);
+const root = [join(here, '../ui'), join(here, '../../apps/ui/dist')].find((p) => existsSync(join(p, 'index.html')));
 if (!root) {
   console.error('devpul: UI build not found. Run `npm run build` in the repo first.');
   process.exit(1);
@@ -97,7 +95,9 @@ function openBrowser(url) {
         ? ['cmd', ['/c', 'start', '', url]]
         : ['xdg-open', [url]];
   try {
-    spawn(cmd, cmdArgs, { stdio: 'ignore', detached: true }).on('error', () => {}).unref();
+    spawn(cmd, cmdArgs, { stdio: 'ignore', detached: true })
+      .on('error', () => {})
+      .unref();
   } catch {
     // Printed URL is enough.
   }
