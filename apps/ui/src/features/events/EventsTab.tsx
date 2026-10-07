@@ -1,9 +1,9 @@
 import type { RefObject } from 'react';
-import type { DevEvent } from '../lib/events';
-import { formatTime, pretty } from '../lib/json';
-import { CopyButton } from './Copy';
-import { EventList, type Facet } from './EventList';
-import { JsonView } from './JsonView';
+import { CopyButton } from '../../components/Copy';
+import { EventList, type Facet } from '../../components/EventList';
+import { JsonView } from '../../components/JsonView';
+import type { DevEvent } from '../../core/events';
+import { formatTime, pretty } from '../../core/json';
 
 interface Props {
   events: DevEvent[];

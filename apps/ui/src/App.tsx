@@ -1,60 +1,36 @@
-import { CircleHelp, Download, FileDown, Settings as SettingsIcon, Trash2 } from 'lucide-react';
+import { CircleHelp, Download, Settings as SettingsIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { version } from '../package.json';
-import { ActionsMenu, type AppActions, type RunAction } from './components/ActionsMenu';
-import { ConnectionBar, type ConnEntry } from './components/ConnectionBar';
-import { ErrorsTab } from './components/ErrorsTab';
-import { EventsTab } from './components/EventsTab';
-import { Home } from './components/Home';
-import { HttpTab } from './components/HttpTab';
-import { LogsTab } from './components/LogsTab';
-import { Menu, MenuItem } from './components/Menu';
-import { latestRuns, PluginOffers, usePlugins } from './components/PluginOffers';
-import { type AppCall, PluginTab } from './components/PluginTab';
-import { SessionHeader, sessionFields } from './components/SessionHeader';
-import { SettingsDialog } from './components/SettingsDialog';
+import { appName, SessionHeader, sessionFields } from './components/SessionHeader';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Tooltip } from './components/Tooltip';
-import { type DevEvent, str } from './lib/events';
-import { download, fromSession, toHar, toSession } from './lib/export';
-import { parseInfo } from './lib/info';
-import { formatTime } from './lib/json';
+import { type DevEvent, str } from './core/events';
+import { fromSession } from './core/export';
+import { formatTime } from './core/json';
+import { Persist } from './core/persist';
+import { type ConnState, Connection } from './core/rpc';
+import { type RunInfo, Store } from './core/store';
+import { connectionLabel, connectParam, hasToken, isLocalOrigin, pastedUrl } from './core/url';
+import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
+import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
+import { ErrorsTab } from './features/errors/ErrorsTab';
+import { EventsTab } from './features/events/EventsTab';
+import { ExportMenu } from './features/export/ExportMenu';
+import { Home } from './features/home/Home';
+import { HttpTab } from './features/http/HttpTab';
+import { LogsTab } from './features/logs/LogsTab';
+import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOffers';
+import { type AppCall, PluginTab } from './features/plugins/PluginTab';
+import { matches, registry } from './features/plugins/plugins';
+import { SettingsDialog } from './features/settings/SettingsDialog';
 import { pageUrl } from './lib/links';
-import { Persist } from './lib/persist';
-import { matches, registry } from './lib/plugins';
-import { type ConnState, Connection } from './lib/rpc';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
-import { type RunInfo, Store } from './lib/store';
-import { connectionLabel, connectParam, hasToken, isLocalOrigin, pastedUrl } from './lib/url';
 
 const store = new Store(load('settings', defaultSettings).maxEvents);
 let counter = 0;
 const nextN = () => ++counter;
 const localOrigin = isLocalOrigin(window.location);
 const pageTitle = document.title;
-
-function appName(session: DevEvent | undefined): string | undefined {
-  if (!session) return undefined;
-  const d = session.data;
-  return (
-    str(d.name) ??
-    str(d.app) ??
-    sessionFields(session)
-      .map(([, v]) => str(v))
-      .find(Boolean)
-  );
-}
-
-// Service extension errors carry the app's message in data.details.
-function rpcMessage(err: unknown): string {
-  if (!err || typeof err !== 'object') return String(err);
-  const data = 'data' in err ? err.data : undefined;
-  if (data && typeof data === 'object' && 'details' in data) return String(data.details);
-  return 'message' in err ? String(err.message) : String(err);
-}
-
-const stamp = () => new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
 
 export function App() {
   const [settings, setSettingsState] = useState<Settings>(() => load('settings', defaultSettings));
@@ -324,14 +300,7 @@ export function App() {
     appName: runName,
   });
 
-  // The latest run of each live connection that offers actions.
-  const actions = useMemo<AppActions[]>(() => {
-    return latestRuns(runs).flatMap((r) => {
-      if (!r.info || states[r.conn]?.status !== 'open') return [];
-      const list = parseInfo(r.info.data).actions;
-      return list.length ? [{ app: appName(r.session) ?? r.conn, event: r.info, actions: list }] : [];
-    });
-  }, [runs, states]);
+  const actions = useMemo(() => appActions(runs, states), [runs, states]);
 
   const errors = store.errors;
   const logs = store.logs;
@@ -360,10 +329,7 @@ export function App() {
   const activeLoaded = plugins.find(({ plugin: p }) => `plugin:${p.id}` === tab);
   const activePlugin = activeLoaded?.plugin;
   // Calls from a whole-tab plugin before any of its events go to the app that offered it.
-  const pluginFallback = activeLoaded
-    ? latestRuns(runs).find((r) => r.info && parseInfo(r.info.data).plugins.some((p) => p.id === activeLoaded.origin))
-        ?.info
-    : undefined;
+  const pluginFallback = activeLoaded ? offeredBy(runs, activeLoaded.origin) : undefined;
   const activeTab = tabs.some((t) => t.id === tab) ? tab : 'http';
   const tabIds = tabs.map((t) => t.id).join('|');
 
@@ -502,15 +468,7 @@ export function App() {
               </span>
             )}
             <ActionsMenu apps={actions} onRun={runAction} />
-            <Menu label="Export" icon={<FileDown size={13} />}>
-              <MenuItem onClick={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>
-                HTTP as HAR
-              </MenuItem>
-              <MenuItem onClick={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}>
-                Session file (all events)
-              </MenuItem>
-              <MenuItem onClick={() => fileRef.current?.click()}>Open a session file</MenuItem>
-            </Menu>
+            <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
             <button type="button" className="btn small" onClick={clearAll}>
               <Trash2 size={13} />
               Clear

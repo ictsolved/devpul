@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { formatBytes } from '../lib/json';
-import type { Settings } from '../lib/storage';
+import { formatBytes } from '../../core/json';
+import type { Settings } from '../../lib/storage';
 
 interface Props {
   open: boolean;

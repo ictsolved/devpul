@@ -1,11 +1,23 @@
-import type { DevEvent, Json } from '../lib/events';
-import { formatTime } from '../lib/json';
+import { type DevEvent, type Json, str } from '../core/events';
+import { formatTime } from '../core/json';
 
 const DEFAULT_COUNT = 4;
 
 export function sessionFields(e: DevEvent | undefined): [string, Json][] {
   if (!e) return [];
   return Object.entries(e.data);
+}
+
+export function appName(session: DevEvent | undefined): string | undefined {
+  if (!session) return undefined;
+  const d = session.data;
+  return (
+    str(d.name) ??
+    str(d.app) ??
+    sessionFields(session)
+      .map(([, v]) => str(v))
+      .find(Boolean)
+  );
 }
 
 interface Props {

@@ -1,8 +1,8 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { memo, useState } from 'react';
-import { isObject, type Json, TRUNCATED } from '../lib/events';
-import { headerValue } from '../lib/fetch';
-import { formatBytes, highlight, pretty } from '../lib/json';
+import { isObject, type Json, TRUNCATED } from '../core/events';
+import { headerValue } from '../core/fetch';
+import { formatBytes, highlight, pretty } from '../core/json';
 
 const LIMIT = 100_000;
 const CHILDREN = 200;

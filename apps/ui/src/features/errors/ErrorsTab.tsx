@@ -1,11 +1,11 @@
 import type { RefObject } from 'react';
-import { type DevEvent, str } from '../lib/events';
-import { formatTime } from '../lib/json';
-import type { HttpRow } from '../lib/store';
-import { CopyButton } from './Copy';
-import { StatusBadge } from './DetailPanel';
-import { EventList, type Facet } from './EventList';
-import { Section } from './Section';
+import { CopyButton } from '../../components/Copy';
+import { EventList, type Facet } from '../../components/EventList';
+import { Section } from '../../components/Section';
+import { type DevEvent, str } from '../../core/events';
+import { formatTime } from '../../core/json';
+import type { HttpRow } from '../../core/store';
+import { StatusBadge } from '../http/DetailPanel';
 
 const NEAR_BEFORE = 10_000;
 const NEAR_AFTER = 1_000;

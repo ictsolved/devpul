@@ -1,5 +1,7 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useMemo } from 'react';
+import { VirtualList } from '../../components/VirtualList';
+import { PauseButton, useListKeys, usePause, ValueChips } from '../../components/list';
 import {
   defaultSort,
   emptyFilter,
@@ -9,14 +11,12 @@ import {
   type SortKey,
   sortRows,
   type StatusFilter,
-} from '../lib/filter';
-import { formatBytes, formatTime } from '../lib/json';
-import { type Settings, useStored } from '../lib/storage';
-import type { HttpRow, Store } from '../lib/store';
+} from '../../core/filter';
+import { formatBytes, formatTime } from '../../core/json';
+import type { HttpRow, Store } from '../../core/store';
+import { type Settings, useStored } from '../../lib/storage';
 import { DetailPanel, StatusBadge } from './DetailPanel';
-import { PauseButton, useListKeys, usePause, ValueChips } from './list';
 import { TagChips } from './TagChips';
-import { VirtualList } from './VirtualList';
 
 const STATUSES: StatusFilter[] = ['2xx', '3xx', '4xx', '5xx', 'err', 'pending'];
 const ROW = 26;

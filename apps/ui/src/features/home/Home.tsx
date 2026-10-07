@@ -1,6 +1,6 @@
 import { FolderOpen, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { pageUrl, repoUrl } from '../lib/links';
+import { pageUrl, repoUrl } from '../../lib/links';
 
 interface Props {
   icon: string;

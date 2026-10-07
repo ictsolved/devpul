@@ -1,13 +1,13 @@
 import { Braces, ListTree, SquareTerminal, X } from 'lucide-react';
 import { memo } from 'react';
-import { isObject, str } from '../lib/events';
-import { toFetch } from '../lib/fetch';
-import { formatBytes, formatTime, pretty } from '../lib/json';
-import { useStored } from '../lib/storage';
-import type { HttpRow } from '../lib/store';
-import { CopyButton } from './Copy';
-import { type BodyMode, isEmptyValue, JsonView, KeyValues } from './JsonView';
-import { Section } from './Section';
+import { CopyButton } from '../../components/Copy';
+import { type BodyMode, isEmptyValue, JsonView, KeyValues } from '../../components/JsonView';
+import { Section } from '../../components/Section';
+import { isObject, str } from '../../core/events';
+import { toFetch } from '../../core/fetch';
+import { formatBytes, formatTime, pretty } from '../../core/json';
+import type { HttpRow } from '../../core/store';
+import { useStored } from '../../lib/storage';
 
 const count = (v: unknown): string | undefined => {
   if (Array.isArray(v)) return `${v.length} items`;

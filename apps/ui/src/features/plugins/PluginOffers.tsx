@@ -1,12 +1,12 @@
 import { Puzzle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { DevEvent } from '../lib/events';
-import { parseInfo } from '../lib/info';
-import { formatBytes } from '../lib/json';
-import { loadPlugin, MAX_SOURCE, sha256 } from '../lib/plugins';
-import type { ConnState } from '../lib/rpc';
-import type { RunInfo } from '../lib/store';
+import type { DevEvent } from '../../core/events';
+import { parseInfo } from '../../core/info';
+import { formatBytes } from '../../core/json';
+import type { ConnState } from '../../core/rpc';
+import { latestRuns, type RunInfo } from '../../core/store';
 import type { AppCall } from './PluginTab';
+import { loadPlugin, MAX_SOURCE, sha256 } from './plugins';
 
 export interface Offer {
   /** `id@sha256`, what an approval covers. */
@@ -110,16 +110,6 @@ export function usePlugins({ runs, states, approved, urls, call, appName }: Opti
   return { offers, errors, allow, dismiss };
 }
 
-/** The newest run of each connection; earlier ones have exited. */
-export function latestRuns(runs: ReadonlyMap<string, RunInfo>): RunInfo[] {
-  const best = new Map<string, RunInfo>();
-  for (const r of runs.values()) {
-    const prev = best.get(r.conn);
-    if (!prev || r.last > prev.last) best.set(r.conn, r);
-  }
-  return [...best.values()];
-}
-
 async function fetchOffer(info: DevEvent, id: string, call: AppCall): Promise<string> {
   const result = await call(info, 'ext.devpul.plugin', { id });
   const source = result && typeof result === 'object' ? (result as { source?: unknown }).source : undefined;
@@ -154,3 +144,7 @@ export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
     </div>
   ));
 }
+
+/** The `app.info` event of the latest run that offers plugin [origin]. */
+export const offeredBy = (runs: ReadonlyMap<string, RunInfo>, origin: string): DevEvent | undefined =>
+  latestRuns(runs).find((r) => r.info && parseInfo(r.info.data).plugins.some((p) => p.id === origin))?.info;

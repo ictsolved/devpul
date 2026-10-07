@@ -1,6 +1,6 @@
-import { copyText } from '../components/Copy';
-import { isObject, type Json, TRUNCATED } from './events';
-import { formatBytes, pretty } from './json';
+import { copyText } from '../../components/Copy';
+import { isObject, type Json, TRUNCATED } from '../../core/events';
+import { formatBytes, pretty } from '../../core/json';
 import type { PluginUi } from './plugins';
 
 // Plain DOM, so plugins can drop elements without anything to unmount.

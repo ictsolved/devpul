@@ -21,5 +21,32 @@
         "allowAsProps": true
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/core/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react-dom",
+                  "react-dom/*",
+                  "lucide-react",
+                  "**/components/**",
+                  "**/features/**",
+                  "**/lib/**"
+                ],
+                "message": "src/core stays free of React and DOM APIs."
+              }
+            ]
+          }
+        ],
+        "no-restricted-globals": ["error", "document", "window", "localStorage", "sessionStorage"]
+      }
+    }
+  ]
 }

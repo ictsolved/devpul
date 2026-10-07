@@ -1,8 +1,11 @@
 import { X, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { DevEvent, Json } from '../lib/events';
-import type { ActionInfo, ActionParam } from '../lib/info';
-import { Menu, MenuItem } from './Menu';
+import { Menu, MenuItem } from '../../components/Menu';
+import { appName } from '../../components/SessionHeader';
+import type { DevEvent, Json } from '../../core/events';
+import { type ActionInfo, type ActionParam, parseInfo } from '../../core/info';
+import type { ConnState } from '../../core/rpc';
+import { latestRuns, type RunInfo } from '../../core/store';
 
 export interface AppActions {
   app: string;
@@ -11,6 +14,23 @@ export interface AppActions {
 }
 
 export type RunAction = (event: DevEvent, name: string, args?: Record<string, Json>) => void;
+
+/** The latest run of each live connection that offers actions. */
+export function appActions(runs: ReadonlyMap<string, RunInfo>, states: Record<string, ConnState>): AppActions[] {
+  return latestRuns(runs).flatMap((r) => {
+    if (!r.info || states[r.conn]?.status !== 'open') return [];
+    const list = parseInfo(r.info.data).actions;
+    return list.length ? [{ app: appName(r.session) ?? r.conn, event: r.info, actions: list }] : [];
+  });
+}
+
+// Service extension errors carry the app's message in data.details.
+export function rpcMessage(err: unknown): string {
+  if (!err || typeof err !== 'object') return String(err);
+  const data = 'data' in err ? err.data : undefined;
+  if (data && typeof data === 'object' && 'details' in data) return String(data.details);
+  return 'message' in err ? String(err.message) : String(err);
+}
 
 interface Props {
   apps: AppActions[];

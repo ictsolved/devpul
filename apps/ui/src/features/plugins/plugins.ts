@@ -1,4 +1,4 @@
-import type { DevEvent, JsonObject } from './events';
+import type { DevEvent, JsonObject } from '../../core/events';
 
 /** The plugin API this UI implements. */
 export const API = 1;

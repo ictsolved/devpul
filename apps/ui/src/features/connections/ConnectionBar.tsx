@@ -1,7 +1,7 @@
 import { Plug, X } from 'lucide-react';
 import { useState } from 'react';
-import type { ConnState } from '../lib/rpc';
-import { connectionLabel, toWsUrl } from '../lib/url';
+import type { ConnState } from '../../core/rpc';
+import { connectionLabel, toWsUrl } from '../../core/url';
 
 export interface ConnEntry {
   id: string;

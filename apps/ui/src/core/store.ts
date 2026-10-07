@@ -34,6 +34,16 @@ export interface RunInfo {
 
 const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) => b.ts - a.ts || b.seq - a.seq;
 
+/** The newest run of each connection; earlier ones have exited. */
+export function latestRuns(runs: ReadonlyMap<string, RunInfo>): RunInfo[] {
+  const best = new Map<string, RunInfo>();
+  for (const r of runs.values()) {
+    const prev = best.get(r.conn);
+    if (!prev || r.last > prev.last) best.set(r.conn, r);
+  }
+  return [...best.values()];
+}
+
 export class Store {
   maxEvents: number;
   version = 0;

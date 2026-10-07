@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fromVm } from './events';
-import { Store } from './store';
+import { latestRuns, Store } from './store';
 import { vmEvent } from './testing';
 
 const req = (id: number, seq: number, ts: number, extra = {}) =>
@@ -153,5 +153,19 @@ describe('Store rows', () => {
     expect(store.remove((e) => e.conn === 'c2')).toHaveLength(1);
     expect(store.errors).toHaveLength(0);
     expect(store.httpRows).toHaveLength(1);
+  });
+
+  it('lists the newest run of each connection', () => {
+    const store = new Store();
+    store.add([
+      vmEvent('log', { session: 's1', seq: 1, ts: 1 }),
+      vmEvent('log', { session: 's2', seq: 1, ts: 5 }),
+      vmEvent('log', { session: 's3', seq: 1, ts: 3 }, { conn: 'c2' }),
+    ]);
+    const latest = latestRuns(store.runs);
+    expect(latest.map((r) => [r.conn, r.last])).toEqual([
+      ['c1', 5],
+      ['c2', 3],
+    ]);
   });
 });

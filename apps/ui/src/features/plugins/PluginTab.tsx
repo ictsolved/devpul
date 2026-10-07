@@ -1,11 +1,11 @@
 import { type RefObject, useEffect, useRef } from 'react';
-import type { DevEvent } from '../lib/events';
-import { formatTime, pretty } from '../lib/json';
-import { type DevpulPlugin, type PluginContext, type PluginEvent, toPluginEvent } from '../lib/plugins';
-import { pluginUi } from '../lib/pluginUi';
-import { CopyButton } from './Copy';
-import { EventList } from './EventList';
-import { JsonView } from './JsonView';
+import { CopyButton } from '../../components/Copy';
+import { EventList } from '../../components/EventList';
+import { JsonView } from '../../components/JsonView';
+import type { DevEvent } from '../../core/events';
+import { formatTime, pretty } from '../../core/json';
+import { pluginUi } from './pluginUi';
+import { type DevpulPlugin, type PluginContext, type PluginEvent, toPluginEvent } from './plugins';
 
 export type AppCall = (e: DevEvent, method: string, params?: Record<string, unknown>) => Promise<unknown>;
 

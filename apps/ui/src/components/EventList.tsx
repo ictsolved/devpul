@@ -1,10 +1,10 @@
 import { X } from 'lucide-react';
 import { type CSSProperties, type ReactNode, type RefObject, useCallback, useMemo, useState } from 'react';
-import type { DevEvent } from '../lib/events';
-import { matchesQuery, matchesTag, parseQuery } from '../lib/filter';
+import type { DevEvent } from '../core/events';
+import { matchesQuery, matchesTag, parseQuery } from '../core/filter';
 import { useStored } from '../lib/storage';
-import { PauseButton, useListKeys, usePause, ValueChips } from './list';
 import { VirtualList } from './VirtualList';
+import { PauseButton, useListKeys, usePause, ValueChips } from './list';
 
 const ROW = 26;
 
