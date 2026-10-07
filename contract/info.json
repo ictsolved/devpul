@@ -1,0 +1,52 @@
+{
+  "protocol": 1,
+  "version": "1.0.0",
+  "capabilities": [],
+  "actions": [
+    {
+      "name": "Clear cache",
+      "params": []
+    },
+    {
+      "name": "Seed",
+      "params": [
+        {
+          "name": "name",
+          "type": "text",
+          "initial": "demo"
+        },
+        {
+          "name": "count",
+          "type": "number",
+          "initial": 3
+        },
+        {
+          "name": "clear",
+          "type": "flag",
+          "initial": false
+        },
+        {
+          "name": "env",
+          "type": "choice",
+          "initial": "dev",
+          "options": [
+            "dev",
+            "prod"
+          ]
+        }
+      ]
+    }
+  ],
+  "plugins": [
+    {
+      "id": "my_plugin",
+      "version": "1.0.0"
+    }
+  ],
+  "limits": {
+    "frame": 0
+  },
+  "dropped": {
+    "frame": 1
+  }
+}

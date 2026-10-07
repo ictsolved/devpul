@@ -1,0 +1,79 @@
+[
+  {
+    "kind": "devpul.route",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 2,
+      "ts": 1767225600002,
+      "data": {
+        "action": "push",
+        "route": "/",
+        "previous": null
+      }
+    }
+  },
+  {
+    "kind": "devpul.route",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 3,
+      "ts": 1767225600003,
+      "data": {
+        "action": "push",
+        "route": "/cart",
+        "previous": "/",
+        "arguments": {
+          "id": 3
+        }
+      }
+    }
+  },
+  {
+    "kind": "devpul.route",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 4,
+      "ts": 1767225600004,
+      "data": {
+        "action": "replace",
+        "route": "/checkout",
+        "previous": "/cart"
+      }
+    }
+  },
+  {
+    "kind": "devpul.route",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 5,
+      "ts": 1767225600005,
+      "data": {
+        "action": "pop",
+        "route": "/checkout",
+        "previous": "/"
+      }
+    }
+  },
+  {
+    "kind": "devpul.error",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 6,
+      "ts": 1767225600006,
+      "data": {
+        "source": "flutter",
+        "type": "StateError",
+        "message": "Bad state: layout",
+        "library": "rendering library",
+        "context": "during layout",
+        "information": "widget: Cart",
+        "stack": "#0      build (file:///app.dart:1:1)"
+      }
+    }
+  }
+]

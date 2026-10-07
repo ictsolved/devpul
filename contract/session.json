@@ -1,0 +1,399 @@
+{
+  "type": "devpul.session",
+  "format": 1,
+  "exported": 0,
+  "events": [
+    {
+      "kind": "app.session",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 1,
+      "ts": 1767225600001,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "name": "Shop",
+        "version": "2.3.1"
+      }
+    },
+    {
+      "kind": "app.info",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 2,
+      "ts": 1767225600002,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "protocol": 1,
+        "version": "1.0.0",
+        "capabilities": [],
+        "actions": [
+          {
+            "name": "Clear cache",
+            "params": []
+          },
+          {
+            "name": "Seed",
+            "params": [
+              {
+                "name": "name",
+                "type": "text",
+                "initial": "demo"
+              },
+              {
+                "name": "count",
+                "type": "number",
+                "initial": 3
+              },
+              {
+                "name": "clear",
+                "type": "flag",
+                "initial": false
+              },
+              {
+                "name": "env",
+                "type": "choice",
+                "initial": "dev",
+                "options": [
+                  "dev",
+                  "prod"
+                ]
+              }
+            ]
+          }
+        ],
+        "plugins": [
+          {
+            "id": "my_plugin",
+            "version": "1.0.0"
+          }
+        ],
+        "limits": {
+          "frame": 0
+        },
+        "dropped": {}
+      }
+    },
+    {
+      "kind": "log",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 3,
+      "ts": 1767225600003,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "level": "info",
+        "message": "Signed in",
+        "name": "auth"
+      }
+    },
+    {
+      "kind": "log",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 4,
+      "ts": 1767225600004,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "level": "error",
+        "message": "Sync failed",
+        "name": "sync",
+        "error": "FormatException: bad",
+        "stack": "#0      main (file:///app.dart:1:1)"
+      }
+    },
+    {
+      "kind": "error",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 5,
+      "ts": 1767225600005,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "source": "zone",
+        "type": "StateError",
+        "message": "Bad state: boom",
+        "library": "sync",
+        "context": "while syncing",
+        "information": "widget: Cart",
+        "silent": true,
+        "stack": "#0      main (file:///app.dart:1:1)"
+      }
+    },
+    {
+      "kind": "http.request",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 6,
+      "ts": 1767225600006,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 1,
+        "method": "POST",
+        "url": "https://example.com/items?page=1&tag=a&tag=b",
+        "params": {
+          "page": "1",
+          "tag": [
+            "a",
+            "b"
+          ]
+        },
+        "headers": {
+          "content-type": "application/json",
+          "accept": [
+            "a",
+            "b"
+          ]
+        },
+        "body": {
+          "sku": "abc-1",
+          "qty": 2
+        },
+        "curl": "curl -X POST 'https://example.com/items?page=1&tag=a&tag=b' -H 'content-type: application/json' -H 'accept: a, b' --data-raw '{\"sku\":\"abc-1\",\"qty\":2}'"
+      }
+    },
+    {
+      "kind": "http.response",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 7,
+      "ts": 1767225600007,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 1,
+        "method": "POST",
+        "url": "https://example.com/items?page=1&tag=a&tag=b",
+        "status": 201,
+        "statusMessage": "Created",
+        "finalUrl": "https://example.com/items/7",
+        "durationMs": 5,
+        "headers": {
+          "content-type": "application/json",
+          "content-length": "11"
+        },
+        "body": {
+          "ok": true
+        }
+      }
+    },
+    {
+      "kind": "http.request",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 8,
+      "ts": 1767225600008,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 2,
+        "method": "GET",
+        "url": "https://example.com/slow",
+        "params": {},
+        "headers": {},
+        "body": null,
+        "curl": "curl 'https://example.com/slow'"
+      }
+    },
+    {
+      "kind": "http.error",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 9,
+      "ts": 1767225600009,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 2,
+        "method": "GET",
+        "url": "https://example.com/slow",
+        "status": null,
+        "errorType": "receiveTimeout",
+        "message": "Timed out",
+        "durationMs": 5,
+        "headers": {},
+        "body": null
+      }
+    },
+    {
+      "kind": "http.request",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 10,
+      "ts": 1767225600010,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 3,
+        "method": "POST",
+        "url": "https://example.com/upload",
+        "params": {},
+        "headers": {},
+        "body": {
+          "note": "it's",
+          "file": "photo.png"
+        },
+        "curl": "curl -X POST 'https://example.com/upload' -F 'note=it'\\''s' -F 'file=@photo.png'"
+      }
+    },
+    {
+      "kind": "http.response",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 11,
+      "ts": 1767225600011,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 3,
+        "method": "POST",
+        "url": "https://example.com/upload",
+        "status": 500,
+        "statusMessage": null,
+        "durationMs": 5,
+        "headers": {},
+        "body": "<3 bytes>"
+      }
+    },
+    {
+      "kind": "cart.updated",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 12,
+      "ts": 1767225600012,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "items": 3,
+        "total": 42.5,
+        "when": "2026-01-01T00:00:00.000Z"
+      }
+    },
+    {
+      "kind": "big",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 13,
+      "ts": 1767225600013,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "body": {
+          "devpul.truncated": {
+            "size": 42,
+            "preview": "xxxxxxxxxxxxxxxx"
+          }
+        },
+        "list": {
+          "devpul.truncated": {
+            "size": 21,
+            "preview": "[0,1,2,3,4,5,6,7"
+          }
+        }
+      }
+    },
+    {
+      "kind": "route",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "f1",
+      "seq": 2,
+      "ts": 1767225600002,
+      "data": {
+        "action": "push",
+        "route": "/",
+        "previous": null
+      }
+    },
+    {
+      "kind": "route",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "f1",
+      "seq": 3,
+      "ts": 1767225600003,
+      "data": {
+        "action": "push",
+        "route": "/cart",
+        "previous": "/",
+        "arguments": {
+          "id": 3
+        }
+      }
+    },
+    {
+      "kind": "route",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "f1",
+      "seq": 4,
+      "ts": 1767225600004,
+      "data": {
+        "action": "replace",
+        "route": "/checkout",
+        "previous": "/cart"
+      }
+    },
+    {
+      "kind": "route",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "f1",
+      "seq": 5,
+      "ts": 1767225600005,
+      "data": {
+        "action": "pop",
+        "route": "/checkout",
+        "previous": "/"
+      }
+    },
+    {
+      "kind": "error",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "f1",
+      "seq": 6,
+      "ts": 1767225600006,
+      "data": {
+        "source": "flutter",
+        "type": "StateError",
+        "message": "Bad state: layout",
+        "library": "rendering library",
+        "context": "during layout",
+        "information": "widget: Cart",
+        "stack": "#0      build (file:///app.dart:1:1)"
+      }
+    }
+  ]
+}

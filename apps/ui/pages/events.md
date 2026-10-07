@@ -95,6 +95,34 @@ The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, 
 | `limits`       | Events per second by kind; `0` is muted.                                                              |
 | `dropped`      | Events dropped by each limit so far.                                                                  |
 
+## Session files
+
+Export > Session file writes:
+
+```json
+{
+  "type": "devpul.session",
+  "format": 1,
+  "exported": 1767225600000,
+  "events": [
+    {
+      "kind": "log",
+      "run": "...",
+      "isolate": "main",
+      "session": "...",
+      "seq": 3,
+      "ts": 1767225600000,
+      "tags": {},
+      "data": {}
+    }
+  ]
+}
+```
+
+`kind` has no `devpul.` prefix. `run` groups events into one launch or hot restart; `tags` is present only when set.
+
+The repository's [`contract/`](%REPO_URL%/tree/main/contract) folder holds sample events, a handshake and a session file that the Dart and UI tests both check.
+
 ## Versioning
 
-New fields and kinds can appear without a version change; readers ignore what they do not know. `v` changes only when an existing field changes meaning. Events without `data` come from a devpul package older than 1.0; the UI asks to update it.
+New fields and kinds can appear without a version change; readers ignore what they do not know. `v`, `protocol` and the session file `format` change only when an existing field changes meaning. Events without `data` come from a devpul package older than 1.0; the UI asks to update it.
