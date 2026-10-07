@@ -9,13 +9,17 @@ environment:
 resolution: workspace
 
 dependencies:
+  bloc: ^9.0.0
   devpul: ^0.2.0
+  devpul_bloc: ^0.2.0
   devpul_dio: ^0.2.0
   devpul_flutter: ^0.2.0
   devpul_http: ^0.2.0
+  devpul_riverpod: ^0.2.0
   dio: ^5.2.0
   flutter:
     sdk: flutter
+  flutter_riverpod: ^3.0.0
 
 flutter:
   uses-material-design: true

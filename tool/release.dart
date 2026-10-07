@@ -19,13 +19,20 @@ void main(List<String> args) {
         dir.uri.pathSegments.lastWhere((s) => s.isNotEmpty): dir.path,
   };
 
-  for (final path in [
-    ...packages.values,
-    ...Directory(
-      'examples',
-    ).listSync().whereType<Directory>().map((d) => d.path),
-  ]) {
-    _bumpPubspec(File('$path/pubspec.yaml'), version, packages.keys);
+  final pubspecs = [
+    for (final path in packages.values) File('$path/pubspec.yaml'),
+    ...Directory('examples')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where(
+          (f) =>
+              f.uri.pathSegments.last == 'pubspec.yaml' &&
+              !f.path.contains('/build/') &&
+              !f.path.contains('/.dart_tool/'),
+        ),
+  ];
+  for (final pubspec in pubspecs) {
+    _bumpPubspec(pubspec, version, packages.keys);
   }
   _bumpJson(File('apps/ui/package.json'), version, (json) => json);
   _bumpJson(

@@ -1,0 +1,16 @@
+name: devpul_riverpod
+description: Riverpod provider state in DevPul. An example of a Dart package that ships a DevPul plugin.
+publish_to: none
+version: 0.2.0
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+resolution: workspace
+
+dependencies:
+  devpul: ^0.2.0
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.0.0

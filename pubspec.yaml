@@ -10,6 +10,8 @@ workspace:
   - packages/devpul_http
   - packages/devpul_flutter
   - examples/devpul_example
+  - examples/plugins/devpul_bloc
+  - examples/plugins/devpul_riverpod
 
 dev_dependencies:
   lints: ^6.1.0

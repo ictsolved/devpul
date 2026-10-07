@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
+import 'package:devpul_bloc/devpul_bloc.dart';
 import 'package:devpul_dio/devpul_dio.dart';
 import 'package:devpul_flutter/devpul_flutter.dart';
 import 'package:devpul_http/devpul_http.dart';
+import 'package:devpul_riverpod/devpul_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const baseUrl = 'https://httpbin.org';
 
@@ -42,8 +46,40 @@ void main() {
       DevpulParam.choice('code', ['200', '404', '500']),
     ],
   );
-  runApp(const ExampleApp());
+  Bloc.observer = DevpulBlocObserver();
+  runApp(
+    UncontrolledProviderScope(container: container, child: const ExampleApp()),
+  );
 }
+
+final container = ProviderContainer(observers: [DevpulProviderObserver()]);
+
+final cartProvider = NotifierProvider<Cart, List<String>>(
+  Cart.new,
+  name: 'cart',
+);
+
+class Cart extends Notifier<List<String>> {
+  @override
+  List<String> build() => [];
+
+  void add(String sku) => state = [...state, sku];
+}
+
+sealed class CounterEvent {}
+
+final class Increment extends CounterEvent {
+  @override
+  String toString() => 'Increment';
+}
+
+class CounterBloc extends Bloc<CounterEvent, int> {
+  CounterBloc() : super(0) {
+    on<Increment>((_, emit) => emit(state + 1));
+  }
+}
+
+final counter = CounterBloc();
 
 // Redaction is opt-in. Without it the UI shows every header as sent.
 Map<String, Object?> _maskAuthorization(
@@ -166,6 +202,11 @@ class _HomePageState extends State<HomePage> {
         Devpul.emit('cart.updated', {'items': _cart, 'total': _cart * 9.5});
       },
     ),
+    (
+      'Riverpod: add to cart',
+      () => container.read(cartProvider.notifier).add('sku-${_cart++}'),
+    ),
+    ('Bloc: increment', () => counter.add(Increment())),
     (
       'Logs',
       () {

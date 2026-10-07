@@ -128,28 +128,7 @@ Dotted kinds group into families: `kind:ws` in the filter, or the kind chips, na
 
 ## A tab for state
 
-This plugin moves Riverpod and Bloc events out of Events into a State tab, showing the event, previous and next values for each:
-
-```js
-// state.js
-export default {
-  id: 'state',
-  label: 'State',
-  kinds: (k) => k.startsWith('riverpod.') || k.startsWith('bloc.'),
-  summarize: (e) => `${e.data.provider ?? e.data.bloc}  ${e.kind.split('.')[1]}`,
-  render(el, e) {
-    for (const key of ['event', 'previous', 'next']) {
-      if (!(key in e.data)) continue;
-      const pre = document.createElement('pre');
-      pre.className = 'code';
-      pre.textContent = `${key}: ${JSON.stringify(e.data[key], null, 2)}`;
-      el.append(pre);
-    }
-  },
-};
-```
-
-Serve it and add its URL in Settings > Plugins, as described in [Plugins](%ROOT%docs/plugins/#developing-a-plugin).
+A package that sends events can also offer a tab for them with [`Devpul.plugin`](%ROOT%docs/plugins/#shipping-a-plugin-in-a-dart-package). The [Riverpod](%REPO_URL%/tree/main/examples/plugins/devpul_riverpod) and [Bloc](%REPO_URL%/tree/main/examples/plugins/devpul_bloc) examples in the repository are the observers above plus a tab with each provider's or bloc's current value and recent changes. Copy one into your project as a starting point.
 
 ## Acting on the app
 
