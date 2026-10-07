@@ -84,7 +84,7 @@ DevPul serves one example, a plugin that shows the navigation stack after each e
 %SITE_URL%plugins/routes.js
 ```
 
-The [source](%REPO_URL%/blob/main/app/public/plugins/routes.js) is a good starting point.
+The [source](%REPO_URL%/blob/main/apps/ui/public/plugins/routes.js) is a good starting point.
 
 ## Other module shapes
 

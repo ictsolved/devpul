@@ -1,4 +1,4 @@
-import site from '../../site.json';
+import site from '../../../../site.json';
 
 export const repoUrl = site.repo;
 

@@ -11,7 +11,7 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
 
-**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/help/).** The same pages are in [app/pages](app/pages).
+**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/help/).** The same pages are in [apps/ui/pages](apps/ui/pages).
 
 ## How it works
 
@@ -85,7 +85,7 @@ npm run dev      # UI on http://localhost:5173
 npm run check    # oxlint, vitest, tsc, build
 ```
 
-The site URL and repository link live in `app/site.json`. Docs are markdown in `app/pages`, rendered to static pages by the build and by the dev server. `npm run deploy` builds the UI and publishes `app/dist` to the `gh-pages` branch.
+The site URL and repository link live in `site.json`. Docs are markdown in `apps/ui/pages`, rendered to static pages by the build and by the dev server. `npm run deploy` builds the UI and publishes `apps/ui/dist` to the `gh-pages` branch.
 
 ## License
 

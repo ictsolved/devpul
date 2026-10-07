@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { PAGES, renderPage } from './pages/render.ts';
-import site from './site.json' with { type: 'json' };
+import site from '../../site.json' with { type: 'json' };
 
 const fill = (text: string) =>
   text

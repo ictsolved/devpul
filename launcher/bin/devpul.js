@@ -30,7 +30,7 @@ const connect = args.find((a, i) => !a.startsWith('-') && args[i - 1] !== '--por
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Packed: ui/ next to bin/. In the repo: the app build.
-const root = [join(here, '../ui'), join(here, '../../app/dist')].find((p) =>
+const root = [join(here, '../ui'), join(here, '../../apps/ui/dist')].find((p) =>
   existsSync(join(p, 'index.html')),
 );
 if (!root) {
