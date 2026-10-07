@@ -64,5 +64,4 @@ export function connectParam(hash: string): string | null {
 export const pastedUrl = (text: string): string | null =>
   /^\s*(https?|wss?):\/\/\S+\s*$/i.test(text) ? toWsUrl(text) : null;
 
-export const isLocalOrigin = (location: Location): boolean =>
-  location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+export const isLocalOrigin = (hostname: string): boolean => ['localhost', '127.0.0.1', '[::1]'].includes(hostname);

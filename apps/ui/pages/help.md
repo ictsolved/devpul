@@ -17,7 +17,7 @@ Chrome and Firefox ask before a hosted page connects to `127.0.0.1`. Allow it on
 
 ### Safari does not connect
 
-Safari blocks hosted pages from reaching `127.0.0.1`. Run `npx devpul` or open the downloaded HTML file instead; both work in Safari.
+Safari blocks hosted pages from reaching `127.0.0.1`. Run `npx devpul` instead; it works in Safari.
 
 ### Connected, but nothing shows
 

@@ -2,13 +2,17 @@
 const CACHE = 'devpul-v1';
 const SHELL = ['./', './favicon.svg', './manifest.webmanifest'];
 
+// The page loaded its hashed JS and CSS before this worker took over, so cache them here.
+async function install() {
+  const cache = await caches.open(CACHE);
+  await cache.addAll(SHELL);
+  const page = await cache.match('./');
+  const assets = page ? (await page.text()).match(/\.\/assets\/[^"]+/g) : null;
+  if (assets) await cache.addAll([...new Set(assets)]);
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((c) => c.addAll(SHELL))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(install().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -32,6 +36,7 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(request).then((hit) => hit ?? caches.match('./'))),
+      // Module scripts send Origin, which misses entries cached with Vary: Origin.
+      .catch(() => caches.match(request, { ignoreVary: true }).then((hit) => hit ?? caches.match('./'))),
   );
 });

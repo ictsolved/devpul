@@ -1,4 +1,4 @@
-import { CircleHelp, Download, Settings as SettingsIcon, Trash2 } from 'lucide-react';
+import { CircleHelp, Settings as SettingsIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { appName, SessionHeader, sessionFields } from './components/SessionHeader';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
@@ -29,7 +29,7 @@ import { defaultSettings, load, save, type Settings } from './lib/storage';
 const store = new Store(load('settings', defaultSettings).maxEvents);
 let counter = 0;
 const nextN = () => ++counter;
-const localOrigin = isLocalOrigin(window.location);
+const localOrigin = isLocalOrigin(location.hostname);
 const pageTitle = document.title;
 
 export function App() {
@@ -408,7 +408,6 @@ export function App() {
           connect={connectionBar(true)}
           tools={tools}
           waiting={connections.some((c) => states[c.id]?.status === 'open')}
-          localOrigin={localOrigin}
           onOpenFile={() => fileRef.current?.click()}
         />
       ) : (
@@ -420,17 +419,6 @@ export function App() {
             </a>
             {connectionBar(false)}
             <nav className="actions">
-              {!localOrigin && (
-                <a
-                  className="btn"
-                  href="./index.html"
-                  download="devpul.html"
-                  data-tip="Single HTML file. Open it from disk to use DevPul without this site (works in Safari)."
-                >
-                  <Download size={14} />
-                  <span className="label">Download</span>
-                </a>
-              )}
               {tools}
               <a
                 className="btn"

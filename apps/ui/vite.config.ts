@@ -53,47 +53,10 @@ function sitePlugin(): Plugin {
   };
 }
 
-// One self-contained HTML file: it can be downloaded and opened from disk,
-// where module scripts loaded by URL are blocked.
-function singleFile(): Plugin {
-  return {
-    name: 'devpul-single-file',
-    enforce: 'post',
-    // Last, so Vite has already filled in the preload markers of dynamic imports.
-    generateBundle: {
-      order: 'post',
-      handler(_, bundle) {
-        const html = bundle['index.html'];
-        if (!html || html.type !== 'asset') return;
-        let source = String(html.source);
-        for (const [name, item] of Object.entries(bundle)) {
-          if (item.type === 'chunk') {
-            source = source.replace(
-              new RegExp(`<script type="module" crossorigin src="[^"]*${name}"></script>`),
-              () => `<script type="module">${item.code.replace(/<\/script/gi, '<\\/script')}</script>`,
-            );
-            delete bundle[name];
-          } else if (name.endsWith('.css')) {
-            source = source.replace(
-              new RegExp(`<link rel="stylesheet" crossorigin href="[^"]*${name}">`),
-              () => `<style>${String(item.source)}</style>`,
-            );
-            delete bundle[name];
-          }
-        }
-        html.source = source;
-      },
-    },
-  };
-}
-
 export default defineConfig({
   base: './',
-  plugins: [react(), sitePlugin(), singleFile()],
+  plugins: [react(), sitePlugin()],
   build: {
-    cssCodeSplit: false,
-    modulePreload: false,
-    assetsInlineLimit: 1_000_000,
     sourcemap: false,
   },
 });

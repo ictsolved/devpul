@@ -90,12 +90,11 @@ Android Studio: add the same flags under Run > Edit Configurations > Additional 
 | Flutter web                            | Always uses a token. Flutter web does not report uncaught async errors to `PlatformDispatcher.onError` ([flutter#100277](https://github.com/flutter/flutter/issues/100277)); wrap `runApp` in `runZonedGuarded` and call `Devpul.error`. |
 | Plain Dart                             | `dart run --enable-vm-service`. Avoid `--observe`: it pauses isolates on exit, which stalls `Isolate.run` and Dio's background JSON decoding.                                                                                            |
 
-## Hosted, local or a file
+## Hosted or local
 
-| Where        | How                                          | Notes                                                                                                                                            |
-| ------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Hosted       | the site you are on                          | Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. Installable as an app. |
-| Local server | `npx devpul`                                 | Any browser, Safari included. Serves these docs too.                                                                                             |
-| File         | "Download as one HTML file" on the home page | One self-contained file that works from disk.                                                                                                    |
+| Where        | How                 | Notes                                                                                                                                            |
+| ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hosted       | the site you are on | Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. Installable as an app. |
+| Local server | `npx devpul`        | Any browser, Safari included. Serves these docs too.                                                                                             |
 
-All three run entirely in the browser. The hosted site only serves the page; your app's data goes from the app to the tab.
+Both run entirely in the browser. The hosted site only serves the page; your app's data goes from the app to the tab.

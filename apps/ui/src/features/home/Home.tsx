@@ -7,7 +7,6 @@ interface Props {
   connect: ReactNode;
   tools: ReactNode;
   waiting: boolean;
-  localOrigin: boolean;
   onOpenFile: () => void;
 }
 
@@ -23,7 +22,7 @@ const MAIN = `void main() {
   runApp(const MyApp());
 }`;
 
-export function Home({ icon, connect, tools, waiting, localOrigin, onOpenFile }: Props) {
+export function Home({ icon, connect, tools, waiting, onOpenFile }: Props) {
   return (
     <div className="home">
       <header className="home-nav">
@@ -78,11 +77,6 @@ export function Home({ icon, connect, tools, waiting, localOrigin, onOpenFile }:
         <button type="button" className="link" onClick={onOpenFile}>
           <FolderOpen size={13} /> Open a session file
         </button>
-        {!localOrigin && (
-          <a href="./index.html" download="devpul.html">
-            Download as one HTML file
-          </a>
-        )}
         <span>
           or run <code>npx devpul</code>
         </span>

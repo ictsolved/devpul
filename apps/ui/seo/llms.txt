@@ -2,7 +2,7 @@
 
 > Open source debug bridge between a running Dart or Flutter app and a browser UI. The app posts HTTP calls, errors, logs, session info, route changes and custom events with `dart:developer` `postEvent`; the browser reads them live from the Dart Development Service (DDS) websocket on 127.0.0.1. Runs only in the browser: no proxy, no certificates, no server, nothing sent anywhere. Debug builds only. MIT licensed.
 
-The hosted UI is at %SITE_URL%. It also runs locally with `npx devpul` or as a downloaded single HTML file.
+The hosted UI is at %SITE_URL%. It also runs locally with `npx devpul`.
 
 ## Docs
 
