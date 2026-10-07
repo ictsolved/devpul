@@ -52,6 +52,8 @@ export interface Settings {
   /** Keys of app.session info shown in the header. Empty means the first few. */
   headerFields: string[];
   pluginUrls: string[];
+  /** `id@sha256` of plugins the user allowed. */
+  approvedPlugins: string[];
 }
 
 export const defaultSettings: Settings = {
@@ -62,4 +64,5 @@ export const defaultSettings: Settings = {
   clearOnRestart: false,
   headerFields: [],
   pluginUrls: [],
+  approvedPlugins: [],
 };

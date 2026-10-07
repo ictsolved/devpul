@@ -673,6 +673,38 @@ body.has-data .app {
   padding: 8px 12px;
 }
 
+.plugin-tab {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px 12px;
+}
+
+.tab-icon {
+  display: inline-flex;
+  margin-right: 5px;
+}
+
+.tab-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.offer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: 12px;
+}
+
+.offer > span {
+  flex: 1;
+  min-width: 0;
+}
+
 .near {
   list-style: none;
   margin: 0;

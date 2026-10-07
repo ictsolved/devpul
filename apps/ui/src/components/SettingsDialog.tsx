@@ -134,6 +134,38 @@ export function SettingsDialog(props: Props) {
         )}
 
         <h3>Plugins</h3>
+        {settings.approvedPlugins.length > 0 && (
+          <>
+            <p>Allowed from apps, by package and source hash. A removed plugin asks again after a reload.</p>
+            <table className="kv">
+              <tbody>
+                {settings.approvedPlugins.map((key) => {
+                  const [id, hash = ''] = key.split('@');
+                  return (
+                    <tr key={key}>
+                      <th>{id}</th>
+                      <td>
+                        <code>{hash.slice(0, 12)}</code>{' '}
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() =>
+                            set(
+                              'approvedPlugins',
+                              settings.approvedPlugins.filter((k) => k !== key),
+                            )
+                          }
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
         <label>
           Module URLs, one per line. They run with full access to this page.
           <textarea

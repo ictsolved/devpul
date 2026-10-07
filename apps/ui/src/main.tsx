@@ -1,10 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { api } from './lib/plugins';
 import './styles.css';
-
-window.devpul = api;
 
 if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {

@@ -9,6 +9,7 @@ import { Home } from './components/Home';
 import { HttpTab } from './components/HttpTab';
 import { LogsTab } from './components/LogsTab';
 import { Menu, MenuItem } from './components/Menu';
+import { latestRuns, PluginOffers, usePlugins } from './components/PluginOffers';
 import { type AppCall, PluginTab } from './components/PluginTab';
 import { SessionHeader, sessionFields } from './components/SessionHeader';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -21,7 +22,7 @@ import { parseInfo } from './lib/info';
 import { formatTime } from './lib/json';
 import { pageUrl } from './lib/links';
 import { Persist } from './lib/persist';
-import { loadPlugin, matches, registry } from './lib/plugins';
+import { matches, registry } from './lib/plugins';
 import { type ConnState, Connection } from './lib/rpc';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
 import { type RunInfo, Store } from './lib/store';
@@ -65,7 +66,6 @@ export function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null);
-  const [pluginErrors, setPluginErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [seenData, setSeenData] = useState(false);
   // Re-renders on every store change; children read from the store directly.
@@ -73,7 +73,6 @@ export function App() {
   const plugins = useSyncExternalStore(registry.subscribe, registry.getPlugins);
   const persist = useRef<Persist | null>(null);
   const live = useRef(new Map<string, Connection>());
-  const loadedPlugins = useRef(new Set<string>());
   const filterRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   // Read by handlers that are registered once.
@@ -183,14 +182,6 @@ export function App() {
       map.clear();
     };
   }, []);
-
-  useEffect(() => {
-    for (const url of settings.pluginUrls) {
-      if (loadedPlugins.current.has(url)) continue;
-      loadedPlugins.current.add(url);
-      loadPlugin(url).catch((err: unknown) => setPluginErrors((e) => ({ ...e, [url]: String(err) })));
-    }
-  }, [settings.pluginUrls]);
 
   /**
    * A token URL that is not open belongs to a run that ended, so a new URL
@@ -319,14 +310,23 @@ export function App() {
     return out;
   }, [runs]);
 
+  const runName = useCallback(
+    (r: RunInfo) => appName(r.session) ?? connectionLabel(connections.find((c) => c.id === r.conn)?.url ?? r.conn),
+    [connections],
+  );
+
+  const pluginOffers = usePlugins({
+    runs,
+    states,
+    approved: settings.approvedPlugins,
+    urls: settings.pluginUrls,
+    call: callApp,
+    appName: runName,
+  });
+
   // The latest run of each live connection that offers actions.
   const actions = useMemo<AppActions[]>(() => {
-    const best = new Map<string, RunInfo>();
-    for (const r of runs.values()) {
-      const prev = best.get(r.conn);
-      if (!prev || r.last > prev.last) best.set(r.conn, r);
-    }
-    return [...best.values()].flatMap((r) => {
+    return latestRuns(runs).flatMap((r) => {
       if (!r.info || states[r.conn]?.status !== 'open') return [];
       const list = parseInfo(r.info.data).actions;
       return list.length ? [{ app: appName(r.session) ?? r.conn, event: r.info, actions: list }] : [];
@@ -341,18 +341,29 @@ export function App() {
     [allOther, plugins],
   );
   const pluginEvents = useMemo(
-    () => Object.fromEntries(plugins.map((p) => [p.id, allOther.filter((e) => matches(p, e.kind))])),
+    () => Object.fromEntries(plugins.map(({ plugin: p }) => [p.id, allOther.filter((e) => matches(p, e.kind))])),
     [allOther, plugins],
   );
   const latestSession = store.latestSession();
-  const tabs: { id: string; label: string; count: number; alert?: boolean }[] = [
+  const tabs: { id: string; label: string; icon?: string; count: number; alert?: boolean }[] = [
     { id: 'http', label: 'HTTP', count: store.httpRows.length },
     { id: 'errors', label: 'Errors', count: errors.length, alert: errors.length > 0 },
     ...(logs.length || tab === 'logs' ? [{ id: 'logs', label: 'Logs', count: logs.length }] : []),
     { id: 'events', label: 'Events', count: other.length },
-    ...plugins.map((p) => ({ id: `plugin:${p.id}`, label: p.label, count: pluginEvents[p.id]?.length ?? 0 })),
+    ...plugins.map(({ plugin: p }) => ({
+      id: `plugin:${p.id}`,
+      label: p.label,
+      icon: p.icon,
+      count: pluginEvents[p.id]?.length ?? 0,
+    })),
   ];
-  const activePlugin = plugins.find((p) => `plugin:${p.id}` === tab);
+  const activeLoaded = plugins.find(({ plugin: p }) => `plugin:${p.id}` === tab);
+  const activePlugin = activeLoaded?.plugin;
+  // Calls from a whole-tab plugin before any of its events go to the app that offered it.
+  const pluginFallback = activeLoaded
+    ? latestRuns(runs).find((r) => r.info && parseInfo(r.info.data).plugins.some((p) => p.id === activeLoaded.origin))
+        ?.info
+    : undefined;
   const activeTab = tabs.some((t) => t.id === tab) ? tab : 'http';
   const tabIds = tabs.map((t) => t.id).join('|');
 
@@ -478,6 +489,7 @@ export function App() {
                   className={`tab ${activeTab === t.id ? 'on' : ''}`}
                   onClick={() => setTab(t.id)}
                 >
+                  {t.icon && <span className="tab-icon" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />}
                   {t.label}
                   {t.count > 0 && <span className={`count ${t.alert ? 'alert' : ''}`}>{t.count}</span>}
                 </button>
@@ -504,6 +516,14 @@ export function App() {
               Clear
             </button>
           </div>
+          <PluginOffers
+            offers={pluginOffers.offers}
+            onAllow={(o) => {
+              setSettings({ ...settings, approvedPlugins: [...settings.approvedPlugins, o.key] });
+              pluginOffers.allow(o);
+            }}
+            onDismiss={pluginOffers.dismiss}
+          />
           <main className="content">
             {activeTab === 'http' && (
               <HttpTab
@@ -533,6 +553,7 @@ export function App() {
               <PluginTab
                 plugin={activePlugin}
                 events={pluginEvents[activePlugin.id] ?? []}
+                fallback={pluginFallback}
                 runLabel={runLabel}
                 filterRef={filterRef}
                 call={callApp}
@@ -564,7 +585,7 @@ export function App() {
         settings={settings}
         sessionKeys={sessionFields(latestSession).map(([k]) => k)}
         usage={usage}
-        pluginErrors={pluginErrors}
+        pluginErrors={pluginOffers.errors}
         onChange={setSettings}
         onClear={clearAll}
         onClose={() => setSettingsOpen(false)}

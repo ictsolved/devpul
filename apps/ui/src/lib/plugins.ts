@@ -1,5 +1,11 @@
 import type { DevEvent, JsonObject } from './events';
 
+/** The plugin API this UI implements. */
+export const API = 1;
+
+/** Largest plugin source the UI loads, in bytes. */
+export const MAX_SOURCE = 512 * 1024;
+
 export interface PluginEvent {
   /** Unique per event; stable across reloads. */
   key: string;
@@ -11,56 +17,94 @@ export interface PluginEvent {
   run: string;
 }
 
-export interface PluginContext {
-  /** Every event the plugin matches, oldest first. */
-  readonly events: PluginEvent[];
-  /**
-   * Calls a VM service method on the app that sent the event. Service
-   * extensions (`ext.*`) get the event's isolateId unless one is given.
-   */
-  call: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
+/** Elements in the UI's own style, for plugins that do not bring their own. */
+export interface PluginUi {
+  /** A collapsible JSON tree. */
+  json: (value: unknown) => HTMLElement;
+  /** A two-column table; values that are not strings show as JSON. */
+  keyValues: (values: Record<string, unknown>) => HTMLElement;
+  /** A copy button. */
+  copy: (text: string | (() => string), label?: string) => HTMLElement;
 }
 
-/** Adds a tab listing the events it matches. */
+export interface PluginContext {
+  /** Every event the plugin matches, oldest first, current when read. */
+  readonly events: PluginEvent[];
+  /** Calls [listener] with events that arrive later, oldest first. */
+  onEvents: (listener: (events: PluginEvent[]) => void) => () => void;
+  /**
+   * Calls a VM service method on the app: the one that sent the event in
+   * `render`, the latest matching app in `renderTab`. Service extensions
+   * (`ext.*`) get its isolate unless `isolateId` is given.
+   */
+  call: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
+  ui: PluginUi;
+}
+
+type Cleanup = void | (() => void);
+
 export interface DevpulPlugin {
+  /** The API version the plugin was written for. */
+  api?: number;
   id: string;
   label: string;
-  kinds: string[] | ((kind: string) => boolean);
-  /** One line shown in the list. Defaults to the kind. */
+  /** SVG markup shown in the tab. */
+  icon?: string;
+  /** Event kinds the tab takes; they leave the Events tab. */
+  kinds?: string[] | ((kind: string) => boolean);
+  /** One line in the list. */
   summarize?: (event: PluginEvent) => string;
-  /** Renders the selected event. May return a cleanup function. */
-  render?: (el: HTMLElement, event: PluginEvent, context: PluginContext) => void | (() => void);
+  /** Fills the detail pane for the selected event. */
+  render?: (el: HTMLElement, event: PluginEvent, context: PluginContext) => Cleanup;
+  /** Fills the whole tab, in place of the event list. */
+  renderTab?: (el: HTMLElement, context: PluginContext) => Cleanup;
 }
 
 export interface DevpulApi {
-  version: 2;
+  api: typeof API;
   register: (plugin: DevpulPlugin) => void;
 }
 
+export interface Loaded {
+  plugin: DevpulPlugin;
+  /** Dart package or URL the plugin came from. */
+  origin: string;
+}
+
 class Registry {
-  plugins: readonly DevpulPlugin[] = [];
+  plugins: readonly Loaded[] = [];
   private listeners = new Set<() => void>();
 
-  register = (plugin: DevpulPlugin): void => {
-    if (!plugin?.id || !plugin.label || !plugin.kinds) return;
-    this.plugins = [...this.plugins.filter((p) => p.id !== plugin.id), plugin];
+  register(plugin: DevpulPlugin, origin: string): void {
+    if (typeof plugin?.id !== 'string' || typeof plugin.label !== 'string') {
+      throw new Error('A plugin needs a string id and label.');
+    }
+    if (plugin.api !== undefined && plugin.api !== API) {
+      throw new Error(`${plugin.id} needs plugin API ${String(plugin.api)}; this UI has API ${API}.`);
+    }
+    this.plugins = [...this.plugins.filter((p) => p.plugin.id !== plugin.id), { plugin, origin }];
     for (const fn of this.listeners) fn();
-  };
+  }
 
   subscribe = (fn: () => void): (() => void) => {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   };
 
-  getPlugins = (): readonly DevpulPlugin[] => this.plugins;
+  getPlugins = (): readonly Loaded[] => this.plugins;
 
   claims(kind: string): boolean {
-    return this.plugins.some((p) => matches(p, kind));
+    return this.plugins.some((p) => matches(p.plugin, kind));
   }
 }
 
-export const matches = (p: DevpulPlugin, kind: string): boolean =>
-  Array.isArray(p.kinds) ? p.kinds.includes(kind) : p.kinds(kind);
+export function matches(p: DevpulPlugin, kind: string): boolean {
+  try {
+    return Array.isArray(p.kinds) ? p.kinds.includes(kind) : (p.kinds?.(kind) ?? false);
+  } catch {
+    return false;
+  }
+}
 
 export const toPluginEvent = (e: DevEvent): PluginEvent => ({
   key: e.key,
@@ -74,22 +118,27 @@ export const toPluginEvent = (e: DevEvent): PluginEvent => ({
 
 export const registry = new Registry();
 
-export const api: DevpulApi = { version: 2, register: registry.register };
-
-declare global {
-  interface Window {
-    devpul?: DevpulApi;
+/**
+ * Runs [source] as an ES module. Its default export is a plugin or a
+ * function that receives the API and registers plugins.
+ */
+export async function loadPlugin(source: string, origin: string): Promise<void> {
+  const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+  let mod: { default?: unknown };
+  try {
+    mod = (await import(/* @vite-ignore */ url)) as { default?: unknown };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+  const value = mod.default;
+  if (typeof value === 'function') {
+    (value as (api: DevpulApi) => void)({ api: API, register: (p) => registry.register(p, origin) });
+  } else {
+    registry.register(value as DevpulPlugin, origin);
   }
 }
 
-/**
- * The module's default export is a plugin, a list of plugins, or a function
- * that receives the API.
- */
-export async function loadPlugin(url: string): Promise<void> {
-  const mod = (await import(/* @vite-ignore */ url)) as { default?: unknown };
-  const value = mod.default;
-  if (typeof value === 'function') (value as (a: DevpulApi) => void)(api);
-  else if (Array.isArray(value)) value.forEach((p) => registry.register(p as DevpulPlugin));
-  else if (value) registry.register(value as DevpulPlugin);
+export async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
