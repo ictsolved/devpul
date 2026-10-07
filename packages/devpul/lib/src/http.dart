@@ -76,8 +76,7 @@ abstract final class DevpulHttp {
     DevpulConfig config,
     Uri url,
     Map<String, Object?> headers,
-  ) =>
-      config.redactHeaders?.call(url, headers) ?? headers;
+  ) => config.redactHeaders?.call(url, headers) ?? headers;
 
   static Object? _body(DevpulConfig config, Uri url, Object? body) {
     final redact = config.redactBody;
@@ -85,14 +84,14 @@ abstract final class DevpulHttp {
   }
 
   static Map<String, Object?> _params(Uri url) => {
-        for (final MapEntry(:key, :value) in url.queryParametersAll.entries)
-          key: value.length == 1 ? value.first : value,
-      };
+    for (final MapEntry(:key, :value) in url.queryParametersAll.entries)
+      key: value.length == 1 ? value.first : value,
+  };
 }
 
 final class DevpulHttpCall {
   DevpulHttpCall._(this.id, this.method, this.url)
-      : _watch = Stopwatch()..start();
+    : _watch = Stopwatch()..start();
 
   final Object id;
   final String method;
@@ -199,13 +198,13 @@ final class DevpulHttpCall {
 
 /// Single values become strings, repeated ones stay lists.
 Map<String, Object?> normalizeHeaders(Map<String, Object?> headers) => {
-      for (final MapEntry(:key, :value) in headers.entries)
-        key: switch (value) {
-          final List<Object?> l when l.length == 1 => l.first?.toString(),
-          final List<Object?> l => [for (final v in l) v?.toString()],
-          _ => value,
-        },
-    };
+  for (final MapEntry(:key, :value) in headers.entries)
+    key: switch (value) {
+      final List<Object?> l when l.length == 1 => l.first?.toString(),
+      final List<Object?> l => [for (final v in l) v?.toString()],
+      _ => value,
+    },
+};
 
 /// Forms become maps, JSON strings are decoded, bytes are summarised.
 Object? normalizeBody(Object? body) {

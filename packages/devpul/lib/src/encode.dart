@@ -43,7 +43,7 @@ String _string(Object value) {
   final marker = {
     truncatedKey: {
       'size': encoded.length,
-      'preview': text.substring(0, min(max, text.length))
+      'preview': text.substring(0, min(max, text.length)),
     },
   };
   return (marker, max + 64);

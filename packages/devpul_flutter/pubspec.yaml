@@ -8,8 +8,8 @@ issue_tracker: https://github.com/ictsolved/devpul/issues
 topics: [debugging, errors, logging, flutter, devtools]
 
 environment:
-  sdk: ^3.6.0
-  flutter: ">=3.27.0"
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
 
 resolution: workspace
 

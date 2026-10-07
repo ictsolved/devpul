@@ -1,9 +1,7 @@
 enum ConsoleMode { off, summary, verbose }
 
-typedef HeaderRedactor = Map<String, Object?> Function(
-  Uri url,
-  Map<String, Object?> headers,
-);
+typedef HeaderRedactor =
+    Map<String, Object?> Function(Uri url, Map<String, Object?> headers);
 
 typedef BodyRedactor = Object? Function(Uri url, Object? body);
 

@@ -17,20 +17,19 @@ class _Adapter implements HttpClientAdapter {
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
-  ) async =>
-      respond(options);
+  ) async => respond(options);
 
   @override
   void close({bool force = false}) {}
 }
 
 ResponseBody _json(Object body, int status) => ResponseBody.fromString(
-      jsonEncode(body),
-      status,
-      headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
-    );
+  jsonEncode(body),
+  status,
+  headers: {
+    Headers.contentTypeHeader: [Headers.jsonContentType],
+  },
+);
 
 void main() {
   final events = <(String, Map<String, Object?>)>[];
@@ -47,15 +46,18 @@ void main() {
   });
 
   test('pairs request and response with the full URL', () async {
-    await dio((_) => _json({'id': 7}, 200))
-        .get<Object?>('/items', queryParameters: {'q': 'a b'});
+    await dio(
+      (_) => _json({'id': 7}, 200),
+    ).get<Object?>('/items', queryParameters: {'q': 'a b'});
     final [(k1, req), (k2, res)] = events;
     expect(k1, 'http.request');
     expect(k2, 'http.response');
     expect(req['url'], 'https://example.com/api/items?q=a+b');
     expect(req['params'], {'q': 'a b'});
     expect(
-        req['curl'], startsWith("curl 'https://example.com/api/items?q=a+b'"));
+      req['curl'],
+      startsWith("curl 'https://example.com/api/items?q=a+b'"),
+    );
     expect(res['id'], req['id']);
     expect(res['status'], 200);
     expect(res['body'], {'id': 7});
@@ -89,9 +91,7 @@ void main() {
           Headers.contentTypeHeader: [Headers.jsonContentType],
         },
         isRedirect: true,
-        redirects: [
-          RedirectRecord(302, 'GET', Uri.parse('/new')),
-        ],
+        redirects: [RedirectRecord(302, 'GET', Uri.parse('/new'))],
       ),
     ).get<Object?>('/old');
     final res = events.last.$2;

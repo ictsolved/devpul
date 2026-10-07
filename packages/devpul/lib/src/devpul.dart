@@ -8,7 +8,8 @@ import 'config.dart';
 import 'console.dart';
 import 'encode.dart';
 
-const _off = bool.fromEnvironment('dart.vm.product') ||
+const _off =
+    bool.fromEnvironment('dart.vm.product') ||
     bool.fromEnvironment('dart.vm.profile');
 
 const _reserved = {'v', 'session', 'seq', 'ts', 'tags'};
@@ -79,7 +80,7 @@ abstract final class Devpul {
     emit('log', {
       'level': level,
       'message': message,
-      if (name != null) 'name': name,
+      'name': ?name,
       if (error != null) 'error': error.toString(),
       if (stack != null) 'stack': stack.toString(),
     });
@@ -113,7 +114,7 @@ abstract final class Devpul {
     try {
       final message = error.toString();
       if (_config.console != ConsoleMode.off) {
-        final where = [source, if (library != null) library].join(' ');
+        final where = [source, ?library].join(' ');
         DevpulConsole.write(
           'error',
           '[$where] ${error.runtimeType}: $message',
@@ -156,8 +157,10 @@ abstract final class Devpul {
     var size = 96;
     for (final MapEntry(:key, :value) in data.entries) {
       if (_reserved.contains(key)) continue;
-      final (capped, length) =
-          capValue(toJsonSafe(value), _config.maxValueLength);
+      final (capped, length) = capValue(
+        toJsonSafe(value),
+        _config.maxValueLength,
+      );
       event[key] = capped;
       size += key.length + length;
     }
@@ -200,7 +203,7 @@ final class _Backlog {
     if (_registered) return;
     _registered = true;
     try {
-      developer.registerExtension('ext.devpul.backlog', (_, __) async {
+      developer.registerExtension('ext.devpul.backlog', (_, _) async {
         final events = [
           for (final MapEntry(:key, :value) in latest.entries)
             {'kind': 'devpul.$key', 'data': value},

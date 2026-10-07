@@ -84,8 +84,7 @@ void main() {
           'Accept': 'application/json',
         },
         body: {'user': 'a', 'password': 'hunter2'},
-      )!
-          .response(status: 200, headers: {'Authorization': 'x'}, body: {});
+      )!.response(status: 200, headers: {'Authorization': 'x'}, body: {});
 
       final request = events[0].$2;
       expect(request['headers'], {
@@ -189,12 +188,9 @@ void main() {
         files: [MapEntry('file', 'a b.png')],
       );
       expect(
-        curl(
-          'POST',
-          u,
-          {'content-type': 'multipart/form-data; boundary=x'},
-          form,
-        ),
+        curl('POST', u, {
+          'content-type': 'multipart/form-data; boundary=x',
+        }, form),
         "curl -X POST 'https://example.com/a' -F 'note=o'\\''k' "
         "-F 'file=@a b.png'",
       );

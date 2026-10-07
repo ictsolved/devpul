@@ -106,7 +106,7 @@ class DevpulClient extends BaseClient {
     'text/',
     'xml',
     'javascript',
-    'form-urlencoded'
+    'form-urlencoded',
   ];
 
   // Text when the type says so or the bytes are valid UTF-8; bytes otherwise.

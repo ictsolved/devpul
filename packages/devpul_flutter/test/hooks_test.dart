@@ -19,7 +19,7 @@ void main() {
     final originalFlutter = FlutterError.onError;
     final originalPlatform = PlatformDispatcher.instance.onError;
     FlutterError.onError = flutterSeen.add;
-    PlatformDispatcher.instance.onError = (_, __) => true;
+    PlatformDispatcher.instance.onError = (_, _) => true;
     addTearDown(() {
       FlutterError.onError = originalFlutter;
       PlatformDispatcher.instance.onError = originalPlatform;
@@ -85,7 +85,7 @@ void main() {
         navigatorObservers: [DevpulNavigatorObserver()],
         onGenerateRoute: (settings) => PageRouteBuilder<void>(
           settings: settings,
-          pageBuilder: (_, __, ___) => const SizedBox(),
+          pageBuilder: (_, _, _) => const SizedBox(),
         ),
       ),
     );

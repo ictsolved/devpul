@@ -16,7 +16,7 @@ Future<List<String>> capture(void Function() body) async {
       }
     },
     zoneSpecification: ZoneSpecification(
-      print: (_, __, ___, line) => lines.add(line),
+      print: (_, _, _, line) => lines.add(line),
     ),
   );
   return lines;
@@ -49,7 +49,9 @@ void main() {
       () => DevpulConsole.write('n', 'a\nb', color: ansiRed),
     );
     expect(
-        lines, everyElement(allOf(startsWith(ansiRed), endsWith(ansiReset))));
+      lines,
+      everyElement(allOf(startsWith(ansiRed), endsWith(ansiReset))),
+    );
   });
 
   test('splits very long lines', () async {

@@ -25,7 +25,10 @@ class DevpulNavigatorObserver extends NavigatorObserver {
   }
 
   static void _emit(
-      String action, Route<dynamic> route, Route<dynamic>? other) {
+    String action,
+    Route<dynamic> route,
+    Route<dynamic>? other,
+  ) {
     if (!Devpul.enabled) return;
     Devpul.emit('route', {
       'action': action,

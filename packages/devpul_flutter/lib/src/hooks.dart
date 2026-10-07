@@ -51,8 +51,9 @@ abstract final class DevpulFlutter {
     final collect = details.informationCollector;
     if (collect == null) return null;
     try {
-      final text =
-          collect().map((n) => n.toStringDeep().trimRight()).join('\n');
+      final text = collect()
+          .map((n) => n.toStringDeep().trimRight())
+          .join('\n');
       return text.isEmpty ? null : text;
     } catch (_) {
       return null;

@@ -52,14 +52,13 @@ class DevpulDioInterceptor extends Interceptor {
   }
 
   static Object? _body(Object? data) => switch (data) {
-        FormData(:final fields, :final files) => DevpulForm(
-            fields: fields,
-            files: [
-              for (final f in files)
-                MapEntry(f.key, f.value.filename ?? 'file'),
-            ],
-          ),
-        Stream<Object?>() || ResponseBody() => '<stream>',
-        _ => data,
-      };
+    FormData(:final fields, :final files) => DevpulForm(
+      fields: fields,
+      files: [
+        for (final f in files) MapEntry(f.key, f.value.filename ?? 'file'),
+      ],
+    ),
+    Stream<Object?>() || ResponseBody() => '<stream>',
+    _ => data,
+  };
 }

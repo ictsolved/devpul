@@ -1,3 +1,7 @@
+## 1.0.0-dev.1
+
+- Requires Dart 3.8.
+
 ## 0.2.0
 
 - `Devpul.log` for the Logs tab.
