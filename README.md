@@ -79,6 +79,7 @@ npm run check        # everything below
 npm run check:dart   # dart format, analyze, tests (Chrome for the web tests)
 npm run check:web    # prettier, oxlint, vitest, tsc, build
 npm run format       # prettier --write
+dart run tool/release.dart 1.2.3   # bump versions, check changelogs, print publish commands
 ```
 
 The site URL and repository link live in `site.json`. Docs are markdown in `apps/ui/pages`, rendered to static pages by the build and by the dev server. `npm run deploy` builds the UI and publishes `apps/ui/dist` to the `gh-pages` branch.
