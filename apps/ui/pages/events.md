@@ -9,19 +9,31 @@ Everything DevPul shows arrives as `dart:developer` `postEvent` calls on the VM 
 
 ## Envelope
 
-Kinds are posted as `devpul.<kind>`. Every event carries:
+Kinds are posted as `devpul.<kind>`. Every event is:
+
+```json
+{
+  "v": 1,
+  "session": "m1x2k9q3z",
+  "seq": 12,
+  "ts": 1767225600000,
+  "tags": { "env": "dev" },
+  "data": { "message": "hi" }
+}
+```
 
 | Field     |                                                                                           |
 | --------- | ----------------------------------------------------------------------------------------- |
-| `v`       | Schema version, `1`.                                                                      |
+| `v`       | Envelope version, `1`.                                                                    |
 | `session` | Random per isolate; stable across hot reload, new on hot restart.                         |
 | `seq`     | Increments per isolate. With `session`, it identifies the event, so replays de-duplicate. |
 | `ts`      | Milliseconds since the epoch.                                                             |
 | `tags`    | `Devpul.tags` when set, string to string.                                                 |
+| `data`    | The fields of the kind, below.                                                            |
 
 The VM adds the isolate and isolate group. The UI groups events into runs by isolate group (by `session` on the web).
 
-Fields longer than `maxValueLength` are replaced by a marker:
+Fields in `data` longer than `maxValueLength` are replaced by a marker:
 
 ```json
 { "devpul.truncated": { "size": 2400000, "preview": "{\"items\": [..." } }
@@ -29,7 +41,7 @@ Fields longer than `maxValueLength` are replaced by a marker:
 
 ## Kinds
 
-| Kind            | Fields                                                                                        |
+| Kind            | `data`                                                                                        |
 | --------------- | --------------------------------------------------------------------------------------------- |
 | `http.request`  | `id`, `method`, `url`, `params`, `headers`, `body`, `curl`                                    |
 | `http.response` | `id`, `method`, `url`, `status`, `statusMessage`, `finalUrl`, `durationMs`, `headers`, `body` |
@@ -56,4 +68,4 @@ The UI calls `ext.devpul.backlog` on connect and whenever an isolate registers i
 
 ## Versioning
 
-New fields and kinds can appear without a version change; readers ignore what they do not know. `v` changes only when an existing field changes meaning.
+New fields and kinds can appear without a version change; readers ignore what they do not know. `v` changes only when an existing field changes meaning. Events without `data` come from a devpul package older than 1.0; the UI asks to update it.

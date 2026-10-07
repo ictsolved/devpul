@@ -64,14 +64,16 @@ describe('session files', () => {
   it('round trips events with fresh arrival numbers', () => {
     const original = events();
     let n = 100;
-    const back = fromSession(toSession(original), () => ++n);
+    const back = fromSession(toSession(original), 'file', () => ++n);
     expect(back.map((e) => e.key)).toEqual(original.map((e) => e.key));
     expect(back.map((e) => e.n)).toEqual([101, 102, 103, 104]);
     expect(back[0]?.data).toEqual(original[0]?.data);
+    expect(back[0]).toMatchObject({ conn: 'file', run: original[0]?.run, tags: {} });
   });
 
-  it('rejects other files and skips broken events', () => {
-    expect(() => fromSession('{"log":{}}', () => 1)).toThrow('Not a DevPul session file.');
-    expect(fromSession('{"format":"devpul.session","events":[{"key":1},null]}', () => 1)).toEqual([]);
+  it('rejects other files and formats and skips broken events', () => {
+    expect(() => fromSession('{"log":{}}', 'f', () => 1)).toThrow('Not a DevPul session file.');
+    expect(() => fromSession('{"type":"devpul.session","format":2,"events":[]}', 'f', () => 1)).toThrow('format 2');
+    expect(fromSession('{"type":"devpul.session","format":1,"events":[{"kind":1},null]}', 'f', () => 1)).toEqual([]);
   });
 });

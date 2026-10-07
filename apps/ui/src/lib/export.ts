@@ -1,4 +1,4 @@
-import { type DevEvent, isObject, type Json, type JsonObject, str, TRUNCATED } from './events';
+import { type DevEvent, isObject, type Json, type JsonObject, str, stringMap, TRUNCATED } from './events';
 import { headerValue } from './fetch';
 import type { HttpRow } from './store';
 
@@ -81,44 +81,63 @@ export function toHar(rows: readonly HttpRow[], version: string): string {
   return JSON.stringify({ log: { version: '1.2', creator: { name: 'DevPul', version }, entries } }, null, 2);
 }
 
-const KIND = 'devpul.session';
+const TYPE = 'devpul.session';
+export const SESSION_FORMAT = 1;
 
 export function toSession(events: readonly DevEvent[]): string {
-  return JSON.stringify({ format: KIND, version: 1, exported: Date.now(), events });
+  return JSON.stringify({
+    type: TYPE,
+    format: SESSION_FORMAT,
+    exported: Date.now(),
+    events: events.map((e) => ({
+      kind: e.kind,
+      run: e.run,
+      isolate: e.isolate,
+      session: e.session,
+      seq: e.seq,
+      ts: e.ts,
+      ...(Object.keys(e.tags).length > 0 && { tags: e.tags }),
+      data: e.data,
+    })),
+  });
 }
 
-/** Throws on anything that is not a DevPul session file. */
-export function fromSession(text: string, nextN: () => number): DevEvent[] {
+/** Throws on anything that is not a DevPul session file this UI reads. */
+export function fromSession(text: string, conn: string, nextN: () => number): DevEvent[] {
   const parsed: unknown = JSON.parse(text);
-  if (!isObject(parsed) || parsed.format !== KIND || !Array.isArray(parsed.events)) {
+  if (!isObject(parsed) || parsed.type !== TYPE || !Array.isArray(parsed.events)) {
     throw new Error('Not a DevPul session file.');
+  }
+  if (parsed.format !== SESSION_FORMAT) {
+    throw new Error(`Session file format ${String(parsed.format)} is not supported here; this UI reads format 1.`);
   }
   const out: DevEvent[] = [];
   for (const e of parsed.events) {
     if (!isObject(e) || !isObject(e.data)) continue;
-    const { key, kind, session, run, conn, ts } = e;
+    const { kind, run, session, seq, ts } = e;
     if (
-      typeof key !== 'string' ||
       typeof kind !== 'string' ||
-      typeof session !== 'string' ||
       typeof run !== 'string' ||
-      typeof conn !== 'string' ||
+      typeof session !== 'string' ||
+      typeof seq !== 'number' ||
       typeof ts !== 'number'
     ) {
       continue;
     }
+    const tags = stringMap(e.tags);
     out.push({
-      key,
+      key: `${session}|${seq}`,
       kind,
       data: e.data,
+      tags,
       session,
-      seq: typeof e.seq === 'number' ? e.seq : null,
+      seq,
       run,
       isolate: str(e.isolate) ?? '',
       conn,
       ts,
       n: nextN(),
-      size: typeof e.size === 'number' ? e.size : JSON.stringify(e.data).length,
+      size: JSON.stringify(e).length,
     });
   }
   return out;

@@ -49,12 +49,9 @@ export function EventsTab({ events, runLabel, filterRef }: Props) {
   );
 }
 
-const ENVELOPE = new Set(['v', 'session', 'seq', 'ts', 'tags']);
-
 export function preview(e: DevEvent): string {
   const parts: string[] = [];
   for (const [k, v] of Object.entries(e.data)) {
-    if (ENVELOPE.has(k)) continue;
     parts.push(`${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
     if (parts.join(', ').length > 200) break;
   }

@@ -219,7 +219,7 @@ export function App() {
   const importFile = useCallback(
     async (file: File) => {
       try {
-        const events = fromSession(await file.text(), nextN);
+        const events = fromSession(await file.text(), `file:${file.name}`, nextN);
         onEvents(events);
         flash(`Opened ${events.length} events from ${file.name}.`);
       } catch (err) {

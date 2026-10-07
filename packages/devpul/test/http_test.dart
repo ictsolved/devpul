@@ -9,7 +9,8 @@ void main() {
   setUp(() {
     events.clear();
     Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
-    debugOnPost = (kind, event) => events.add((kind, event));
+    debugOnPost = (kind, event) =>
+        events.add((kind, event['data']! as Map<String, Object?>));
   });
 
   group('calls', () {

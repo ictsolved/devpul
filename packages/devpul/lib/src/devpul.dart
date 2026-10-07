@@ -12,7 +12,8 @@ const _off =
     bool.fromEnvironment('dart.vm.product') ||
     bool.fromEnvironment('dart.vm.profile');
 
-const _reserved = {'v', 'session', 'seq', 'ts', 'tags'};
+/// Envelope `v` and handshake `protocol`.
+const protocolVersion = 1;
 
 /// Receives every posted event. Tests only.
 void Function(String kind, Map<String, Object?> event)? debugOnPost;
@@ -21,8 +22,6 @@ void Function(String kind, Map<String, Object?> event)? debugOnPost;
 Future<Object?> debugRunAction(String name) => Devpul._runAction(name);
 
 abstract final class Devpul {
-  static const schemaVersion = 1;
-
   static DevpulConfig _config = const DevpulConfig();
   static DevpulConfig get config => _config;
   static void configure(DevpulConfig config) => _config = config;
@@ -30,8 +29,8 @@ abstract final class Devpul {
   /// Merged into every event. The UI builds filters from them.
   static final Map<String, String> tags = {};
 
-  /// Random per isolate, so ids stay unique across hot restarts and isolates.
-  static final String sessionId = _randomId();
+  // Random per isolate, so ids stay unique across hot restarts and isolates.
+  static final String _session = _randomId();
 
   static bool get enabled => !_off && _config.enabled;
 
@@ -147,23 +146,24 @@ abstract final class Devpul {
     }
     _listening = listening;
 
+    final payload = <String, Object?>{};
+    var size = 96;
+    for (final MapEntry(:key, :value) in data.entries) {
+      final (capped, length) = capValue(value, _config.maxValueLength);
+      payload[key] = capped;
+      size += key.length + length + 4;
+    }
+    for (final MapEntry(:key, :value) in tags.entries) {
+      size += key.length + value.length + 6;
+    }
     final event = <String, Object?>{
-      'v': schemaVersion,
-      'session': sessionId,
+      'v': protocolVersion,
+      'session': _session,
       'seq': ++_seq,
       'ts': DateTime.now().millisecondsSinceEpoch,
       if (tags.isNotEmpty) 'tags': Map.of(tags),
+      'data': payload,
     };
-    var size = 96;
-    for (final MapEntry(:key, :value) in data.entries) {
-      if (_reserved.contains(key)) continue;
-      final (capped, length) = capValue(
-        toJsonSafe(value),
-        _config.maxValueLength,
-      );
-      event[key] = capped;
-      size += key.length + length;
-    }
     final fullKind = 'devpul.$kind';
     if (kind == 'app.session' || kind == 'app.actions') {
       _backlog.latest[kind] = event;

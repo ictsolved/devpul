@@ -3,44 +3,42 @@ import 'package:devpul/src/devpul.dart' show debugOnPost, debugRunAction;
 import 'package:test/test.dart';
 
 void main() {
+  final envelopes = <Map<String, Object?>>[];
   final events = <(String, Map<String, Object?>)>[];
 
   setUp(() {
+    envelopes.clear();
     events.clear();
     Devpul.tags.clear();
     Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
-    debugOnPost = (kind, event) => events.add((kind, event));
+    debugOnPost = (kind, event) {
+      envelopes.add(event);
+      events.add((kind, event['data']! as Map<String, Object?>));
+    };
   });
 
-  test('session id is usable on every platform', () {
-    expect(Devpul.sessionId, matches(RegExp(r'^[0-9a-z]{8,}$')));
-  });
-
-  test('adds the envelope', () {
-    Devpul.emit('custom', {'a': 1});
-    final (kind, event) = events.single;
-    expect(kind, 'custom');
+  test('wraps data in the envelope', () {
+    Devpul.emit('custom', {'a': 1, 'v': 9});
+    final event = envelopes.single;
+    expect(events.single.$1, 'custom');
+    expect(event.keys, ['v', 'session', 'seq', 'ts', 'data']);
     expect(event['v'], 1);
-    expect(event['session'], Devpul.sessionId);
+    expect(event['session'], matches(RegExp(r'^[0-9a-z]{8,}$')));
     expect(event['seq'], isA<int>());
     expect(event['ts'], isA<int>());
-    expect(event['a'], 1);
-    expect(event.containsKey('tags'), isFalse);
+    expect(event['data'], {'a': 1, 'v': 9});
   });
 
   test('increments seq', () {
     Devpul.emit('a', {});
     Devpul.emit('b', {});
-    expect(events[1].$2['seq'] as int, (events[0].$2['seq'] as int) + 1);
+    expect(envelopes[1]['seq'] as int, (envelopes[0]['seq'] as int) + 1);
   });
 
-  test('merges tags and keeps envelope keys reserved', () {
+  test('adds tags', () {
     Devpul.tags['env'] = 'staging';
-    Devpul.emit('custom', {'session': 'mine', 'v': 9, 'x': 'y'});
-    final event = events.single.$2;
-    expect(event['tags'], {'env': 'staging'});
-    expect(event['session'], Devpul.sessionId);
-    expect(event['v'], 1);
+    Devpul.emit('custom', {});
+    expect(envelopes.single['tags'], {'env': 'staging'});
   });
 
   test('session sets tags and emits free-form info', () {
@@ -48,7 +46,7 @@ void main() {
     final (kind, event) = events.single;
     expect(kind, 'app.session');
     expect(event['name'], 'demo');
-    expect(event['tags'], {'flavor': 'dev'});
+    expect(envelopes.single['tags'], {'flavor': 'dev'});
   });
 
   test('truncates large fields', () {

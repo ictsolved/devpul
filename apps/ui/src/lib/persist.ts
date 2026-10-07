@@ -26,8 +26,10 @@ export class Persist {
   static open(maxEvents: number): Promise<Persist | null> {
     return new Promise((resolve) => {
       try {
-        const req = indexedDB.open(DB_NAME, 1);
+        // Version 2: events with the `data` envelope. Older rows are dropped.
+        const req = indexedDB.open(DB_NAME, 2);
         req.onupgradeneeded = () => {
+          if (req.result.objectStoreNames.contains(STORE)) req.result.deleteObjectStore(STORE);
           const store = req.result.createObjectStore(STORE, { keyPath: 'key' });
           store.createIndex('n', 'n');
         };

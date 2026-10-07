@@ -40,7 +40,7 @@ Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 | `summarize` | `(event) => string`                            | Optional. One line in the list.                                                                                                    |
 | `render`    | `(el, event, context) => void \| (() => void)` | Optional. Fills `el` for the selected event. May return a cleanup function. Without it, the detail shows the event as a JSON tree. |
 
-An event is `{key, kind, data, ts, session, run}`. `data` holds the fields the app sent plus the envelope (`v`, `session`, `seq`, `ts`, `tags`). `run` identifies one launch or hot restart of one app.
+An event is `{key, kind, data, tags, ts, session, run}`. `data` holds the fields the app sent. `run` identifies one launch or hot restart of one app.
 
 `context` gives:
 

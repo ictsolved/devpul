@@ -84,6 +84,18 @@ export function ConnectionBar(props: Props) {
         </ul>
       )}
       {error && <div className="hint err">{error}</div>}
+      {connections.map((c) => {
+        const side = states[c.id]?.incompatible;
+        if (!side) return null;
+        const name = names[c.id] ?? connectionLabel(c.url);
+        return (
+          <div key={c.id} className="hint err">
+            {side === 'app'
+              ? `${name} uses an older devpul package. Update the devpul packages in the app to use this UI.`
+              : `${name} uses a newer devpul package than this UI. Reload the page or update the DevPul UI.`}
+          </div>
+        );
+      })}
       {stuck.length > 0 && (
         <div className="hint">
           Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the URL changes on every run;

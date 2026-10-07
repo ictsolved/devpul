@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { type CSSProperties, type ReactNode, type RefObject, useCallback, useMemo, useState } from 'react';
-import { type DevEvent, tagsOf } from '../lib/events';
+import type { DevEvent } from '../lib/events';
 import { matchesQuery, matchesTag, parseQuery } from '../lib/filter';
 import { useStored } from '../lib/storage';
 import { PauseButton, useListKeys, usePause, ValueChips } from './list';
@@ -77,7 +77,7 @@ export function EventList(props: Props) {
           key === 'kind'
             ? e.kind.toLowerCase().includes(value.toLowerCase())
             : key === 'tag'
-              ? matchesTag(tagsOf(e), value)
+              ? matchesTag(e.tags, value)
               : (field?.(e, key, value) ?? false),
       );
     });

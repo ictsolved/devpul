@@ -1,4 +1,4 @@
-import { type DevEvent, isObject, type JsonObject, num, str, tagsOf, TRUNCATED } from './events';
+import { type DevEvent, isObject, type JsonObject, num, str, TRUNCATED } from './events';
 
 export type HttpState = 'pending' | 'done' | 'error';
 
@@ -109,7 +109,7 @@ export class Store {
   }
 
   get errors(): DevEvent[] {
-    this.errorsSnapshot ??= this.errorList.toSorted(eventNewest);
+    this.errorsSnapshot ??= this.errorList.toSorted(byNewest);
     return this.errorsSnapshot;
   }
 
@@ -146,7 +146,7 @@ export class Store {
   }
 
   private index(e: DevEvent): void {
-    for (const [k, v] of Object.entries(tagsOf(e))) {
+    for (const [k, v] of Object.entries(e.tags)) {
       let set = this.tagMap.get(k);
       if (!set) this.tagMap.set(k, (set = new Set()));
       set.add(v);
@@ -196,13 +196,13 @@ export class Store {
           url: '',
           host: '',
           ts: e.ts,
-          seq: e.seq ?? 0,
+          seq: e.seq,
           state: 'pending',
         };
     if (e.kind === 'http.request') {
       row.request = e;
       row.ts = e.ts;
-      row.seq = e.seq ?? row.seq;
+      row.seq = e.seq;
     } else if (e.kind === 'http.response') {
       row.response = e;
     } else if (e.kind === 'http.error') {
@@ -260,8 +260,6 @@ export class Store {
     }, 50);
   }
 }
-
-const eventNewest = (a: DevEvent, b: DevEvent) => b.ts - a.ts || (b.seq ?? 0) - (a.seq ?? 0);
 
 const hostOf = (url: string): string => {
   try {

@@ -1,12 +1,11 @@
 import type { DevEvent, Json } from '../lib/events';
 import { formatTime } from '../lib/json';
 
-const ENVELOPE = new Set(['v', 'session', 'seq', 'ts', 'tags']);
 const DEFAULT_COUNT = 4;
 
 export function sessionFields(e: DevEvent | undefined): [string, Json][] {
   if (!e) return [];
-  return Object.entries(e.data).filter(([k]) => !ENVELOPE.has(k));
+  return Object.entries(e.data);
 }
 
 interface Props {

@@ -1,4 +1,3 @@
-import { tagsOf } from './events';
 import type { HttpRow } from './store';
 
 export type StatusFilter = '2xx' | '3xx' | '4xx' | '5xx' | 'err' | 'pending';
@@ -163,7 +162,7 @@ export function matchesTags(tags: Record<string, string>, wanted: Record<string,
 
 const rowTags = (row: HttpRow): Record<string, string> => {
   const e = row.request ?? row.response ?? row.error;
-  return e ? tagsOf(e) : {};
+  return e?.tags ?? {};
 };
 
 function httpField(row: HttpRow, key: string, value: string): boolean {

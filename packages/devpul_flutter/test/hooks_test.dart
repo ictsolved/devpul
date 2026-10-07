@@ -12,7 +12,8 @@ void main() {
 
   test('reports Flutter and platform errors and keeps previous handlers', () {
     final events = <(String, Map<String, Object?>)>[];
-    debugOnPost = (kind, event) => events.add((kind, event));
+    debugOnPost = (kind, event) =>
+        events.add((kind, event['data']! as Map<String, Object?>));
     Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
 
     final flutterSeen = <FlutterErrorDetails>[];
@@ -57,7 +58,8 @@ void main() {
 
   test('captures debugPrint and still prints', () {
     final events = <(String, Map<String, Object?>)>[];
-    debugOnPost = (kind, event) => events.add((kind, event));
+    debugOnPost = (kind, event) =>
+        events.add((kind, event['data']! as Map<String, Object?>));
     Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
     final printed = <String?>[];
     final original = debugPrint;
@@ -75,7 +77,8 @@ void main() {
 
   testWidgets('route observer emits navigation', (tester) async {
     final events = <(String, Map<String, Object?>)>[];
-    debugOnPost = (kind, event) => events.add((kind, event));
+    debugOnPost = (kind, event) =>
+        events.add((kind, event['data']! as Map<String, Object?>));
     Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
     final key = GlobalKey<NavigatorState>();
     await tester.pumpWidget(

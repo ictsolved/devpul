@@ -18,9 +18,11 @@ export interface VmExtensionEvent {
 export interface DevEvent {
   key: string;
   kind: string;
+  /** The envelope's `data`: the fields the app sent. */
   data: JsonObject;
+  tags: Record<string, string>;
   session: string;
-  seq: number | null;
+  seq: number;
   /** Hot restart or app launch. Isolate group on native, session on web. */
   run: string;
   isolate: string;
@@ -36,30 +38,36 @@ export interface DevEvent {
 export const PREFIX = 'devpul.';
 export const TRUNCATED = 'devpul.truncated';
 
-export function fromVm(raw: VmExtensionEvent, conn: string, n: number): DevEvent | null {
+/** Envelope `v` and handshake `protocol` this UI reads. */
+export const PROTOCOL = 1;
+
+/**
+ * Null for events that are not DevPul's or are malformed, `outdated` for
+ * events from a devpul package older than the `data` envelope.
+ */
+export function fromVm(raw: VmExtensionEvent, conn: string, n: number): DevEvent | 'outdated' | null {
   const fullKind = raw.extensionKind;
   if (!fullKind?.startsWith(PREFIX)) return null;
-  const data = isObject(raw.extensionData) ? raw.extensionData : {};
-  const kind = fullKind.slice(PREFIX.length);
-  const isolateId = raw.isolate?.id ?? '';
-  const session = str(data.session) ?? `${conn}|${isolateId}`;
-  const seq = typeof data.seq === 'number' ? data.seq : null;
-  const ts = typeof data.ts === 'number' ? data.ts : (raw.timestamp ?? Date.now());
+  const env = raw.extensionData;
+  if (!isObject(env)) return null;
+  if (!isObject(env.data)) return 'outdated';
+  const { session, seq, ts } = env;
+  if (typeof session !== 'string' || typeof seq !== 'number' || typeof ts !== 'number') return null;
   const group = raw.isolateGroup?.id || raw.isolate?.isolateGroupId || '';
-  const size = JSON.stringify(data).length;
   return {
-    key: seq === null ? `${session}|${kind}|${raw.timestamp ?? ts}|${size}` : `${session}|${seq}`,
-    kind,
-    data,
+    key: `${session}|${seq}`,
+    kind: fullKind.slice(PREFIX.length),
+    data: env.data,
+    tags: stringMap(env.tags),
     session,
     seq,
     run: group ? `${conn}|${group}` : session,
     isolate: raw.isolate?.name ?? '',
-    isolateId: isolateId || undefined,
+    isolateId: raw.isolate?.id || undefined,
     conn,
     ts,
     n,
-    size,
+    size: JSON.stringify(env).length,
   };
 }
 
@@ -70,12 +78,11 @@ export const str = (v: unknown): string | undefined =>
 
 export const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
-export function tagsOf(e: DevEvent): Record<string, string> {
-  const tags = e.data.tags;
-  if (!isObject(tags)) return {};
+export function stringMap(v: unknown): Record<string, string> {
+  if (!isObject(v)) return {};
   const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(tags)) {
-    const s = str(v);
+  for (const [k, x] of Object.entries(v)) {
+    const s = str(x);
     if (s !== undefined) out[k] = s;
   }
   return out;

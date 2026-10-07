@@ -5,6 +5,7 @@ export interface PluginEvent {
   key: string;
   kind: string;
   data: JsonObject;
+  tags: Record<string, string>;
   ts: number;
   session: string;
   run: string;
@@ -65,6 +66,7 @@ export const toPluginEvent = (e: DevEvent): PluginEvent => ({
   key: e.key,
   kind: e.kind,
   data: e.data,
+  tags: e.tags,
   ts: e.ts,
   session: e.session,
   run: e.run,

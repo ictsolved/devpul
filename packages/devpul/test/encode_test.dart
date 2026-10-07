@@ -54,6 +54,33 @@ void main() {
   });
 
   group('capValue', () {
+    test('measures the encoded length without encoding', () {
+      final values = <Object?>[
+        null,
+        true,
+        false,
+        0,
+        -12.5,
+        1e21,
+        double.infinity,
+        '',
+        'plain',
+        'quote " backslash \\ tab \t newline \n bell \x07 nul \x00',
+        'emoji \u{1F600} accents \u00e9',
+        'lone \ud800 and \udc00 surrogates',
+        <Object?>[],
+        <String, Object?>{},
+        {
+          'a': [1, 'b', null, <String, Object?>{}],
+          2: {'c': DateTime.utc(2026), 'd': _Thing()},
+        },
+      ];
+      for (final v in values) {
+        final (safe, size) = capValue(v, 1 << 20);
+        expect(size, jsonEncode(safe).length, reason: '$v');
+      }
+    });
+
     test('passes short values', () {
       final (value, size) = capValue({'a': 'b'}, 100);
       expect(value, {'a': 'b'});
@@ -71,6 +98,14 @@ void main() {
       final (value, _) = capValue('y' * 30, 10);
       final marker = (value! as Map)[truncatedKey] as Map;
       expect(marker['preview'], 'y' * 10);
+    });
+
+    test('previews a long structure without encoding all of it', () {
+      final big = [for (var i = 0; i < 100000; i++) i];
+      final (value, _) = capValue(big, 12);
+      final marker = (value! as Map)[truncatedKey] as Map;
+      expect(marker['preview'], '[0,1,2,3,4,5');
+      expect(marker['size'], jsonEncode(big).length);
     });
 
     test('handles strings whose escaping pushes them over the cap', () {

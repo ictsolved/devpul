@@ -73,10 +73,11 @@ void main() {
       expect(event['session'], session);
       expect(event['tags'], {'flavor': 'test'});
     }
-    expect(events['devpul.log']!['message'], 'hello');
-    expect(events['devpul.http.request']!['method'], 'GET');
-    expect(events['devpul.http.response']!['status'], 200);
-    expect(events['devpul.error']!['message'], 'Bad state: boom');
+    Object? data(String kind) => events[kind]!['data'];
+    expect(data('devpul.log'), containsPair('message', 'hello'));
+    expect(data('devpul.http.request'), containsPair('method', 'GET'));
+    expect(data('devpul.http.response'), containsPair('status', 200));
+    expect(data('devpul.error'), containsPair('message', 'Bad state: boom'));
   });
 
   test('serves the backlog', () async {

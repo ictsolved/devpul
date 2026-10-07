@@ -5,7 +5,6 @@ import { vmEvent } from './testing';
 
 const req = (id: number, seq: number, ts: number, extra = {}) =>
   vmEvent('http.request', {
-    v: 1,
     session: 's1',
     seq,
     ts,
@@ -16,7 +15,6 @@ const req = (id: number, seq: number, ts: number, extra = {}) =>
   });
 const res = (id: number, seq: number, ts: number, status = 200) =>
   vmEvent('http.response', {
-    v: 1,
     session: 's1',
     seq,
     ts,
@@ -113,8 +111,11 @@ describe('Store', () => {
     expect(store.all[0]?.seq).toBe(3);
   });
 
-  it('ignores non devpul events', () => {
+  it('ignores non devpul events and flags events without data', () => {
     expect(fromVm({ extensionKind: 'Flutter.Frame', extensionData: {} }, 'c', 1)).toBeNull();
+    const old = { v: 1, session: 's', seq: 1, ts: 1, message: 'x' };
+    expect(fromVm({ extensionKind: 'devpul.log', extensionData: old }, 'c', 1)).toBe('outdated');
+    expect(fromVm({ extensionKind: 'devpul.log', extensionData: { data: {} } }, 'c', 1)).toBeNull();
   });
 });
 

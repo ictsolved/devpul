@@ -5,6 +5,8 @@ export type ConnStatus = 'connecting' | 'open' | 'closed';
 export interface ConnState {
   status: ConnStatus;
   everOpened: boolean;
+  /** `app`: the app's devpul package is too old for this UI. `ui`: the reverse. */
+  incompatible?: 'app' | 'ui';
 }
 
 interface Pending {
@@ -60,11 +62,20 @@ export class Connection {
   }
 
   private setStatus(status: ConnStatus): void {
-    this.state = {
-      status,
-      everOpened: this.state.everOpened || status === 'open',
-    };
+    this.state = { ...this.state, status, everOpened: this.state.everOpened || status === 'open' };
     this.onState();
+  }
+
+  private incompatible(side: 'app' | 'ui'): void {
+    if (this.state.incompatible === side) return;
+    this.state = { ...this.state, incompatible: side };
+    this.onState();
+  }
+
+  private accept(raw: VmExtensionEvent, out: DevEvent[]): void {
+    const e = fromVm(raw, this.id, this.nextN());
+    if (e === 'outdated') this.incompatible('app');
+    else if (e) out.push(e);
   }
 
   private open(): void {
@@ -154,8 +165,7 @@ export class Connection {
         isolate: { ...iso, isolateGroupId: group },
         timestamp: typeof item.data.ts === 'number' ? item.data.ts : undefined,
       };
-      const e = fromVm(raw, this.id, this.nextN());
-      if (e) events.push(e);
+      this.accept(raw, events);
     }
     if (events.length) this.onEvents(events);
   }
@@ -182,8 +192,9 @@ export class Connection {
     const { streamId, event } = msg.params;
     if (!isObject(event)) return;
     if (streamId === 'Extension') {
-      const e = fromVm(event as VmExtensionEvent, this.id, this.nextN());
-      if (e) this.onEvents([e]);
+      const events: DevEvent[] = [];
+      this.accept(event as VmExtensionEvent, events);
+      if (events.length) this.onEvents(events);
     } else if (
       streamId === 'Isolate' &&
       event.kind === 'ServiceExtensionAdded' &&
