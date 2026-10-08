@@ -106,7 +106,14 @@ void main() {
     );
     expect(
       info['plugins'],
-      contains(equals({'id': 'my_plugin', 'version': '1.2.0'})),
+      contains(
+        equals({
+          'id': 'my_plugin',
+          'version': '1.2.0',
+          'hash':
+              '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec',
+        }),
+      ),
     );
     expect(info['limits'], {'frame': 0});
     expect(debugPluginSource('my_plugin'), 'export default {}');

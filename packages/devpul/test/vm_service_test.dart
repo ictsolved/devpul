@@ -111,7 +111,11 @@ void main() {
       },
     ]);
     expect(info['plugins'], [
-      {'id': 'e2e'},
+      {
+        'id': 'e2e',
+        'hash':
+            '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec',
+      },
     ]);
   });
 

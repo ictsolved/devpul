@@ -79,7 +79,7 @@ The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, 
   "version": "1.0.0",
   "capabilities": [],
   "actions": [{ "name": "Seed cart", "params": [{ "name": "items", "type": "number", "initial": 3 }] }],
-  "plugins": [{ "id": "devpul_flutter", "version": "1.0.0" }],
+  "plugins": [{ "id": "devpul_flutter", "version": "1.0.0", "hash": "9aeb8d59b4d4..." }],
   "limits": { "frame": 0 },
   "dropped": { "frame": 1520 }
 }
@@ -91,7 +91,7 @@ The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, 
 | `version`      | The `devpul` package version.                                                                         |
 | `capabilities` | Features added after protocol 1, by name.                                                             |
 | `actions`      | In registration order. Param `type` is `text`, `number`, `flag` or `choice`; choices carry `options`. |
-| `plugins`      | Browser plugins from `Devpul.plugin`, by package.                                                     |
+| `plugins`      | Browser plugins from `Devpul.plugin`, by package, with the SHA-256 of the source in hex.              |
 | `limits`       | Events per second by kind; `0` is muted.                                                              |
 | `dropped`      | Events dropped by each limit so far.                                                                  |
 

@@ -70,7 +70,8 @@
         "plugins": [
           {
             "id": "my_plugin",
-            "version": "1.0.0"
+            "version": "1.0.0",
+            "hash": "9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec"
           }
         ],
         "limits": {

@@ -14,9 +14,13 @@ export interface ActionInfo {
   params: ActionParam[];
 }
 
+const HASH = /^[0-9a-f]{64}$/;
+
 export interface PluginInfo {
   id: string;
   version?: string;
+  /** SHA-256 of the source, as the app reports it; only picks an approved, cached source. */
+  hash?: string;
 }
 
 /** `app.info` data, the same as the `ext.devpul.info` handshake. */
@@ -62,7 +66,15 @@ export function parseInfo(data: JsonObject): AppInfo {
       return [{ name: a.name, params }];
     }),
     plugins: list(data.plugins).flatMap((p) =>
-      isObject(p) && typeof p.id === 'string' ? [{ id: p.id, version: str(p.version) }] : [],
+      isObject(p) && typeof p.id === 'string'
+        ? [
+            {
+              id: p.id,
+              version: str(p.version),
+              hash: typeof p.hash === 'string' && HASH.test(p.hash) ? p.hash : undefined,
+            },
+          ]
+        : [],
     ),
     limits: numbers(data.limits),
     dropped: numbers(data.dropped),

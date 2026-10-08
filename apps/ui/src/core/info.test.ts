@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { limitKey, limitParams, parseInfo } from './info';
 
+const H = 'ab'.repeat(32);
+
 describe('parseInfo', () => {
   it('reads actions, plugins and limits and skips malformed entries', () => {
     const info = parseInfo({
@@ -19,7 +21,7 @@ describe('parseInfo', () => {
         },
         { params: [] },
       ],
-      plugins: [{ id: 'routes', version: '1.0.0' }, { id: 'bare' }, {}],
+      plugins: [{ id: 'routes', version: '1.0.0', hash: H }, { id: 'bare', hash: 'xyz' }, {}],
       limits: { frame: 0, route: 'x' },
       dropped: { frame: 12 },
     });
@@ -32,8 +34,8 @@ describe('parseInfo', () => {
         { name: 'Seed', params: [{ name: 'env', type: 'choice', initial: 'dev', options: ['dev', 'prod'] }] },
       ],
       plugins: [
-        { id: 'routes', version: '1.0.0' },
-        { id: 'bare', version: undefined },
+        { id: 'routes', version: '1.0.0', hash: H },
+        { id: 'bare', version: undefined, hash: undefined },
       ],
       limits: { frame: 0 },
       dropped: { frame: 12 },

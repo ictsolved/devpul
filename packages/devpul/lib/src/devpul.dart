@@ -9,6 +9,7 @@ import 'config.dart';
 import 'console.dart';
 import 'encode.dart';
 import 'limits.dart';
+import 'sha256.dart';
 import 'version.dart';
 
 const _off =
@@ -36,7 +37,14 @@ typedef _Action = ({
   FutureOr<Object?> Function(Map<String, Object?> args) run,
 });
 
-typedef _Plugin = ({String Function() source, String? version});
+final class _Plugin {
+  _Plugin(this.source, this.version);
+
+  final String Function() source;
+  final String? version;
+
+  late final String hash = sha256Hex(source());
+}
 
 abstract final class Devpul {
   static DevpulConfig _config = const DevpulConfig();
@@ -156,10 +164,11 @@ abstract final class Devpul {
 
   /// Offers a browser plugin to the UI, which runs it after the user
   /// approves it. [id] is the Dart package that ships it. [source] is an ES
-  /// module, read when the UI asks for it.
+  /// module; its SHA-256 goes in the handshake so the UI can load an approved
+  /// copy it keeps without asking for the source.
   static void plugin(String id, String Function() source, {String? version}) {
     if (!enabled) return;
-    _plugins[id] = (source: source, version: version);
+    _plugins[id] = _Plugin(source, version);
     _infoChanged();
   }
 
@@ -205,7 +214,7 @@ abstract final class Devpul {
     ],
     'plugins': [
       for (final MapEntry(:key, :value) in _plugins.entries)
-        {'id': key, 'version': ?value.version},
+        {'id': key, 'version': ?value.version, 'hash': value.hash},
     ],
     'limits': _limits.all,
     'dropped': Map.of(_limits.dropped),
