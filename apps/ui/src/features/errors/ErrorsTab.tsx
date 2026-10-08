@@ -91,7 +91,7 @@ export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest
       field={field}
       facets={FACETS}
       groupBy={groupKey}
-      columns="96px 72px minmax(80px, 200px) minmax(0, 1fr) 40px minmax(0, 160px)"
+      columns="96px 128px minmax(80px, 160px) minmax(0, 1fr) 40px minmax(0, 120px)"
       empty="No errors yet."
       cells={cells}
       head={(e) => (
