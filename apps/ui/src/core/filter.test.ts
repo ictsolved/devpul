@@ -115,7 +115,14 @@ describe('filterRows', () => {
 
   it('filters by host', () => {
     expect(ids({ hosts: ['example.com'] })).toHaveLength(4);
-    expect(ids({ hosts: ['other.com'] })).toEqual([]);
+  });
+
+  it('ignores picked runs, hosts and methods that are not in the data', () => {
+    expect(ids({ hosts: ['other.com'] })).toHaveLength(4);
+    expect(ids({ methods: ['PUT'] })).toHaveLength(4);
+    expect(ids({ runs: ['gone'] })).toHaveLength(4);
+    expect(ids({ methods: ['PUT', 'POST'] })).toEqual(['2']);
+    expect(ids({ runs: ['gone'], methods: ['DELETE'] })).toEqual(['4']);
   });
 
   it('filters by methods and tags', () => {

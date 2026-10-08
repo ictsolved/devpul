@@ -184,14 +184,24 @@ function httpField(row: HttpRow, key: string, value: string): boolean {
   }
 }
 
+/** Chip values not in the rows, such as a run before a Clear, stay picked but filter nothing. */
+function present(rows: readonly HttpRow[], picked: string[], of: (row: HttpRow) => string): string[] {
+  if (!picked.length) return picked;
+  const seen = new Set(rows.map(of));
+  return picked.filter((v) => seen.has(v));
+}
+
 export function filterRows(rows: readonly HttpRow[], f: HttpFilter): HttpRow[] {
   const q = parseQuery(f.text, HTTP_KEYS);
   const anyTags = Object.values(f.tags).some((v) => v.length > 0);
+  const methods = present(rows, f.methods, (r) => r.method);
+  const hosts = present(rows, f.hosts, (r) => r.host);
+  const runs = present(rows, f.runs, (r) => r.run);
   return rows.filter((row) => {
     if (f.statuses.length && !f.statuses.some((s) => matchesStatus(row, s))) return false;
-    if (f.methods.length && !f.methods.includes(row.method)) return false;
-    if (f.hosts.length && !f.hosts.includes(row.host)) return false;
-    if (f.runs.length && !f.runs.includes(row.run)) return false;
+    if (methods.length && !methods.includes(row.method)) return false;
+    if (hosts.length && !hosts.includes(row.host)) return false;
+    if (runs.length && !runs.includes(row.run)) return false;
     if (anyTags && !matchesTags(rowTags(row), f.tags)) return false;
     return matchesQuery(
       q,
