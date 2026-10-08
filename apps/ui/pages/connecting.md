@@ -40,6 +40,8 @@ Add the URL after `#connect=`:
 %SITE_URL%#connect=http://127.0.0.1:41234/AbCdEf12=/
 ```
 
+Any site can link here, so a link connects only to this machine: `localhost`, `127.0.0.0/8` or `[::1]`. DevPul ignores a link to any other host and says so. Pasting a URL works for any host.
+
 The local server takes the URL as an argument and opens that link for you:
 
 ```sh

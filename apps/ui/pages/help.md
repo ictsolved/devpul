@@ -48,6 +48,7 @@ Its error shows under the plugin URLs in Settings. The module must be served wit
 - Events contain whatever the app sends, including tokens and personal data in headers and bodies. Use [redaction](%ROOT%docs/api/#redaction) when that matters, for example before sharing a screen or an export.
 - History is stored in your browser (IndexedDB). Turn it off or clear it in Settings.
 - The VM service URL token is the only access check. With `--disable-service-auth-codes`, any local process and any web page open in your browser can connect while the app runs.
+- `#connect=` links connect only to apps on this machine. A URL you paste can point anywhere.
 - Plugins run with full access to the page. Load only code you trust.
 - Release and profile builds never emit.
 

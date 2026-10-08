@@ -15,7 +15,7 @@ import { formatTime } from './core/json';
 import { Persist } from './core/persist';
 import { type ConnState, Connection } from './core/rpc';
 import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
-import { connectionLabel, connectParam, hasToken, isLocalOrigin, pastedUrl } from './core/url';
+import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
 import { ErrorsTab } from './features/errors/ErrorsTab';
@@ -42,7 +42,7 @@ const selection = (tab: string) => {
 };
 let counter = 0;
 const nextN = () => ++counter;
-const localOrigin = isLocalOrigin(location.hostname);
+const localOrigin = isLoopback(location.hostname);
 const pageTitle = document.title;
 const LABEL = 'max-[560px]:hidden';
 
@@ -78,9 +78,9 @@ export function App() {
     save('settings', next);
   };
 
-  const flash = useCallback((text: string) => {
+  const flash = useCallback((text: string, ms = 4000) => {
     setNotice(text);
-    setTimeout(() => setNotice((n) => (n === text ? null : n)), 4000);
+    setTimeout(() => setNotice((n) => (n === text ? null : n)), ms);
   }, []);
 
   const drop = useCallback((pred: (e: DevEvent) => boolean) => {
@@ -218,12 +218,17 @@ export function App() {
 
   useEffect(() => {
     if (!ready) return;
-    const url = connectParam(location.hash);
-    if (url) {
-      addConnection(url);
-      history.replaceState(null, '', location.pathname + location.search);
+    const param = connectParam(location.hash);
+    if (!param) return;
+    if (param.allowed) addConnection(param.url);
+    else {
+      flash(
+        `Not connecting to ${connectionLabel(param.url)} from the link: links connect only to this machine. Paste the URL to connect anyway.`,
+        15000,
+      );
     }
-  }, [ready, addConnection]);
+    history.replaceState(null, '', location.pathname + location.search);
+  }, [ready, addConnection, flash]);
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {

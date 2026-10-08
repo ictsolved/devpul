@@ -49,19 +49,26 @@ export function hasToken(wsUrl: string): boolean {
   }
 }
 
-/** The `#connect=<url>` part of a link, as a websocket URL. */
-export function connectParam(hash: string): string | null {
+/**
+ * The `#connect=<url>` part of a link, as a websocket URL. Any page can link
+ * here, so only loopback hosts are `allowed`; a pasted URL has no such limit.
+ */
+export function connectParam(hash: string): { url: string; allowed: boolean } | null {
   const m = /^#connect=(.+)$/.exec(hash);
   if (!m?.[1]) return null;
+  let url: string | null;
   try {
-    return toWsUrl(decodeURIComponent(m[1]));
+    url = toWsUrl(decodeURIComponent(m[1]));
   } catch {
     return null;
   }
+  return url ? { url, allowed: isLoopback(new URL(url).hostname) } : null;
 }
 
 /** Pasted text that is clearly a VM service link, not just any text. */
 export const pastedUrl = (text: string): string | null =>
   /^\s*(https?|wss?):\/\/\S+\s*$/i.test(text) ? toWsUrl(text) : null;
 
-export const isLocalOrigin = (hostname: string): boolean => ['localhost', '127.0.0.1', '[::1]'].includes(hostname);
+/** `localhost`, `127.0.0.0/8` or `[::1]`, as `URL.hostname` gives them. */
+export const isLoopback = (hostname: string): boolean =>
+  hostname === 'localhost' || hostname === '[::1]' || /^127\.\d+\.\d+\.\d+$/.test(hostname);
