@@ -68,3 +68,16 @@ export function parseInfo(data: JsonObject): AppInfo {
     dropped: numbers(data.dropped),
   };
 }
+
+/** The limit key that applies to [kind]: itself or its longest dotted parent, as the app matches them. */
+export function limitKey(kind: string, limits: Record<string, number>): string | undefined {
+  let match: string | undefined;
+  for (const k of Object.keys(limits)) {
+    if ((kind === k || kind.startsWith(`${k}.`)) && (match === undefined || k.length > match.length)) match = k;
+  }
+  return match;
+}
+
+/** `ext.devpul.limit` params. 0 mutes, null clears. Service extension params are strings. */
+export const limitParams = (kind: string, perSecond: number | null): Record<string, string> =>
+  perSecond === null ? { kind } : { kind, perSecond: String(perSecond) };

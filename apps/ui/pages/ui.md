@@ -63,6 +63,10 @@ In Errors, **Group repeats** folds identical errors into one row with a count, a
 
 Code the app registers with `Devpul.action` shows in the **Actions** menu. Clicking one runs it in the app and shows the result. See [Core API](%ROOT%docs/api/#actions).
 
+## Limits
+
+Settings lists the event kinds of each connected app. Mute a kind or cap it per second there, and see how many events the app dropped. The app applies them before it sends anything, until it restarts. See [Core API](%ROOT%docs/api/#limits).
+
 ## Export and import
 
 **Export** offers:

@@ -93,6 +93,7 @@ describe('Store', () => {
       vmEvent('app.session', { session: 'c', seq: 1, ts: 50, name: 'demo 2' }, { group: 'g2' }),
     ]);
     expect(store.runs.size).toBe(2);
+    expect([...store.runs.values()].map((r) => r.kinds)).toEqual([['app.session', 'custom'], ['app.session']]);
     expect(store.latestSession()?.data.name).toBe('demo 2');
   });
 

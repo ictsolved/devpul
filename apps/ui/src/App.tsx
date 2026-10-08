@@ -13,7 +13,7 @@ import { fromSession } from './core/export';
 import { formatTime } from './core/json';
 import { Persist } from './core/persist';
 import { type ConnState, Connection } from './core/rpc';
-import { type RunInfo, type Selection, Store } from './core/store';
+import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLocalOrigin, pastedUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
@@ -325,6 +325,9 @@ export function App() {
   });
 
   const actions = useMemo(() => appActions(runs, states), [runs, states]);
+  const limitApps = latestRuns(runs).flatMap((run) =>
+    run.info && states[run.conn]?.status === 'open' ? [{ name: runName(run), run }] : [],
+  );
 
   const errors = store.errors;
   const logs = store.logs;
@@ -590,6 +593,8 @@ export function App() {
         memory={{ count: store.size, bytes: store.bytes, dropped: store.dropped }}
         usage={usage}
         pluginErrors={pluginOffers.errors}
+        limitApps={limitApps}
+        call={callApp}
         onChange={setSettings}
         onClear={clearAll}
         onClose={() => setSettingsOpen(false)}

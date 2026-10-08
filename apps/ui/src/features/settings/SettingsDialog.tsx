@@ -2,12 +2,14 @@ import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { kvClass } from '../../components/JsonView';
 import { Chip } from '../../components/list';
 import { formatBytes } from '../../core/json';
 import type { Settings } from '../../lib/storage';
+import type { AppCall } from '../plugins/PluginTab';
+import { type LimitApp, Limits } from './Limits';
+import { NumberField } from './NumberField';
 
 interface Props {
   open: boolean;
@@ -16,32 +18,11 @@ interface Props {
   memory: { count: number; bytes: number; dropped: number };
   usage: { count: number; bytes: number } | null;
   pluginErrors: Record<string, string>;
+  limitApps: LimitApp[];
+  call: AppCall;
   onChange: (next: Settings) => void;
   onClear: () => void;
   onClose: () => void;
-}
-
-/** Digits only, no spinner; commits on blur or Enter. Key it by value to reset. */
-function NumberField(props: { value: number; min: number; onCommit: (v: number) => void }) {
-  const { value, min, onCommit } = props;
-  const [text, setText] = useState(String(value));
-  const commit = () => {
-    const n = Number.parseInt(text, 10);
-    if (Number.isFinite(n) && n >= min) onCommit(n);
-    else setText(String(value));
-  };
-  return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      value={text}
-      onChange={(e) => setText(e.target.value.replace(/\D/g, ''))}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') commit();
-      }}
-    />
-  );
 }
 
 /** Mounts with the dialog content, so each open starts from the saved list. */
@@ -84,7 +65,8 @@ function Check(props: { checked: boolean; onChange: (checked: boolean) => void; 
 }
 
 export function SettingsDialog(props: Props) {
-  const { open, settings, sessionKeys, memory, usage, pluginErrors, onChange, onClear, onClose } = props;
+  const { open, settings, sessionKeys, memory, usage, pluginErrors, limitApps, call, onChange, onClear, onClose } =
+    props;
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => onChange({ ...settings, [key]: value });
 
@@ -150,6 +132,10 @@ export function SettingsDialog(props: Props) {
           <Button type="button" variant="warning" size="sm" onClick={onClear}>
             Clear all events
           </Button>
+
+          <Heading>Limits</Heading>
+          <p>Set in the app before it sends events, per kind and its dotted children. App events are never limited.</p>
+          <Limits apps={limitApps} call={call} />
 
           <Heading>Header fields</Heading>
           {sessionKeys.length === 0 ? (

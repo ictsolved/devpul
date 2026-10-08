@@ -30,6 +30,8 @@ export interface RunInfo {
   session?: DevEvent;
   /** Latest `app.info` event of the run. */
   info?: DevEvent;
+  /** Event kinds seen, in order of arrival. */
+  kinds: string[];
 }
 
 /** A tab's selected item, and the item it was opened from, if any. */
@@ -237,8 +239,13 @@ export class Store {
 
     const prev = this.runMap.get(e.run);
     const run: RunInfo = prev
-      ? { ...prev, first: Math.min(prev.first, e.ts), last: Math.max(prev.last, e.ts) }
-      : { run: e.run, conn: e.conn, first: e.ts, last: e.ts };
+      ? {
+          ...prev,
+          first: Math.min(prev.first, e.ts),
+          last: Math.max(prev.last, e.ts),
+          kinds: prev.kinds.includes(e.kind) ? prev.kinds : [...prev.kinds, e.kind],
+        }
+      : { run: e.run, conn: e.conn, first: e.ts, last: e.ts, kinds: [e.kind] };
     if (e.kind === 'app.session' && (!run.session || byNewest(e, run.session) <= 0)) {
       run.session = e;
     }

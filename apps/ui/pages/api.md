@@ -99,7 +99,7 @@ Devpul.limit('route', 20);   // at most 20 per second
 Devpul.limit('route', null); // no cap
 ```
 
-A limit covers the kind and its dotted children: `http` covers `http.request`. Events over the cap are dropped in the app before they are converted or kept in the backlog. `app.*` kinds are never limited.
+A limit covers the kind and its dotted children: `http` covers `http.request`. Events over the cap are dropped in the app before they are converted or kept in the backlog. `app.*` kinds are never limited. Settings in the UI lists each kind with its limit and drop count, and sets them on a connected app.
 
 ## Configuration
 
