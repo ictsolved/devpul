@@ -6,6 +6,24 @@ import { defineConfig, type Plugin } from 'vite';
 import { PAGES, renderPage } from './pages/render.ts';
 import site from '../../site.json' with { type: 'json' };
 
+// The same policy on the app and every static page. Meta tags cannot set frame-ancestors.
+const CSP = [
+  "default-src 'self'",
+  // No inline scripts and no eval; approved plugins load as blob: modules.
+  "script-src 'self' blob:",
+  // Radix injects <style> tags (scroll lock), the static pages inline their CSS, and plugins set style attributes.
+  "style-src 'self' 'unsafe-inline'",
+  // The logo is a data: URI; plugins may draw blob: or data: images.
+  "img-src 'self' data: blob:",
+  // VM service websockets on whatever host the user pastes, and plugin URLs.
+  "connect-src 'self' ws: wss: http: https:",
+  "object-src 'none'",
+  "base-uri 'self'",
+].join('; ');
+
+// The React refresh preamble is an inline script.
+const DEV_CSP = CSP.replace("script-src 'self' blob:", "script-src 'self' blob: 'unsafe-inline'");
+
 const fill = (text: string) =>
   text
     .replaceAll('%SITE_URL%', site.url)
@@ -26,11 +44,11 @@ const sitemap = () => {
 function sitePlugin(): Plugin {
   return {
     name: 'devpul-site',
-    transformIndexHtml: fill,
+    transformIndexHtml: (html, ctx) => fill(html).replace('%CSP%', ctx.server ? DEV_CSP : CSP),
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? '').split('?')[0]?.replace(/^\//, '') ?? '';
-        const html = renderPage(path.endsWith('/') ? path : `${path}/`, site);
+        const html = renderPage(path.endsWith('/') ? path : `${path}/`, site, CSP);
         if (!html || !path) return next();
         if (!path.endsWith('/')) {
           res.writeHead(301, { location: `/${path}/` }).end();
@@ -47,7 +65,11 @@ function sitePlugin(): Plugin {
       }
       this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap() });
       for (const page of PAGES) {
-        this.emitFile({ type: 'asset', fileName: `${page.path}index.html`, source: renderPage(page.path, site) ?? '' });
+        this.emitFile({
+          type: 'asset',
+          fileName: `${page.path}index.html`,
+          source: renderPage(page.path, site, CSP) ?? '',
+        });
       }
       this.emitFile({ type: 'asset', fileName: 'CNAME', source: `${new URL(site.url).host}\n` });
     },

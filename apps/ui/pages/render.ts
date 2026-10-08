@@ -130,7 +130,7 @@ const markdown = new Marked({
 
 const read = (file: string) => readFileSync(join(dir, file), 'utf8');
 
-export function renderPage(path: string, site: Site): string | null {
+export function renderPage(path: string, site: Site, csp: string): string | null {
   const index = PAGES.findIndex((p) => p.path === path);
   const entry = PAGES[index];
   if (!entry) return null;
@@ -182,6 +182,7 @@ export function renderPage(path: string, site: Site): string | null {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="${csp}" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escape(page.title)} - DevPul</title>
     <meta name="description" content="${escape(page.description)}" />
@@ -195,12 +196,7 @@ export function renderPage(path: string, site: Site): string | null {
     <meta property="og:description" content="${escape(page.description)}" />
     <meta property="og:url" content="${site.url}${path}" />
     <meta property="og:image" content="${site.url}og.png" />
-    <script>
-      try {
-        const t = JSON.parse(localStorage.getItem('devpul:theme'));
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-      } catch {}
-    </script>
+    <script src="${root}theme.js"></script>
     <style>${read('../src/tokens.css')}${read('page.css')}</style>
     ${ld}
   </head>
@@ -226,7 +222,7 @@ export function renderPage(path: string, site: Site): string | null {
     <footer class="foot">
       <a href="${site.repo}">Source</a> · <a href="${site.repo}/issues">Issues</a>
     </footer>
-    <script>${read('page.js')}</script>
+    <script src="${root}page.js"></script>
   </body>
 </html>
 `;

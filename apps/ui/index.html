@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="%CSP%" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DevPul - inspect Dart and Flutter HTTP calls, errors and events in the browser</title>
     <meta
@@ -9,12 +10,7 @@
       content="Open source debug bridge for Dart and Flutter. See HTTP requests, responses, errors, logs and custom events from a running debug app live in your browser. Runs only in the browser; no proxy, no certificates, no server."
     />
     <link rel="canonical" href="%SITE_URL%" />
-    <script>
-      try {
-        const t = JSON.parse(localStorage.getItem('devpul:theme'));
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-      } catch {}
-    </script>
+    <script src="/theme.js"></script>
     <meta name="theme-color" content="#0f766e" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />

@@ -1,6 +1,6 @@
 // Network first so a new deploy shows up at once; the cache covers offline.
 const CACHE = 'devpul-v1';
-const SHELL = ['./', './favicon.svg', './manifest.webmanifest'];
+const SHELL = ['./', './theme.js', './favicon.svg', './manifest.webmanifest'];
 
 // The page loaded its hashed JS and CSS before this worker took over, so cache them here.
 async function install() {

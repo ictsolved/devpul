@@ -128,3 +128,5 @@ Plugins load once per page; reload DevPul after editing. Load errors show in Set
 ## Security
 
 A plugin runs with full access to the page: every event, header and body DevPul has seen, from every app. Allow only plugins from packages you trust.
+
+The page's Content Security Policy applies to plugins: no `eval` or `new Function`, no inline event handler attributes such as `onclick="..."`, no scripts from other origins. `fetch`, websockets, `style` properties and `data:` or `blob:` images work.
