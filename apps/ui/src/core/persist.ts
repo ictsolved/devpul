@@ -3,6 +3,8 @@ import { evictable } from './store';
 
 const DB_NAME = 'devpul';
 const STORE = 'events';
+// One transaction per chunk: putting a large batch in one clones it all in one long task.
+const CHUNK_BYTES = 1024 * 1024;
 
 const done = (tx: IDBTransaction): Promise<void> =>
   new Promise((resolve, reject) => {
@@ -17,6 +19,7 @@ export class Persist {
   bytes = 0;
   private queue: DevEvent[] = [];
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private flushing = false;
 
   private constructor(
     private readonly db: IDBDatabase,
@@ -101,19 +104,33 @@ export class Persist {
 
   private async flush(): Promise<void> {
     this.timer = null;
-    const batch = this.queue;
-    this.queue = [];
-    if (!batch.length) return;
+    if (this.flushing) return;
+    this.flushing = true;
     try {
-      const tx = this.db.transaction(STORE, 'readwrite');
-      const store = tx.objectStore(STORE);
-      for (const e of batch) store.put(e);
-      await done(tx);
-      this.count += batch.length;
-      this.bytes += batch.reduce((sum, e) => sum + e.size, 0);
+      // Taken a chunk at a time, so clear and delete still reach what is not written yet.
+      while (this.queue.length) {
+        let n = 0;
+        let bytes = 0;
+        for (const e of this.queue) {
+          if (n > 0 && bytes + e.size > CHUNK_BYTES) break;
+          bytes += e.size;
+          n++;
+        }
+        const chunk = this.queue.splice(0, n);
+        const tx = this.db.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        for (const e of chunk) store.put(e);
+        await done(tx);
+        this.count += chunk.length;
+        this.bytes += bytes;
+      }
       if (this.bytes > this.maxBytes) await this.evict();
     } catch {
       // Quota or a closed database; the in-memory view still works.
+      this.queue = [];
+    } finally {
+      this.flushing = false;
+      if (this.queue.length) this.timer ??= setTimeout(() => void this.flush(), 500);
     }
   }
 

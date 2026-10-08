@@ -1,6 +1,49 @@
-import { IDBFactory } from 'fake-indexeddb';
+import { IDBDatabase, IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SourceCache } from './persist';
+import type { DevEvent } from './events';
+import { Persist, SourceCache } from './persist';
+import { vmEvent } from './testing';
+
+const MB = 1024 * 1024;
+
+/** Log events that count as [mb] each toward the byte cap and chunking. */
+const logs = (count: number, mb: number): DevEvent[] =>
+  Array.from({ length: count }, (_, i) => ({ ...vmEvent('log', { message: `m${i}` }), size: mb * MB }));
+
+const flush = (p: Persist) => (p as unknown as { flush(): Promise<void> }).flush();
+
+describe('Persist', () => {
+  beforeEach(() => {
+    vi.stubGlobal('indexedDB', new IDBFactory());
+  });
+
+  it('writes a large batch in chunks of about 1 MB', async () => {
+    const p = (await Persist.open(100 * MB))!;
+    const tx = vi.spyOn(IDBDatabase.prototype, 'transaction');
+    p.put([...logs(4, 0.4), ...logs(1, 3), ...logs(2, 0.1)]);
+    await flush(p);
+    // 0.4 + 0.4 | 0.4 + 0.4 | 3 | 0.1 + 0.1
+    expect(tx.mock.calls.filter(([, mode]) => mode === 'readwrite')).toHaveLength(4);
+    expect(p.count).toBe(7);
+    expect((await p.load()).length).toBe(7);
+  });
+
+  it('keeps cleared and deleted events out while a flush runs', async () => {
+    const p = (await Persist.open(100 * MB))!;
+    const events = logs(6, 0.6);
+    p.put(events);
+    const running = flush(p);
+    await p.delete([events[5]!]);
+    await running;
+    expect((await p.load()).map((e) => e.key)).toEqual(events.slice(0, 5).map((e) => e.key));
+
+    p.put(logs(6, 0.6));
+    const again = flush(p);
+    await p.clear();
+    await again;
+    expect(await p.load()).toEqual([]);
+  });
+});
 
 describe('SourceCache', () => {
   beforeEach(() => {

@@ -68,7 +68,7 @@ test('10k events and a 5 MB body stay within the frame and memory budget', async
   // The header row counts too.
   await expect(grid).toHaveAttribute('aria-rowcount', String(requests + 1));
   const ingestMs = Date.now() - started;
-  // Frames are timed after the IndexedDB write, which blocks the page once.
+  // Frames are timed after the IndexedDB write.
   await expect.poll(() => storedEvents(page), { timeout: 15_000 }).toBe(events.length);
   const longestTask = round(Math.max(0, ...(await page.evaluate(() => window.longTasks))));
 
@@ -98,10 +98,10 @@ test('10k events and a 5 MB body stay within the frame and memory budget', async
   });
 
   console.log(JSON.stringify({ ingestMs, longestTask, heapMB, scroll, tabs }));
-  // Measured on a laptop: 670 ms, 220 ms, 16 MB, frames 17 ms, tab switch up to 33 ms.
-  // With the CPU throttled 4x: 2700 ms, 790 ms, frames up to 50 ms, tab switch up to 100 ms.
+  // Measured on a laptop: 700 ms, 140 ms, 16 MB, frames 17 ms, tab switch up to 33 ms.
+  // With the CPU throttled 4x: 2100 ms, 470 ms, frames 33 ms, tab switch up to 83 ms.
   expect.soft(ingestMs, 'connect to all rows, ms').toBeLessThan(4000);
-  expect.soft(longestTask, 'longest task while ingesting and storing, ms').toBeLessThan(1200);
+  expect.soft(longestTask, 'longest task while ingesting and storing, ms').toBeLessThan(800);
   expect.soft(heapMB, 'JS heap after GC, MB').toBeLessThan(40);
   expect.soft(scroll.p95, 'scroll frame p95, ms').toBeLessThan(50);
   expect.soft(scroll.max, 'scroll frame max, ms').toBeLessThan(100);
