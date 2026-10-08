@@ -86,6 +86,13 @@ class Registry {
     for (const fn of this.listeners) fn();
   }
 
+  /** Drops every plugin [origin] registered. */
+  unregister(origin: string): void {
+    if (!this.plugins.some((p) => p.origin === origin)) return;
+    this.plugins = this.plugins.filter((p) => p.origin !== origin);
+    for (const fn of this.listeners) fn();
+  }
+
   subscribe = (fn: () => void): (() => void) => {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -120,9 +127,10 @@ export const registry = new Registry();
 
 /**
  * Runs [source] as an ES module. Its default export is a plugin or a
- * function that receives the API and registers plugins.
+ * function that receives the API and registers plugins. Registrations
+ * after [wanted] turns false are ignored.
  */
-export async function loadPlugin(source: string, origin: string): Promise<void> {
+export async function loadPlugin(source: string, origin: string, wanted = () => true): Promise<void> {
   const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
   let mod: { default?: unknown };
   try {
@@ -130,12 +138,12 @@ export async function loadPlugin(source: string, origin: string): Promise<void> 
   } finally {
     URL.revokeObjectURL(url);
   }
+  const register = (p: DevpulPlugin) => {
+    if (wanted()) registry.register(p, origin);
+  };
   const value = mod.default;
-  if (typeof value === 'function') {
-    (value as (api: DevpulApi) => void)({ api: API, register: (p) => registry.register(p, origin) });
-  } else {
-    registry.register(value as DevpulPlugin, origin);
-  }
+  if (typeof value === 'function') (value as (api: DevpulApi) => void)({ api: API, register });
+  else register(value as DevpulPlugin);
 }
 
 export async function sha256(text: string): Promise<string> {

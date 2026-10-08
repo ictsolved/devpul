@@ -135,3 +135,76 @@ export class Persist {
     await done(tx);
   }
 }
+
+const SOURCES_DB = 'devpul-plugins';
+const SOURCES = 'sources';
+
+const request = <T>(req: IDBRequest<T>): Promise<T> =>
+  new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+
+/**
+ * Approved plugin sources by SHA-256, read into memory on open. A separate
+ * database, so opening it never waits on a version change of the events one.
+ */
+export class SourceCache {
+  private constructor(
+    private readonly db: IDBDatabase | null,
+    private readonly sources: Map<string, string>,
+  ) {}
+
+  /** Falls back to memory only when IndexedDB is unavailable. */
+  static async open(): Promise<SourceCache> {
+    try {
+      const req = indexedDB.open(SOURCES_DB, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(SOURCES);
+      const db = await request(req);
+      const tx = db.transaction(SOURCES, 'readonly');
+      const store = tx.objectStore(SOURCES);
+      const [keys, values] = await Promise.all([request(store.getAllKeys()), request(store.getAll())]);
+      const sources = new Map<string, string>();
+      keys.forEach((k, i) => {
+        if (typeof k === 'string' && typeof values[i] === 'string') sources.set(k, values[i]);
+      });
+      return new SourceCache(db, sources);
+    } catch {
+      return new SourceCache(null, new Map());
+    }
+  }
+
+  get(hash: string): string | undefined {
+    return this.sources.get(hash);
+  }
+
+  has(hash: string): boolean {
+    return this.sources.has(hash);
+  }
+
+  put(hash: string, source: string): Promise<void> {
+    this.sources.set(hash, source);
+    return this.write((store) => store.put(source, hash));
+  }
+
+  /** Drops every source whose hash is not in [hashes]. */
+  keep(hashes: ReadonlySet<string>): Promise<void> {
+    const gone = [...this.sources.keys()].filter((h) => !hashes.has(h));
+    if (!gone.length) return Promise.resolve();
+    for (const h of gone) this.sources.delete(h);
+    return this.write((store) => {
+      for (const h of gone) store.delete(h);
+    });
+  }
+
+  private async write(fn: (store: IDBObjectStore) => void): Promise<void> {
+    if (!this.db) return;
+    try {
+      const tx = this.db.transaction(SOURCES, 'readwrite');
+      fn(tx.objectStore(SOURCES));
+      await done(tx);
+    } catch {
+      // Quota or a closed database; memory still has it for this page.
+    }
+  }
+}

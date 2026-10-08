@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Approval } from '../core/approvals';
 import { DEFAULT_MAX_MB } from '../core/store';
 
 const PREFIX = 'devpul:';
@@ -54,8 +55,8 @@ export interface Settings {
   /** Keys of app.session info shown in the header. Empty means the first few. */
   headerFields: string[];
   pluginUrls: string[];
-  /** `id@sha256` of plugins the user allowed. */
-  approvedPlugins: string[];
+  /** Plugins the user allowed, one per package. */
+  plugins: Approval[];
 }
 
 export const defaultSettings: Settings = {
@@ -66,5 +67,5 @@ export const defaultSettings: Settings = {
   clearOnRestart: true,
   headerFields: [],
   pluginUrls: [],
-  approvedPlugins: [],
+  plugins: [],
 };

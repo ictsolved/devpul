@@ -8,6 +8,7 @@ import { Tip } from './components/Tip';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { approve } from './core/approvals';
 import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
 import { formatTime } from './core/json';
@@ -318,10 +319,11 @@ export function App() {
   const pluginOffers = usePlugins({
     runs,
     states,
-    approved: settings.approvedPlugins,
+    approvals: settings.plugins,
     urls: settings.pluginUrls,
     call: callApp,
     appName: runName,
+    onApprove: (a) => setSettings({ ...settings, plugins: approve(settings.plugins, a) }),
   });
 
   const actions = useMemo(() => appActions(runs, states), [runs, states]);
@@ -510,14 +512,7 @@ export function App() {
                 Clear
               </Button>
             </div>
-            <PluginOffers
-              offers={pluginOffers.offers}
-              onAllow={(o) => {
-                setSettings({ ...settings, approvedPlugins: [...settings.approvedPlugins, o.key] });
-                pluginOffers.allow(o);
-              }}
-              onDismiss={pluginOffers.dismiss}
-            />
+            <PluginOffers offers={pluginOffers.offers} onAllow={pluginOffers.allow} onDismiss={pluginOffers.dismiss} />
             <main className="flex min-h-0 flex-1">
               <TabsContent value={activeTab} className="flex min-h-0 min-w-0">
                 {activeTab === 'http' && (

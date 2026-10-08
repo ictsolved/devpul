@@ -2,8 +2,8 @@ import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { kvClass } from '../../components/JsonView';
 import { Chip } from '../../components/list';
 import { formatBytes } from '../../core/json';
 import type { Settings } from '../../lib/storage';
@@ -151,35 +151,51 @@ export function SettingsDialog(props: Props) {
           )}
 
           <Heading>Plugins</Heading>
-          {settings.approvedPlugins.length > 0 && (
+          {settings.plugins.length > 0 && (
             <>
-              <p>Allowed from apps, by package and source hash. A removed plugin asks again after a reload.</p>
-              <table className={kvClass.table}>
+              <p>
+                Allowed from apps, one source hash per package; a changed plugin asks again. Off keeps the approval
+                without loading the plugin.
+              </p>
+              <table className="w-full max-w-[560px] border-collapse text-left [&_td]:border-b [&_td]:py-1 [&_td]:pr-3">
                 <tbody>
-                  {settings.approvedPlugins.map((key) => {
-                    const [id, hash = ''] = key.split('@');
-                    return (
-                      <tr key={key}>
-                        <th className={kvClass.key}>{id}</th>
-                        <td className={kvClass.value}>
-                          <code>{hash.slice(0, 12)}</code>{' '}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            onClick={() =>
-                              set(
-                                'approvedPlugins',
-                                settings.approvedPlugins.filter((k) => k !== key),
-                              )
-                            }
-                          >
-                            Remove
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {settings.plugins.map((a) => (
+                    <tr key={a.id}>
+                      <td className="font-mono text-xs wrap-anywhere">{a.id}</td>
+                      <td className="text-muted-foreground">{a.version}</td>
+                      <td>
+                        <code title={`sha256 ${a.hash}`}>{a.hash.slice(0, 12)}</code>
+                      </td>
+                      <td>
+                        <Switch
+                          size="sm"
+                          aria-label={`Load ${a.id}`}
+                          checked={!a.off}
+                          onCheckedChange={(on) =>
+                            set(
+                              'plugins',
+                              settings.plugins.map((p) => (p.id === a.id ? { ...p, off: !on } : p)),
+                            )
+                          }
+                        />
+                      </td>
+                      <td className="text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          onClick={() =>
+                            set(
+                              'plugins',
+                              settings.plugins.filter((p) => p.id !== a.id),
+                            )
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </>

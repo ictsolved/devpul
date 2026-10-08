@@ -1,71 +1,76 @@
 import { Puzzle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { type Approval, type Listed, toLoad } from '../../core/approvals';
 import type { DevEvent } from '../../core/events';
 import { parseInfo } from '../../core/info';
 import { formatBytes } from '../../core/json';
+import { SourceCache } from '../../core/persist';
 import type { ConnState } from '../../core/rpc';
 import { latestRuns, type RunInfo } from '../../core/store';
 import type { AppCall } from './PluginTab';
-import { loadPlugin, MAX_SOURCE, sha256 } from './plugins';
+import { loadPlugin, MAX_SOURCE, registry, sha256 } from './plugins';
 
 export interface Offer {
-  /** `id@sha256`, what an approval covers. */
+  /** `id@sha256`. */
   key: string;
   id: string;
   version?: string;
   size: number;
   hash: string;
-  source: string;
   app: string;
 }
+
+/** What a live run sent for one of its plugins. */
+type Fetched = Omit<Offer, 'key'>;
 
 interface Options {
   runs: ReadonlyMap<string, RunInfo>;
   states: Record<string, ConnState>;
-  approved: string[];
+  approvals: Approval[];
   urls: string[];
   call: AppCall;
   appName: (run: RunInfo) => string;
+  onApprove: (approval: Approval) => void;
 }
 
 /**
- * Fetches the plugins that live apps offer and loads the approved ones.
- * Approval is per package and source hash, so a changed plugin asks again.
+ * Loads the approved plugins that runs list, from the cache, and offers the
+ * sources live apps send that no approval covers. Approval is per package and
+ * source hash, so a changed plugin asks again.
  */
-export function usePlugins({ runs, states, approved, urls, call, appName }: Options) {
-  const [offers, setOffers] = useState<Offer[]>([]);
+export function usePlugins({ runs, states, approvals, urls, call, appName, onApprove }: Options) {
+  const [cache, setCache] = useState<SourceCache | null>(null);
+  const [fetched, setFetched] = useState<Record<string, Fetched>>({});
+  const [dismissed, setDismissed] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const fetched = useRef(new Set<string>());
-  const loaded = useRef(new Set<string>());
-  const dismissed = useRef(new Set<string>());
-  const latest = useRef(approved);
+  const asked = useRef(new Set<string>());
+  const sources = useRef(new Map<string, string>());
+  // Package to the hash it runs.
+  const current = useRef(new Map<string, string>());
+  const loadedUrls = useRef(new Set<string>());
+
   useEffect(() => {
-    latest.current = approved;
-  }, [approved]);
+    void SourceCache.open().then(setCache);
+  }, []);
 
   const fail = useCallback((origin: string, err: unknown) => {
     setErrors((e) => ({ ...e, [origin]: err instanceof Error ? err.message : String(err) }));
   }, []);
 
-  const load = useCallback(
-    (source: string, origin: string, once: string) => {
-      if (loaded.current.has(once)) return;
-      loaded.current.add(once);
-      loadPlugin(source, origin).catch((err: unknown) => fail(origin, err));
-    },
-    [fail],
-  );
-
   useEffect(() => {
     for (const url of urls) {
-      if (loaded.current.has(url)) continue;
+      if (loadedUrls.current.has(url)) continue;
       fetch(url)
         .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((source) => load(source, url, url))
+        .then((source) => {
+          if (loadedUrls.current.has(url)) return;
+          loadedUrls.current.add(url);
+          return loadPlugin(source, url);
+        })
         .catch((err: unknown) => fail(url, err));
     }
-  }, [urls, load, fail]);
+  }, [urls, fail]);
 
   useEffect(() => {
     for (const run of latestRuns(runs)) {
@@ -73,40 +78,63 @@ export function usePlugins({ runs, states, approved, urls, call, appName }: Opti
       if (!info || states[run.conn]?.status !== 'open') continue;
       for (const { id, version } of parseInfo(info.data).plugins) {
         const once = `${run.run}|${id}`;
-        if (fetched.current.has(once)) continue;
-        fetched.current.add(once);
+        if (asked.current.has(once)) continue;
+        asked.current.add(once);
         void fetchOffer(info, id, call).then(
           async (source) => {
             const hash = await sha256(source);
-            const offer: Offer = {
-              key: `${id}@${hash}`,
-              id,
-              version,
-              size: source.length,
-              hash,
-              source,
-              app: appName(run),
-            };
-            if (latest.current.includes(offer.key)) load(source, id, hash);
-            else if (!dismissed.current.has(offer.key) && !loaded.current.has(hash)) {
-              setOffers((list) => (list.some((o) => o.key === offer.key) ? list : [...list, offer]));
-            }
+            sources.current.set(hash, source);
+            setFetched((f) => ({ ...f, [once]: { id, version, size: source.length, hash, app: appName(run) } }));
           },
           (err: unknown) => fail(id, err),
         );
       }
     }
-  }, [runs, states, call, appName, load, fail]);
+  }, [runs, states, call, appName, fail]);
 
-  const allow = (offer: Offer) => {
-    setOffers((list) => list.filter((o) => o.key !== offer.key));
-    load(offer.source, offer.id, offer.hash);
-  };
+  const listed = useMemo(
+    () =>
+      latestRuns(runs).flatMap((run) =>
+        run.info
+          ? parseInfo(run.info.data).plugins.map(({ id }): Listed => ({ id, hash: fetched[`${run.run}|${id}`]?.hash }))
+          : [],
+      ),
+    [runs, fetched],
+  );
 
-  const dismiss = (offer: Offer) => {
-    dismissed.current.add(offer.key);
-    setOffers((list) => list.filter((o) => o.key !== offer.key));
-  };
+  useEffect(() => {
+    if (!cache) return;
+    for (const a of approvals) {
+      const source = sources.current.get(a.hash);
+      if (source !== undefined && !cache.has(a.hash)) void cache.put(a.hash, source);
+    }
+    void cache.keep(new Set(approvals.map((a) => a.hash)));
+
+    const want = toLoad(approvals, listed, (hash) => cache.has(hash));
+    const running = current.current;
+    for (const [id, hash] of running) {
+      if (want.get(id) === hash) continue;
+      running.delete(id);
+      registry.unregister(id);
+    }
+    for (const [id, hash] of want) {
+      const source = cache.get(hash);
+      if (running.get(id) === hash || source === undefined) continue;
+      running.set(id, hash);
+      loadPlugin(source, id, () => running.get(id) === hash).catch((err: unknown) => fail(id, err));
+    }
+  }, [cache, approvals, listed, fail]);
+
+  const offers: Offer[] = [];
+  for (const f of Object.values(fetched)) {
+    const key = `${f.id}@${f.hash}`;
+    if (dismissed.includes(key) || offers.some((o) => o.key === key)) continue;
+    if (approvals.some((a) => a.id === f.id && a.hash === f.hash)) continue;
+    offers.push({ key, ...f });
+  }
+
+  const allow = (offer: Offer) => onApprove({ id: offer.id, hash: offer.hash, version: offer.version });
+  const dismiss = (offer: Offer) => setDismissed((d) => [...d, offer.key]);
 
   return { offers, errors, allow, dismiss };
 }
