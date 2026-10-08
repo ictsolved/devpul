@@ -1,12 +1,15 @@
 import type { RefObject } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet } from '../../components/EventList';
+import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
 import { type DevEvent, str } from '../../core/events';
 import { formatTime } from '../../core/json';
 import type { HttpRow } from '../../core/store';
-import { StatusBadge } from '../http/DetailPanel';
+import { Method, StatusBadge } from '../http/DetailPanel';
 
+const noteClass = 'mx-3 my-1.5 text-xs text-muted-foreground';
 const NEAR_BEFORE = 10_000;
 const NEAR_AFTER = 1_000;
 
@@ -28,6 +31,10 @@ function field(e: DevEvent, key: string, value: string): boolean {
   if (key === 'source') return sourceOf(e).toLowerCase() === v;
   if (key === 'type') return typeOf(e).toLowerCase().includes(v);
   return false;
+}
+
+function Source({ e }: { e: DevEvent }) {
+  return <Badge className="rounded-sm bg-destructive-soft text-destructive">{sourceOf(e)}</Badge>;
 }
 
 function report(e: DevEvent): string {
@@ -55,24 +62,28 @@ export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest
       empty="No errors yet."
       cells={(e, group) => (
         <>
-          <span className="muted">{formatTime(e.ts)}</span>
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
           <span>
-            <span className="badge err">{sourceOf(e)}</span>
-            {e.data.silent === true && <span className="badge"> silent</span>}
+            <Source e={e} />
+            {e.data.silent === true && (
+              <Badge variant="secondary" className="ml-1 rounded-sm text-muted-foreground">
+                silent
+              </Badge>
+            )}
           </span>
-          <span className="kind ellipsis">{typeOf(e)}</span>
-          <span className="ellipsis">{str(e.data.message) ?? ''}</span>
-          <span className="num muted">{group && group.count > 1 ? `x${group.count}` : ''}</span>
-          <span className="muted ellipsis">{runLabel(e.run)}</span>
+          <span className="truncate font-semibold">{typeOf(e)}</span>
+          <span className="truncate">{str(e.data.message) ?? ''}</span>
+          <span className="text-right text-muted-foreground">{group && group.count > 1 ? `x${group.count}` : ''}</span>
+          <span className="truncate text-muted-foreground">{runLabel(e.run)}</span>
         </>
       )}
       head={(e) => (
         <>
-          <span className="badge err">{sourceOf(e)}</span>
+          <Source e={e} />
           <strong>{typeOf(e)}</strong>
-          {str(e.data.library) && <span className="muted">{str(e.data.library)}</span>}
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className="grow" />
+          {str(e.data.library) && <span className="text-muted-foreground">{str(e.data.library)}</span>}
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <span className="flex-1" />
           <CopyButton text={() => report(e)} label="Copy all" />
         </>
       )}
@@ -83,12 +94,12 @@ export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest
         return (
           <>
             {group && group.count > 1 && (
-              <p className="detail-note muted">
+              <p className={noteClass}>
                 {group.count} times since {formatTime(group.first)}. Showing the latest.
               </p>
             )}
             <Section id="err-message" title="Message">
-              <pre className="code">{str(d.message) ?? ''}</pre>
+              <pre className={codeClass}>{str(d.message) ?? ''}</pre>
             </Section>
             {str(d.context) && (
               <Section id="err-context" title="Context">
@@ -97,33 +108,37 @@ export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest
             )}
             {str(d.information) && (
               <Section id="err-information" title="Diagnostics">
-                <pre className="code">{str(d.information)}</pre>
+                <pre className={codeClass}>{str(d.information)}</pre>
               </Section>
             )}
             {stack && (
               <Section id="err-stack" title="Stack trace" actions={<CopyButton text={() => stack} />}>
-                <pre className="code">{stack}</pre>
+                <pre className={codeClass}>{stack}</pre>
               </Section>
             )}
             <Section id="err-near" title="Requests around this time" summary={String(nearby.length)}>
               {nearby.length === 0 ? (
-                <div className="muted">None in the 10 s before.</div>
+                <div className="text-muted-foreground">None in the 10 s before.</div>
               ) : (
-                <ul className="near">
+                <ul>
                   {nearby.map((r) => (
                     <li key={r.key}>
-                      <button type="button" className="link-row" onClick={() => onOpenRequest(r.key)}>
-                        <span className="muted">{formatTime(r.ts)}</span>
-                        <span className={`method m-${r.method}`}>{r.method}</span>
+                      <button
+                        type="button"
+                        className="grid w-full cursor-pointer grid-cols-[96px_56px_56px_minmax(0,1fr)] gap-2 rounded px-1 py-[3px] text-left font-mono text-xs hover:bg-secondary"
+                        onClick={() => onOpenRequest(r.key)}
+                      >
+                        <span className="text-muted-foreground">{formatTime(r.ts)}</span>
+                        <Method method={r.method} />
                         <StatusBadge row={r} />
-                        <span className="ellipsis">{r.url}</span>
+                        <span className="truncate">{r.url}</span>
                       </button>
                     </li>
                   ))}
                 </ul>
               )}
             </Section>
-            <p className="detail-note muted">{runLabel(e.run)}</p>
+            <p className={noteClass}>{runLabel(e.run)}</p>
           </>
         );
       }}

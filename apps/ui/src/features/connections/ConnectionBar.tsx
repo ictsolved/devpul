@@ -1,8 +1,19 @@
+import { cn } from 'cn';
 import { Plug, X } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tip } from '../../components/Tip';
 import type { ConnState } from '../../core/rpc';
 import { connectionLabel, toWsUrl } from '../../core/url';
+
+const DOT: Record<ConnState['status'], string> = {
+  open: 'bg-success',
+  connecting: 'bg-warning',
+  closed: 'bg-muted-foreground',
+};
+const HINT = 'max-w-[900px] text-xs text-muted-foreground';
+const ERROR = cn(HINT, 'text-destructive');
 
 export interface ConnEntry {
   id: string;
@@ -42,16 +53,22 @@ export function ConnectionBar(props: Props) {
   });
 
   return (
-    <div className={`connbar ${hero ? 'hero' : ''}`}>
+    <div
+      className={cn(
+        'flex min-w-0 flex-1 flex-col gap-1.5',
+        hero ? 'w-full flex-none items-center' : 'max-[860px]:order-3 max-[860px]:basis-full',
+      )}
+    >
       <form
-        className="connform"
+        className={cn('flex gap-1.5', hero && 'w-full flex-wrap justify-center')}
         onSubmit={(e) => {
           e.preventDefault();
           add(text);
         }}
       >
-        <input
+        <Input
           type="text"
+          className={cn('flex-1 font-mono text-xs', hero && 'h-auto flex-[1_1_320px] rounded-lg px-3 py-[9px] text-sm')}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={
@@ -62,22 +79,27 @@ export function ConnectionBar(props: Props) {
           spellCheck={false}
           autoComplete="off"
         />
-        <button type="submit" className="btn primary">
-          <Plug size={14} />
+        <Button type="submit" size="sm" className={cn(hero && 'h-auto rounded-lg px-3.5 py-2 has-[>svg]:px-3.5')}>
+          <Plug />
           Connect
-        </button>
+        </Button>
       </form>
       {connections.length > 0 && (
-        <ul className="conns" aria-label="Connections">
+        <ul className={cn('flex flex-wrap gap-1.5', hero && 'justify-center')} aria-label="Connections">
           {connections.map((c) => {
             const s = states[c.id];
             const status = s?.status ?? 'closed';
             return (
               <Tip key={c.id} content={c.url} code>
-                <li className="conn">
-                  <span className={`dot ${status}`} aria-label={status} />
+                <li className="inline-flex items-center gap-1.5 rounded-full border py-px pr-1 pl-[9px] text-xs">
+                  <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
                   <span>{names[c.id] ?? connectionLabel(c.url)}</span>
-                  <button type="button" className="x" onClick={() => onRemove(c.id)} aria-label={`Remove ${c.url}`}>
+                  <button
+                    type="button"
+                    className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
+                    onClick={() => onRemove(c.id)}
+                    aria-label={`Remove ${c.url}`}
+                  >
                     <X size={12} />
                   </button>
                 </li>
@@ -86,13 +108,13 @@ export function ConnectionBar(props: Props) {
           })}
         </ul>
       )}
-      {error && <div className="hint err">{error}</div>}
+      {error && <div className={ERROR}>{error}</div>}
       {connections.map((c) => {
         const side = states[c.id]?.incompatible;
         if (!side) return null;
         const name = names[c.id] ?? connectionLabel(c.url);
         return (
-          <div key={c.id} className="hint err">
+          <div key={c.id} className={ERROR}>
             {side === 'app'
               ? `${name} uses an older devpul package. Update the devpul packages in the app to use this UI.`
               : `${name} uses a newer devpul package than this UI. Reload the page or update the DevPul UI.`}
@@ -100,7 +122,7 @@ export function ConnectionBar(props: Props) {
         );
       })}
       {stuck.length > 0 && (
-        <div className="hint">
+        <div className={HINT}>
           Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the URL changes on every run;
           pasting the new one replaces the old.
           {!localOrigin &&

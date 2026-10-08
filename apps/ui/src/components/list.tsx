@@ -1,5 +1,13 @@
+import { cn } from 'cn';
 import { Pause, Play } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { type ComponentProps, useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+
+export const toolbarClass = 'flex flex-wrap items-center gap-2 border-b px-3 py-2';
+export const filterClass = 'w-[340px] max-w-full max-[860px]:w-full';
+export const emptyClass = 'px-3 py-6 text-muted-foreground';
+export const rowClass = (selected: boolean) =>
+  cn('cursor-pointer border-b font-mono text-xs whitespace-nowrap', selected ? 'bg-selection' : 'hover:bg-secondary');
 
 /** j/k and arrows move the selection, Esc closes it or leaves the filter. */
 export function useListKeys(
@@ -46,10 +54,25 @@ export function usePause<T extends { key: string }>(items: readonly T[]) {
 export function PauseButton(props: { paused: boolean; newCount: number; onClick: () => void }) {
   const { paused, newCount, onClick } = props;
   return (
-    <button type="button" className={`btn ${paused ? 'warn' : ''}`} onClick={onClick}>
-      {paused ? <Play size={13} /> : <Pause size={13} />}
+    <Button type="button" variant={paused ? 'warning' : 'outline'} size="sm" onClick={onClick}>
+      {paused ? <Play /> : <Pause />}
       {paused ? `Resume${newCount ? ` (${newCount} new)` : ''}` : 'Pause'}
-    </button>
+    </Button>
+  );
+}
+
+/** A toggle in a row of filter values. */
+export function Chip({ on, className, ...props }: ComponentProps<'button'> & { on?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        'cursor-pointer rounded-full border px-2.5 py-px text-xs whitespace-nowrap hover:bg-accent',
+        on && 'border-primary bg-primary-soft text-foreground hover:bg-primary-soft',
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
@@ -68,22 +91,21 @@ export function ValueChips(props: {
   if (values.length < 2) return null;
   const shown = all ? values : values.filter((v, i) => i < max || selected.includes(v));
   return (
-    <div className="chips" role="group" aria-label={label}>
-      {prefix && <span className="chips-prefix">{prefix}</span>}
+    <div className="flex flex-wrap gap-1" role="group" aria-label={label}>
+      {prefix && <span className="self-center text-[11px] text-muted-foreground">{prefix}</span>}
       {shown.map((v) => (
-        <button
-          type="button"
+        <Chip
           key={v}
-          className={`chip ${selected.includes(v) ? 'on' : ''}`}
+          on={selected.includes(v)}
           onClick={() => onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v])}
         >
           {render ? render(v) : v}
-        </button>
+        </Chip>
       ))}
       {values.length > max && (
-        <button type="button" className="chip more" onClick={() => setAll(!all)}>
+        <Chip className="border-dashed text-muted-foreground" onClick={() => setAll(!all)}>
           {all ? 'less' : `+${values.length - max}`}
-        </button>
+        </Chip>
       )}
     </div>
   );

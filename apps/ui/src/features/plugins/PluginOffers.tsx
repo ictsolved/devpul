@@ -1,5 +1,6 @@
 import { Puzzle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import type { DevEvent } from '../../core/events';
 import { parseInfo } from '../../core/info';
 import { formatBytes } from '../../core/json';
@@ -128,19 +129,19 @@ interface BarProps {
 
 export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
   return offers.map((o) => (
-    <div key={o.key} className="offer" role="alert">
-      <Puzzle size={14} />
-      <span>
+    <div key={o.key} className="flex items-center gap-2.5 border-b bg-secondary px-3 py-1.5 text-xs" role="alert">
+      <Puzzle size={14} className="flex-none" />
+      <span className="min-w-0 flex-1">
         {o.app} offers the plugin <strong>{o.id}</strong>
         {o.version && ` ${o.version}`} ({formatBytes(o.size)}, sha256 <code>{o.hash.slice(0, 12)}</code>). It runs in
         this page with access to every event from every app.
       </span>
-      <button type="button" className="btn small primary" onClick={() => onAllow(o)}>
+      <Button type="button" size="xs" onClick={() => onAllow(o)}>
         Allow
-      </button>
-      <button type="button" className="btn small" onClick={() => onDismiss(o)}>
+      </Button>
+      <Button type="button" variant="outline" size="xs" onClick={() => onDismiss(o)}>
         Not now
-      </button>
+      </Button>
     </div>
   ));
 }

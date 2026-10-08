@@ -1,0 +1,46 @@
+/* Plugins build plain DOM in .plugin-view. pages/plugins.md documents the code class.
+   Elements from context.ui carry Tailwind classes, so the control rules skip classed ones. */
+
+.plugin-view h1,
+.plugin-view h2,
+.plugin-view h3,
+.plugin-view h4 {
+  font-weight: 600;
+  margin: 12px 0 6px;
+}
+
+.plugin-view p {
+  margin: 6px 0;
+}
+
+.plugin-view a {
+  color: var(--primary);
+}
+
+.plugin-view :is(button, input, select, textarea):not([class]) {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  padding: 2px 8px;
+}
+
+.plugin-view button:not([class]) {
+  cursor: pointer;
+}
+
+.plugin-view button:not([class]):hover {
+  background: var(--secondary);
+}
+
+.plugin-view .muted {
+  color: var(--muted-foreground);
+}
+
+.plugin-view .code {
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--secondary);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

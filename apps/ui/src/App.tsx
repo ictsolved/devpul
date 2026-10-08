@@ -1,9 +1,12 @@
+import { cn } from 'cn';
 import { CircleHelp, Settings as SettingsIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { appName, SessionHeader, sessionFields } from './components/SessionHeader';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Tip } from './components/Tip';
+import { Badge } from './components/ui/badge';
+import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
@@ -32,6 +35,7 @@ let counter = 0;
 const nextN = () => ++counter;
 const localOrigin = isLocalOrigin(location.hostname);
 const pageTitle = document.title;
+const LABEL = 'max-[560px]:hidden';
 
 export function App() {
   const [settings, setSettingsState] = useState<Settings>(() => load('settings', defaultSettings));
@@ -374,10 +378,16 @@ export function App() {
   };
 
   const settingsButton = (
-    <button type="button" className={`btn ${showMain ? '' : 'icon'}`} onClick={openSettings} aria-label="Settings">
-      <SettingsIcon size={14} />
-      {showMain && <span className="label">Settings</span>}
-    </button>
+    <Button
+      type="button"
+      variant="outline"
+      size={showMain ? 'sm' : 'icon-sm'}
+      onClick={openSettings}
+      aria-label="Settings"
+    >
+      <SettingsIcon />
+      {showMain && <span className={LABEL}>Settings</span>}
+    </Button>
   );
   const tools = (
     <>
@@ -399,7 +409,7 @@ export function App() {
   );
 
   return (
-    <div className="app">
+    <div className={cn('flex flex-col', showMain && 'h-screen')}>
       {!showMain ? (
         <Home
           icon={ICON}
@@ -410,49 +420,65 @@ export function App() {
         />
       ) : (
         <>
-          <header className="topbar">
-            <a className="brand" href="./" aria-label="DevPul home">
+          <header className="flex items-start gap-3 border-b bg-card px-3 py-2 max-[860px]:flex-wrap">
+            <a
+              className="flex items-center gap-1.5 pt-1 text-[15px] font-bold whitespace-nowrap max-[860px]:flex-1"
+              href="./"
+              aria-label="DevPul home"
+            >
               <img src={ICON} alt="" width={20} height={20} />
               DevPul
             </a>
             {connectionBar(false)}
-            <nav className="actions">
+            <nav className="flex gap-1.5">
               {tools}
               <Tip content="Help opens in a new tab. Press ? for shortcuts.">
-                <a className="btn" href={pageUrl('help/')} target="_blank" rel="noopener">
-                  <CircleHelp size={14} />
-                  <span className="label">Help</span>
-                </a>
+                <Button asChild variant="outline" size="sm">
+                  <a href={pageUrl('help/')} target="_blank" rel="noopener">
+                    <CircleHelp />
+                    <span className={LABEL}>Help</span>
+                  </a>
+                </Button>
               </Tip>
             </nav>
           </header>
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
-            <div className="subbar">
+            <div className="flex min-h-9 items-center gap-3 border-b bg-card px-3 max-[860px]:flex-wrap max-[860px]:gap-1.5 max-[860px]:pb-1.5">
               <TabsList variant="line" className="max-w-full justify-start overflow-x-auto p-0">
                 {tabs.map((t) => (
                   <TabsTrigger
                     key={t.id}
                     value={t.id}
-                    className="flex-none px-2.5 text-[13px] font-normal text-muted-foreground after:bg-primary group-data-[orientation=horizontal]/tabs:after:bottom-0"
+                    // The default focus ring and border crowd the dense strip.
+                    className="flex-none px-2.5 text-[13px] font-normal text-muted-foreground group-data-[orientation=horizontal]/tabs:after:bottom-0 after:bg-primary focus-visible:border-transparent focus-visible:ring-0 [&_svg:not([class*='size-'])]:size-3.5"
                   >
-                    {t.icon && <span className="tab-icon" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />}
+                    {t.icon && (
+                      <span className="inline-flex" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />
+                    )}
                     {t.label}
-                    {t.count > 0 && <span className={`count ${t.alert ? 'alert' : ''}`}>{t.count}</span>}
+                    {t.count > 0 && (
+                      <Badge
+                        variant={t.alert ? 'destructive' : 'secondary'}
+                        className={cn('font-normal', !t.alert && 'text-muted-foreground')}
+                      >
+                        {t.count}
+                      </Badge>
+                    )}
                   </TabsTrigger>
                 ))}
               </TabsList>
               <SessionHeader session={latestSession} fields={settings.headerFields} runs={runs.size} />
               {notice && (
-                <span className="notice" role="status">
+                <span className="max-w-80 truncate text-xs text-primary max-[860px]:hidden" role="status">
                   {notice}
                 </span>
               )}
               <ActionsMenu apps={actions} onRun={runAction} />
               <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
-              <button type="button" className="btn small" onClick={clearAll}>
-                <Trash2 size={13} />
+              <Button type="button" variant="outline" size="xs" onClick={clearAll}>
+                <Trash2 />
                 Clear
-              </button>
+              </Button>
             </div>
             <PluginOffers
               offers={pluginOffers.offers}
@@ -462,7 +488,7 @@ export function App() {
               }}
               onDismiss={pluginOffers.dismiss}
             />
-            <main className="content">
+            <main className="flex min-h-0 flex-1">
               <TabsContent value={activeTab} className="flex min-h-0 min-w-0">
                 {activeTab === 'http' && (
                   <HttpTab
@@ -505,7 +531,10 @@ export function App() {
       )}
 
       {!showMain && notice && (
-        <div className="toast" role="status">
+        <div
+          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background"
+          role="status"
+        >
           {notice}
         </div>
       )}

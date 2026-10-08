@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { kvClass } from '../../components/JsonView';
+import { Chip } from '../../components/list';
 import { formatBytes } from '../../core/json';
 import type { Settings } from '../../lib/storage';
 
@@ -24,7 +30,7 @@ function NumberField(props: { value: number; min: number; onCommit: (v: number) 
     else setText(String(value));
   };
   return (
-    <input
+    <Input
       type="text"
       inputMode="numeric"
       value={text}
@@ -42,7 +48,8 @@ function PluginUrls(props: { urls: string[]; onCommit: (urls: string[]) => void 
   const { urls, onCommit } = props;
   const [text, setText] = useState(urls.join('\n'));
   return (
-    <textarea
+    <Textarea
+      className="font-mono text-xs"
       rows={3}
       value={text}
       spellCheck={false}
@@ -57,6 +64,21 @@ function PluginUrls(props: { urls: string[]; onCommit: (urls: string[]) => void 
         )
       }
     />
+  );
+}
+
+const LABEL = 'my-1.5 flex max-w-[420px] flex-col gap-1';
+
+function Heading({ children }: { children: ReactNode }) {
+  return <h3 className="mt-4 mb-1.5 text-[13px] font-bold">{children}</h3>;
+}
+
+function Check(props: { checked: boolean; onChange: (checked: boolean) => void; children: ReactNode }) {
+  return (
+    <label className="my-1.5 flex items-center gap-2">
+      <Checkbox checked={props.checked} onCheckedChange={(checked) => props.onChange(checked === true)} />
+      {props.children}
+    </label>
   );
 }
 
@@ -88,13 +110,13 @@ export function SettingsDialog(props: Props) {
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
-        <div className="dialog-body form -mx-6 overflow-y-auto px-6">
-          <h3>Slow requests</h3>
-          <label>
+        <div className="-mx-6 overflow-y-auto px-6 [&_p]:my-1.5">
+          <Heading>Slow requests</Heading>
+          <label className={LABEL}>
             Amber from (ms)
             <NumberField key={settings.slowMs} value={settings.slowMs} min={1} onCommit={(v) => set('slowMs', v)} />
           </label>
-          <label>
+          <label className={LABEL}>
             Red from (ms)
             <NumberField
               key={settings.verySlowMs}
@@ -104,8 +126,8 @@ export function SettingsDialog(props: Props) {
             />
           </label>
 
-          <h3>Storage</h3>
-          <label>
+          <Heading>Storage</Heading>
+          <label className={LABEL}>
             Events kept
             <NumberField
               key={settings.maxEvents}
@@ -114,61 +136,51 @@ export function SettingsDialog(props: Props) {
               onCommit={(v) => set('maxEvents', v)}
             />
           </label>
-          <label className="check">
-            <input type="checkbox" checked={settings.persist} onChange={(e) => set('persist', e.target.checked)} />
+          <Check checked={settings.persist} onChange={(v) => set('persist', v)}>
             Keep events in this browser across reloads (IndexedDB, oldest dropped first, 200 MB max)
-          </label>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={settings.clearOnRestart}
-              onChange={(e) => set('clearOnRestart', e.target.checked)}
-            />
+          </Check>
+          <Check checked={settings.clearOnRestart} onChange={(v) => set('clearOnRestart', v)}>
             Clear an app&apos;s earlier events when it restarts or its URL is replaced
-          </label>
+          </Check>
           {usage && (
-            <p className="muted">
+            <p className="text-muted-foreground">
               Stored: {usage.count} events, {formatBytes(usage.bytes)}
             </p>
           )}
-          <button type="button" className="btn warn" onClick={onClear}>
+          <Button type="button" variant="warning" size="sm" onClick={onClear}>
             Clear all events
-          </button>
+          </Button>
 
-          <h3>Header fields</h3>
+          <Heading>Header fields</Heading>
           {sessionKeys.length === 0 ? (
-            <p className="muted">Fields appear once an app sends Devpul.session.</p>
+            <p className="text-muted-foreground">Fields appear once an app sends Devpul.session.</p>
           ) : (
-            <div className="chips">
+            <div className="flex flex-wrap gap-1">
               {sessionKeys.map((k) => (
-                <button
-                  type="button"
-                  key={k}
-                  className={`chip ${shownFields.includes(k) ? 'on' : ''}`}
-                  onClick={() => toggleField(k)}
-                >
+                <Chip key={k} on={shownFields.includes(k)} onClick={() => toggleField(k)}>
                   {k}
-                </button>
+                </Chip>
               ))}
             </div>
           )}
 
-          <h3>Plugins</h3>
+          <Heading>Plugins</Heading>
           {settings.approvedPlugins.length > 0 && (
             <>
               <p>Allowed from apps, by package and source hash. A removed plugin asks again after a reload.</p>
-              <table className="kv">
+              <table className={kvClass.table}>
                 <tbody>
                   {settings.approvedPlugins.map((key) => {
                     const [id, hash = ''] = key.split('@');
                     return (
                       <tr key={key}>
-                        <th>{id}</th>
-                        <td>
+                        <th className={kvClass.key}>{id}</th>
+                        <td className={kvClass.value}>
                           <code>{hash.slice(0, 12)}</code>{' '}
-                          <button
+                          <Button
                             type="button"
-                            className="btn small"
+                            variant="outline"
+                            size="xs"
                             onClick={() =>
                               set(
                                 'approvedPlugins',
@@ -177,7 +189,7 @@ export function SettingsDialog(props: Props) {
                             }
                           >
                             Remove
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -186,12 +198,12 @@ export function SettingsDialog(props: Props) {
               </table>
             </>
           )}
-          <label>
+          <label className={LABEL}>
             Module URLs, one per line. They run with full access to this page.
             <PluginUrls urls={settings.pluginUrls} onCommit={(urls) => set('pluginUrls', urls)} />
           </label>
           {Object.entries(pluginErrors).map(([url, err]) => (
-            <p key={url} className="hint err">
+            <p key={url} className="text-xs text-destructive">
               {url}: {err}
             </p>
           ))}

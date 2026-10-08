@@ -55,23 +55,25 @@
   </head>
   <body>
     <div id="root">
-      <main class="home-main">
-        <h1>DevPul</h1>
-        <p class="lead">
+      <main class="mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center gap-1 px-4 pt-[6vh] pb-6 text-center">
+        <h1 class="mt-2 text-[30px] font-bold">DevPul</h1>
+        <p class="mt-1 mb-5 max-w-[520px] text-base text-muted-foreground">
           HTTP calls, errors, logs and events from a running Dart or Flutter app, live in your browser. No proxy, no
           certificates, no server.
         </p>
-        <p class="privacy">
+        <p
+          class="mt-[18px] flex max-w-[560px] items-start gap-1.5 rounded-lg border bg-card px-3 py-2 text-left text-[12.5px]"
+        >
           Runs only in this browser. Requests, headers and bodies go from your app to this tab over 127.0.0.1 and are
           never sent to a server.
         </p>
-        <p>
+        <p class="[&_a]:text-primary">
           <a href="docs/">Docs</a> · <a href="docs/plugins/">Plugins</a> · <a href="help/">Help and FAQ</a> ·
           <a href="%REPO_URL%">Source on GitHub</a>
         </p>
       </main>
     </div>
-    <noscript><p class="home-hint">DevPul needs JavaScript to connect to your app.</p></noscript>
+    <noscript><p class="text-center">DevPul needs JavaScript to connect to your app.</p></noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,3 +1,4 @@
+import { cn } from 'cn';
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 
 interface Props<T> {
@@ -42,7 +43,11 @@ export function VirtualList<T>({ items, rowHeight, render, scrollToIndex, classN
   for (let i = start; i < end; i++) visible.push(render(items[i] as T, i));
 
   return (
-    <div ref={ref} className={`vlist ${className ?? ''}`} onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}>
+    <div
+      ref={ref}
+      className={cn('min-h-0 flex-1 overflow-auto', className)}
+      onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+    >
       <div style={{ height: items.length * rowHeight, position: 'relative' }}>
         <div style={{ position: 'absolute', top: start * rowHeight, left: 0, right: 0 }}>{visible}</div>
       </div>

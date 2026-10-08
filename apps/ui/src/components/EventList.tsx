@@ -1,10 +1,22 @@
-import { X } from 'lucide-react';
-import { type CSSProperties, type ReactNode, type RefObject, useCallback, useMemo, useState } from 'react';
+import { cn } from 'cn';
+import { type ReactNode, type RefObject, useCallback, useMemo, useState } from 'react';
 import type { DevEvent } from '../core/events';
 import { matchesQuery, matchesTag, parseQuery } from '../core/filter';
+import { Input } from '@/components/ui/input';
 import { useStored } from '../lib/storage';
+import { Detail, Split } from './Panes';
 import { VirtualList } from './VirtualList';
-import { PauseButton, useListKeys, usePause, ValueChips } from './list';
+import {
+  Chip,
+  emptyClass,
+  filterClass,
+  PauseButton,
+  rowClass,
+  toolbarClass,
+  useListKeys,
+  usePause,
+  ValueChips,
+} from './list';
 
 const ROW = 26;
 
@@ -116,78 +128,64 @@ export function EventList(props: Props) {
   const values = (f: Facet) => [...new Set(events.map(f.of).filter((v): v is string => v !== undefined))].toSorted();
 
   return (
-    <div className={`pane-split ${current ? 'has-detail' : ''}`}>
-      <div className="pane-main">
-        <div className="toolbar">
-          <input
-            ref={filterRef}
-            className="filter"
-            type="search"
-            placeholder={placeholder}
-            value={state.text}
-            onChange={(e) => setState({ ...state, text: e.target.value })}
-            aria-label="Filter"
+    <Split
+      detail={
+        current && (
+          <Detail label="Detail" head={props.head(current, groupOf(current))} onClose={() => setSelected(null)}>
+            {props.body(current, groupOf(current))}
+          </Detail>
+        )
+      }
+    >
+      <div className={toolbarClass}>
+        <Input
+          ref={filterRef}
+          className={filterClass}
+          type="search"
+          placeholder={placeholder}
+          value={state.text}
+          onChange={(e) => setState({ ...state, text: e.target.value })}
+          aria-label="Filter"
+        />
+        {facets.map((f) => (
+          <ValueChips
+            key={f.id}
+            label={f.label}
+            values={values(f)}
+            selected={state.facets[f.id] ?? []}
+            onChange={(v) => setState({ ...state, facets: { ...state.facets, [f.id]: v } })}
+            render={f.render}
+            max={f.max}
+            prefix={f.prefix}
           />
-          {facets.map((f) => (
-            <ValueChips
-              key={f.id}
-              label={f.label}
-              values={values(f)}
-              selected={state.facets[f.id] ?? []}
-              onChange={(v) => setState({ ...state, facets: { ...state.facets, [f.id]: v } })}
-              render={f.render}
-              max={f.max}
-              prefix={f.prefix}
-            />
-          ))}
-          <span className="grow" />
-          {groupBy && (
-            <button
-              type="button"
-              className={`chip ${state.grouped ? 'on' : ''}`}
-              onClick={() => setState({ ...state, grouped: !state.grouped })}
-            >
-              Group repeats
-            </button>
-          )}
-          <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
-        </div>
-        {rows.length === 0 ? (
-          <div className="muted empty">{events.length ? 'Nothing matches the filter.' : props.empty}</div>
-        ) : (
-          <VirtualList
-            items={rows}
-            rowHeight={ROW}
-            scrollToIndex={current ? rows.indexOf(current) : -1}
-            render={(e) => (
-              <div
-                key={e.key}
-                className={`event-row ${selected === keyOf(e) ? 'selected' : ''}`}
-                style={{ height: ROW, '--cols': props.columns } as CSSProperties}
-                onClick={() => setSelected(keyOf(e))}
-              >
-                {props.cells(e, groupOf(e))}
-              </div>
-            )}
-          />
+        ))}
+        <span className="flex-1" />
+        {groupBy && (
+          <Chip on={state.grouped} onClick={() => setState({ ...state, grouped: !state.grouped })}>
+            Group repeats
+          </Chip>
         )}
+        <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
       </div>
-      {current && (
-        <aside className="detail" aria-label="Detail">
-          <div className="detail-head">
-            {props.head(current, groupOf(current))}
-            <button
-              type="button"
-              className="btn small icon"
-              onClick={() => setSelected(null)}
-              aria-label="Close detail"
+      {rows.length === 0 ? (
+        <div className={emptyClass}>{events.length ? 'Nothing matches the filter.' : props.empty}</div>
+      ) : (
+        <VirtualList
+          items={rows}
+          rowHeight={ROW}
+          scrollToIndex={current ? rows.indexOf(current) : -1}
+          render={(e) => (
+            <div
+              key={e.key}
+              className={cn('grid items-center gap-2 px-3', rowClass(selected === keyOf(e)))}
+              style={{ height: ROW, gridTemplateColumns: props.columns }}
+              onClick={() => setSelected(keyOf(e))}
             >
-              <X size={14} />
-            </button>
-          </div>
-          <div className="detail-scroll">{props.body(current, groupOf(current))}</div>
-        </aside>
+              {props.cells(e, groupOf(e))}
+            </div>
+          )}
+        />
       )}
-    </div>
+    </Split>
   );
 }

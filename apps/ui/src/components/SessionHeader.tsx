@@ -34,14 +34,14 @@ export function SessionHeader({ session, fields, runs }: Props) {
   const tip = JSON.stringify(Object.fromEntries(all), null, 2);
   return (
     <Tip content={tip} code align="end">
-      <div className="session">
+      <div className="flex min-w-0 flex-1 justify-end gap-3.5 overflow-hidden text-xs whitespace-nowrap max-[860px]:hidden">
         {shown.map(([k, v]) => (
-          <span key={k} className="field">
-            <span className="muted">{k}</span> {typeof v === 'string' ? v : JSON.stringify(v)}
+          <span key={k} className="truncate">
+            <span className="text-muted-foreground">{k}</span> {typeof v === 'string' ? v : JSON.stringify(v)}
           </span>
         ))}
-        <span className="muted">started {formatTime(session.ts)}</span>
-        {runs > 1 && <span className="muted">{runs} runs</span>}
+        <span className="text-muted-foreground">started {formatTime(session.ts)}</span>
+        {runs > 1 && <span className="text-muted-foreground">{runs} runs</span>}
       </div>
     </Tip>
   );

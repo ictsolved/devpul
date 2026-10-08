@@ -25,24 +25,24 @@ export function EventsTab({ events, runLabel, filterRef }: Props) {
       empty="No custom events yet. Send them with Devpul.emit."
       cells={(e) => (
         <>
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className="kind ellipsis">{e.kind}</span>
-          <span className="muted ellipsis">{runLabel(e.run)}</span>
-          <span className="muted ellipsis">{preview(e)}</span>
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <span className="truncate font-semibold">{e.kind}</span>
+          <span className="truncate text-muted-foreground">{runLabel(e.run)}</span>
+          <span className="truncate text-muted-foreground">{preview(e)}</span>
         </>
       )}
       head={(e) => (
         <>
-          <span className="kind">{e.kind}</span>
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className="grow" />
+          <span className="font-mono font-semibold">{e.kind}</span>
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <span className="flex-1" />
           <CopyButton text={() => pretty(e.data)} />
         </>
       )}
       body={(e) => (
-        <div className="detail-pad">
+        <div className="px-3 py-2">
           <JsonView value={e.data} mode="tree" />
-          <p className="muted">{runLabel(e.run)}</p>
+          <p className="my-[1em] text-muted-foreground">{runLabel(e.run)}</p>
         </div>
       )}
     />

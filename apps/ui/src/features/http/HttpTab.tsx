@@ -1,7 +1,19 @@
+import { cn } from 'cn';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useMemo } from 'react';
+import { Input } from '@/components/ui/input';
+import { Split } from '../../components/Panes';
 import { VirtualList } from '../../components/VirtualList';
-import { PauseButton, useListKeys, usePause, ValueChips } from '../../components/list';
+import {
+  emptyClass,
+  filterClass,
+  PauseButton,
+  rowClass,
+  toolbarClass,
+  useListKeys,
+  usePause,
+  ValueChips,
+} from '../../components/list';
 import { Tip } from '../../components/Tip';
 import {
   defaultSort,
@@ -16,7 +28,7 @@ import {
 import { formatBytes, formatTime } from '../../core/json';
 import type { HttpRow, Store } from '../../core/store';
 import { type Settings, useStored } from '../../lib/storage';
-import { DetailPanel, StatusBadge } from './DetailPanel';
+import { DetailPanel, Method, StatusBadge } from './DetailPanel';
 import { TagChips } from './TagChips';
 
 const STATUSES: StatusFilter[] = ['2xx', '3xx', '4xx', '5xx', 'err', 'pending'];
@@ -37,6 +49,9 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: 'url', label: 'url' },
 ];
 const ASCENDING_FIRST: SortKey[] = ['method', 'url'];
+// Narrow windows drop the time and size columns.
+const GRID =
+  'grid grid-cols-[52px_96px_64px_64px_60px_72px_minmax(0,1fr)] items-center gap-2 px-3 max-[860px]:grid-cols-[40px_64px_52px_60px_minmax(0,1fr)] max-[860px]:[&>:nth-child(2)]:hidden max-[860px]:[&>:nth-child(6)]:hidden';
 
 type Item = { type: 'row'; row: HttpRow } | { type: 'divider'; run: string; key: string };
 
@@ -91,110 +106,119 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
   const slowClass = (row: HttpRow) => {
     const ms = row.durationMs;
     if (ms === undefined) return '';
-    if (ms >= settings.verySlowMs) return 'very-slow';
-    if (ms >= settings.slowMs) return 'slow';
+    if (ms >= settings.verySlowMs) return 'font-semibold text-destructive';
+    if (ms >= settings.slowMs) return 'font-semibold text-warning';
     return '';
   };
 
   return (
-    <div className={`pane-split ${selectedRow ? 'has-detail' : ''}`}>
-      <div className="pane-main">
-        <div className="toolbar">
-          <Tip content={SYNTAX} code>
-            <input
-              ref={filterRef}
-              className="filter"
-              type="search"
-              placeholder="Filter, e.g. login -health status:4xx ms:>500"
-              value={filter.text}
-              onChange={(e) => setFilter({ ...filter, text: e.target.value })}
-              aria-label="Filter requests"
-            />
-          </Tip>
-          <ValueChips
-            label="Status"
-            values={STATUSES}
-            selected={filter.statuses}
-            onChange={(v) => setFilter({ ...filter, statuses: v as StatusFilter[] })}
+    <Split
+      detail={selectedRow && <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} />}
+    >
+      <div className={toolbarClass}>
+        <Tip content={SYNTAX} code>
+          <Input
+            ref={filterRef}
+            className={filterClass}
+            type="search"
+            placeholder="Filter, e.g. login -health status:4xx ms:>500"
+            value={filter.text}
+            onChange={(e) => setFilter({ ...filter, text: e.target.value })}
+            aria-label="Filter requests"
           />
-          <ValueChips
-            label="Method"
-            values={methods}
-            selected={filter.methods}
-            onChange={(v) => setFilter({ ...filter, methods: v })}
-          />
-          <ValueChips
-            label="Host"
-            values={hosts}
-            selected={filter.hosts}
-            onChange={(v) => setFilter({ ...filter, hosts: v })}
-            max={6}
-          />
-          <TagChips tags={store.tags} selected={filter.tags} onChange={(tags) => setFilter({ ...filter, tags })} />
-          <ValueChips
-            label="App run"
-            values={runs}
-            selected={filter.runs}
-            onChange={(v) => setFilter({ ...filter, runs: v })}
-            render={runLabel}
-            max={4}
-          />
-          <span className="grow" />
-          <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
-        </div>
-        <div className="http-head" role="row">
-          {COLUMNS.map((c) => (
-            <button
-              type="button"
-              key={c.key}
-              className={`sort ${c.num ? 'num' : ''} ${sort.key === c.key ? 'on' : ''}`}
-              onClick={() => sortBy(c.key)}
-              aria-sort={sort.key === c.key ? (sort.desc ? 'descending' : 'ascending') : undefined}
-            >
-              {c.label}
-              {sort.key === c.key && (sort.desc ? <ArrowDown size={11} /> : <ArrowUp size={11} />)}
-            </button>
-          ))}
-        </div>
-        {items.length === 0 ? (
-          <div className="muted empty">{rows.length ? 'No requests match the filter.' : 'No HTTP requests yet.'}</div>
-        ) : (
-          <VirtualList
-            items={items}
-            rowHeight={ROW}
-            scrollToIndex={selectedIndex}
-            render={(item) =>
-              item.type === 'divider' ? (
-                <div key={item.key} className="divider" style={{ height: ROW }}>
-                  {runLabel(item.run)}
-                </div>
-              ) : (
-                <div
-                  key={item.row.key}
-                  role="row"
-                  aria-selected={item.row.key === selected}
-                  className={`http-row ${item.row.key === selected ? 'selected' : ''} ${slowClass(item.row)}`}
-                  style={{ height: ROW }}
-                  onClick={() => onSelect(item.row.key)}
-                >
-                  <span className="muted">{item.row.id}</span>
-                  <span className="muted">{formatTime(item.row.ts)}</span>
-                  <span className={`method m-${item.row.method}`}>{item.row.method}</span>
-                  <span>
-                    <StatusBadge row={item.row} />
-                  </span>
-                  <span className="num ms">{item.row.durationMs ?? ''}</span>
-                  <span className="num muted">{item.row.size === undefined ? '' : formatBytes(item.row.size)}</span>
-                  <Tip content={item.row.url} code whenCut>
-                    <span className="url">{item.row.url}</span>
-                  </Tip>
-                </div>
-              )
-            }
-          />
-        )}
+        </Tip>
+        <ValueChips
+          label="Status"
+          values={STATUSES}
+          selected={filter.statuses}
+          onChange={(v) => setFilter({ ...filter, statuses: v as StatusFilter[] })}
+        />
+        <ValueChips
+          label="Method"
+          values={methods}
+          selected={filter.methods}
+          onChange={(v) => setFilter({ ...filter, methods: v })}
+        />
+        <ValueChips
+          label="Host"
+          values={hosts}
+          selected={filter.hosts}
+          onChange={(v) => setFilter({ ...filter, hosts: v })}
+          max={6}
+        />
+        <TagChips tags={store.tags} selected={filter.tags} onChange={(tags) => setFilter({ ...filter, tags })} />
+        <ValueChips
+          label="App run"
+          values={runs}
+          selected={filter.runs}
+          onChange={(v) => setFilter({ ...filter, runs: v })}
+          render={runLabel}
+          max={4}
+        />
+        <span className="flex-1" />
+        <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
       </div>
-      {selectedRow && <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} />}
-    </div>
+      <div className={cn(GRID, 'h-[26px] border-b')} role="row">
+        {COLUMNS.map((c) => (
+          <button
+            type="button"
+            key={c.key}
+            className={cn(
+              'inline-flex cursor-pointer items-center gap-0.5 text-[11px] tracking-[0.04em] text-muted-foreground uppercase hover:text-foreground',
+              c.num && 'justify-end',
+              sort.key === c.key && 'text-foreground',
+            )}
+            onClick={() => sortBy(c.key)}
+            aria-sort={sort.key === c.key ? (sort.desc ? 'descending' : 'ascending') : undefined}
+          >
+            {c.label}
+            {sort.key === c.key && (sort.desc ? <ArrowDown size={11} /> : <ArrowUp size={11} />)}
+          </button>
+        ))}
+      </div>
+      {items.length === 0 ? (
+        <div className={emptyClass}>{rows.length ? 'No requests match the filter.' : 'No HTTP requests yet.'}</div>
+      ) : (
+        <VirtualList
+          items={items}
+          rowHeight={ROW}
+          scrollToIndex={selectedIndex}
+          render={(item) =>
+            item.type === 'divider' ? (
+              <div
+                key={item.key}
+                className="flex items-center border-b bg-secondary px-3 text-[11px] font-semibold text-primary"
+                style={{ height: ROW }}
+              >
+                {runLabel(item.run)}
+              </div>
+            ) : (
+              <div
+                key={item.row.key}
+                role="row"
+                aria-selected={item.row.key === selected}
+                className={cn(GRID, rowClass(item.row.key === selected))}
+                style={{ height: ROW }}
+                onClick={() => onSelect(item.row.key)}
+              >
+                <span className="text-muted-foreground">{item.row.id}</span>
+                <span className="text-muted-foreground">{formatTime(item.row.ts)}</span>
+                <Method method={item.row.method} />
+                <span>
+                  <StatusBadge row={item.row} />
+                </span>
+                <span className={cn('text-right', slowClass(item.row))}>{item.row.durationMs ?? ''}</span>
+                <span className="text-right text-muted-foreground">
+                  {item.row.size === undefined ? '' : formatBytes(item.row.size)}
+                </span>
+                <Tip content={item.row.url} code whenCut>
+                  <span className="truncate">{item.row.url}</span>
+                </Tip>
+              </div>
+            )
+          }
+        />
+      )}
+    </Split>
   );
 }

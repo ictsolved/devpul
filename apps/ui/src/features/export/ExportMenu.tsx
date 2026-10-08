@@ -1,5 +1,6 @@
 import { FileDown } from 'lucide-react';
 import { version } from '../../../package.json';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,9 +21,11 @@ interface Props {
 export function ExportMenu({ store, onOpenFile }: Props) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="btn small">
-        <FileDown size={13} />
-        Export
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="outline" size="xs">
+          <FileDown />
+          Export
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-50">
         <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>

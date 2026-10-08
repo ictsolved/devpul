@@ -1,10 +1,9 @@
-@layer theme, base, legacy, components, utilities;
-
 @import 'tailwindcss' source('.');
 @import 'tw-animate-css';
 @import './tokens.css';
-/* Above preflight, below utilities, so a Tailwind class wins over a leftover rule. */
-@import './styles.css' layer(legacy);
+@import './plugin.css' layer(components);
+
+@source '../index.html';
 
 /* No data-theme follows the system. */
 @custom-variant dark {
@@ -58,5 +57,29 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* On body, not html, so rem-based sizes stay at 16px. */
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font: 13px/1.45 var(--sans);
+  }
+
+  body.has-data {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  code,
+  kbd,
+  pre {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  :is(a, button, input, textarea, summary):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
   }
 }

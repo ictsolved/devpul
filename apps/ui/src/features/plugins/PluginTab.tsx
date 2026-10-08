@@ -110,17 +110,17 @@ export function PluginTab(props: Props) {
       empty={`No events for ${plugin.label} yet.`}
       cells={(e) => (
         <>
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className="kind ellipsis">{e.kind}</span>
-          <span className="muted ellipsis">{runLabel(e.run)}</span>
-          <span className="ellipsis">{summary(plugin, e)}</span>
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <span className="truncate font-semibold">{e.kind}</span>
+          <span className="truncate text-muted-foreground">{runLabel(e.run)}</span>
+          <span className="truncate">{summary(plugin, e)}</span>
         </>
       )}
       head={(e) => (
         <>
-          <span className="kind">{e.kind}</span>
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className="grow" />
+          <span className="font-mono font-semibold">{e.kind}</span>
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <span className="flex-1" />
           <CopyButton text={() => pretty(e.data)} />
         </>
       )}
@@ -128,7 +128,7 @@ export function PluginTab(props: Props) {
         plugin.render ? (
           <PluginView key={e.key} plugin={plugin} event={e} events={events} call={call} />
         ) : (
-          <div className="detail-pad">
+          <div className="px-3 py-2">
             <JsonView value={e.data} mode="tree" />
           </div>
         )
@@ -160,7 +160,7 @@ function PluginView(props: { plugin: DevpulPlugin; event: DevEvent; events: DevE
     feed,
     [plugin, event, call],
   );
-  return <div ref={ref} className="detail-pad plugin-view" />;
+  return <div ref={ref} className="plugin-view px-3 py-2" />;
 }
 
 function WholeTab({ plugin, events, fallback, call }: Props) {
@@ -187,5 +187,5 @@ function WholeTab({ plugin, events, fallback, call }: Props) {
     feed,
     [plugin, call],
   );
-  return <div ref={ref} className="plugin-tab plugin-view" />;
+  return <div ref={ref} className="plugin-view min-w-0 flex-1 overflow-auto px-3 py-2" />;
 }

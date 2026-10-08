@@ -1,5 +1,6 @@
 import { Check, Copy } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 export async function copyText(text: string): Promise<boolean> {
   try {
@@ -27,17 +28,18 @@ interface Props {
 export function CopyButton({ text, label = 'Copy', icon }: Props) {
   const [state, setState] = useState<'idle' | 'ok' | 'fail'>('idle');
   return (
-    <button
+    <Button
       type="button"
-      className="btn small"
+      variant="outline"
+      size="xs"
       onClick={async (e) => {
         e.stopPropagation();
         setState((await copyText(text())) ? 'ok' : 'fail');
         setTimeout(() => setState('idle'), 1200);
       }}
     >
-      {state === 'ok' ? <Check size={13} /> : (icon ?? <Copy size={13} />)}
+      {state === 'ok' ? <Check /> : (icon ?? <Copy />)}
       {state === 'ok' ? 'Copied' : state === 'fail' ? 'Failed' : label}
-    </button>
+    </Button>
   );
 }

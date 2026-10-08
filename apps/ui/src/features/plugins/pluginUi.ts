@@ -1,4 +1,6 @@
+import { buttonVariants } from '@/components/ui/button';
 import { copyText } from '../../components/Copy';
+import { codeClass, jsonClass, kvClass, noteClass, treeToggleClass } from '../../components/JsonView';
 import { isObject, type Json, TRUNCATED } from '../../core/events';
 import { formatBytes, pretty } from '../../core/json';
 import type { PluginUi } from './plugins';
@@ -6,6 +8,7 @@ import type { PluginUi } from './plugins';
 // Plain DOM, so plugins can drop elements without anything to unmount.
 
 const CHILDREN = 200;
+const BUTTON = buttonVariants({ variant: 'outline', size: 'xs' });
 const CHEVRON =
   '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
 const COPY =
@@ -19,14 +22,14 @@ function h<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, te
 }
 
 function leaf(value: Json): HTMLElement {
-  if (typeof value === 'string') return h('span', 'j-str', JSON.stringify(value));
-  if (typeof value === 'number') return h('span', 'j-num', String(value));
-  if (value === null || typeof value === 'boolean') return h('span', 'j-lit', String(value));
-  return h('span', 'muted', Array.isArray(value) ? '[]' : '{}');
+  if (typeof value === 'string') return h('span', jsonClass.str, JSON.stringify(value));
+  if (typeof value === 'number') return h('span', jsonClass.num, String(value));
+  if (value === null || typeof value === 'boolean') return h('span', jsonClass.lit, String(value));
+  return h('span', 'text-muted-foreground', Array.isArray(value) ? '[]' : '{}');
 }
 
 function children(value: Json[] | { [key: string]: Json }, depth: number): HTMLElement {
-  const ul = h('ul');
+  const ul = h('ul', depth ? 'pl-4' : undefined);
   const entries: [string, Json][] = Array.isArray(value) ? value.map((v, i) => [String(i), v]) : Object.entries(value);
   let shown = 0;
   const more = h('li');
@@ -35,7 +38,7 @@ function children(value: Json[] | { [key: string]: Json }, depth: number): HTMLE
     shown += CHILDREN;
     more.replaceChildren();
     if (entries.length > shown) {
-      const button = h('button', 'btn small', `Show more of ${entries.length - shown}`);
+      const button = h('button', BUTTON, `Show more of ${entries.length - shown}`);
       button.type = 'button';
       button.onclick = showMore;
       more.append(button);
@@ -47,18 +50,18 @@ function children(value: Json[] | { [key: string]: Json }, depth: number): HTMLE
 }
 
 function node(name: string, value: Json, depth: number): HTMLElement {
-  const li = h('li');
+  const li = h('li', 'wrap-anywhere');
   const empty = Array.isArray(value) ? value.length === 0 : isObject(value) && Object.keys(value).length === 0;
   if ((!isObject(value) && !Array.isArray(value)) || empty) {
-    li.append(h('span', 'j-key', name), ': ', leaf(value));
+    li.append(h('span', jsonClass.key, name), ': ', leaf(value));
     return li;
   }
-  const toggle = h('button', 'tree-toggle');
+  const toggle = h('button', treeToggleClass);
   toggle.type = 'button';
   const chevron = h('span');
   chevron.innerHTML = CHEVRON;
   const size = Array.isArray(value) ? `[${value.length}]` : `{${Object.keys(value).length}}`;
-  toggle.append(chevron, h('span', 'j-key', name), ' ', h('span', 'muted', size));
+  toggle.append(chevron, h('span', jsonClass.key, name), ' ', h('span', 'text-muted-foreground', size));
   li.append(toggle);
   let list: HTMLElement | null = null;
   const set = (open: boolean) => {
@@ -77,23 +80,23 @@ function json(value: unknown): HTMLElement {
     const box = h('div');
     const size = typeof v[TRUNCATED].size === 'number' ? formatBytes(v[TRUNCATED].size) : 'unknown size';
     box.append(
-      h('div', 'note', `Cut by the app at its maxValueLength. Full size ${size}.`),
-      h('pre', 'code', String(v[TRUNCATED].preview ?? '')),
+      h('div', noteClass, `Cut by the app at its maxValueLength. Full size ${size}.`),
+      h('pre', codeClass, String(v[TRUNCATED].preview ?? '')),
     );
     return box;
   }
-  if (!isObject(v) && !Array.isArray(v)) return h('pre', 'code', pretty(v));
-  const tree = h('div', 'code tree');
+  if (!isObject(v) && !Array.isArray(v)) return h('pre', codeClass, pretty(v));
+  const tree = h('div', codeClass);
   tree.append(children(v, 0));
   return tree;
 }
 
 function keyValues(values: Record<string, unknown>): HTMLElement {
-  const table = h('table', 'kv');
+  const table = h('table', kvClass.table);
   const body = h('tbody');
   for (const [k, v] of Object.entries(values)) {
     const row = h('tr');
-    row.append(h('th', undefined, k), h('td', undefined, typeof v === 'string' ? v : pretty(v)));
+    row.append(h('th', kvClass.key, k), h('td', kvClass.value, typeof v === 'string' ? v : pretty(v)));
     body.append(row);
   }
   table.append(body);
@@ -101,7 +104,7 @@ function keyValues(values: Record<string, unknown>): HTMLElement {
 }
 
 function copy(text: string | (() => string), label = 'Copy'): HTMLElement {
-  const button = h('button', 'btn small');
+  const button = h('button', BUTTON);
   button.type = 'button';
   const show = (caption: string) => {
     button.innerHTML = COPY;

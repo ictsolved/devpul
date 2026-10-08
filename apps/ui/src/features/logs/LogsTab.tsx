@@ -1,6 +1,8 @@
+import { cn } from 'cn';
 import type { RefObject } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet } from '../../components/EventList';
+import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
 import { type DevEvent, str } from '../../core/events';
 import { formatTime } from '../../core/json';
@@ -17,6 +19,21 @@ const FACETS: Facet[] = [
   { id: 'level', label: 'Level', of: levelOf },
   { id: 'name', label: 'Logger', of: nameOf, max: 6, prefix: 'logger' },
 ];
+
+const LEVEL_COLORS: Record<string, string> = {
+  info: 'text-primary',
+  warn: 'text-warning',
+  warning: 'text-warning',
+  error: 'text-destructive',
+  severe: 'text-destructive',
+  shout: 'text-destructive',
+  fatal: 'text-destructive',
+};
+
+function Level({ e }: { e: DevEvent }) {
+  const level = levelOf(e);
+  return <span className={cn('font-mono font-semibold text-muted-foreground', LEVEL_COLORS[level])}>{level}</span>;
+}
 
 function field(e: DevEvent, key: string, value: string): boolean {
   const v = value.toLowerCase();
@@ -39,37 +56,37 @@ export function LogsTab({ logs, runLabel, filterRef }: Props) {
       empty="No logs yet. Send them with Devpul.log."
       cells={(e) => (
         <>
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className={`level lvl-${levelOf(e)}`}>{levelOf(e)}</span>
-          <span className="muted ellipsis">{nameOf(e) ?? ''}</span>
-          <span className="ellipsis">{str(e.data.message) ?? ''}</span>
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <Level e={e} />
+          <span className="truncate text-muted-foreground">{nameOf(e) ?? ''}</span>
+          <span className="truncate">{str(e.data.message) ?? ''}</span>
         </>
       )}
       head={(e) => (
         <>
-          <span className={`level lvl-${levelOf(e)}`}>{levelOf(e)}</span>
+          <Level e={e} />
           {nameOf(e) && <strong>{nameOf(e)}</strong>}
-          <span className="muted">{formatTime(e.ts)}</span>
-          <span className="grow" />
+          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
+          <span className="flex-1" />
           <CopyButton text={() => str(e.data.message) ?? ''} />
         </>
       )}
       body={(e) => (
         <>
           <Section id="log-message" title="Message">
-            <pre className="code">{str(e.data.message) ?? ''}</pre>
+            <pre className={codeClass}>{str(e.data.message) ?? ''}</pre>
           </Section>
           {str(e.data.error) && (
             <Section id="log-error" title="Error">
-              <pre className="code">{str(e.data.error)}</pre>
+              <pre className={codeClass}>{str(e.data.error)}</pre>
             </Section>
           )}
           {str(e.data.stack) && (
             <Section id="log-stack" title="Stack trace">
-              <pre className="code">{str(e.data.stack)}</pre>
+              <pre className={codeClass}>{str(e.data.stack)}</pre>
             </Section>
           )}
-          <p className="detail-note muted">{runLabel(e.run)}</p>
+          <p className="mx-3 my-1.5 text-xs text-muted-foreground">{runLabel(e.run)}</p>
         </>
       )}
     />

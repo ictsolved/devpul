@@ -1,5 +1,7 @@
 import { Zap } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -9,6 +11,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { appName } from '../../components/SessionHeader';
 import type { DevEvent, Json } from '../../core/events';
 import { type ActionInfo, type ActionParam, parseInfo } from '../../core/info';
@@ -51,9 +55,11 @@ export function ActionsMenu({ apps, onRun }: Props) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="btn small">
-          <Zap size={13} />
-          Actions
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline" size="xs">
+            <Zap />
+            Actions
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
@@ -106,7 +112,7 @@ function ActionDialog(props: { action: ActionInfo; onRun: (args: Record<string, 
           <DialogTitle>{action.name}</DialogTitle>
         </DialogHeader>
         <form
-          className="dialog-body form"
+          className="flex flex-col items-start gap-3"
           onSubmit={(e) => {
             e.preventDefault();
             onRun(values);
@@ -121,40 +127,43 @@ function ActionDialog(props: { action: ActionInfo; onRun: (args: Record<string, 
               onChange={(v) => setValues({ ...values, [p.name]: v })}
             />
           ))}
-          <button type="submit" className="btn primary">
+          <Button type="submit" size="sm">
             Run
-          </button>
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
 
+const LABEL = 'flex w-full max-w-[420px] flex-col gap-1';
+
 function Field({ param, value, onChange }: { param: ActionParam; value: Json; onChange: (v: Json) => void }) {
   switch (param.type) {
     case 'flag':
       return (
-        <label className="check">
-          <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />
+        <label className="flex items-center gap-2">
+          <Checkbox checked={value === true} onCheckedChange={(checked) => onChange(checked === true)} />
           {param.name}
         </label>
       );
     case 'choice':
       return (
-        <label>
+        <label className={LABEL}>
           {param.name}
-          <select value={String(value)} onChange={(e) => onChange(e.target.value)}>
+          <NativeSelect value={String(value)} onChange={(e) => onChange(e.target.value)}>
             {param.options.map((o) => (
-              <option key={o}>{o}</option>
+              <NativeSelectOption key={o}>{o}</NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         </label>
       );
     case 'number':
       return (
-        <label>
+        <label className={LABEL}>
           {param.name}
-          <input
+          <Input
+            className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             type="number"
             step="any"
             required
@@ -167,9 +176,9 @@ function Field({ param, value, onChange }: { param: ActionParam; value: Json; on
       );
     default:
       return (
-        <label>
+        <label className={LABEL}>
           {param.name}
-          <input
+          <Input
             type="text"
             value={typeof value === 'string' ? value : ''}
             onChange={(e) => onChange(e.target.value)}

@@ -22,17 +22,20 @@ export function Section({ id, title, summary, actions, children }: Props) {
     setClosed(next);
   };
   return (
-    <section className={`section ${closed ? 'closed' : ''}`}>
-      <header onClick={toggle}>
-        <span className="caret" aria-hidden="true">
+    <section>
+      <header
+        className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 select-none hover:bg-secondary"
+        onClick={toggle}
+      >
+        <span className="inline-flex text-muted-foreground" aria-hidden="true">
           {closed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
         </span>
-        <h3>{title}</h3>
-        {summary && <span className="muted summary">{summary}</span>}
-        <span className="grow" />
+        <h3 className="text-xs font-semibold">{title}</h3>
+        {summary && <span className="text-xs text-muted-foreground">{summary}</span>}
+        <span className="flex-1" />
         {actions}
       </header>
-      {!closed && <div className="section-body">{children}</div>}
+      {!closed && <div className="pr-3 pb-2 pl-[30px]">{children}</div>}
     </section>
   );
 }

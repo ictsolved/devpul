@@ -1,5 +1,6 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Tip } from './Tip';
 import { load, save } from '../lib/storage';
 
@@ -20,9 +21,9 @@ export function ThemeToggle() {
   const Icon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor;
   return (
     <Tip content={`Theme: ${theme}`}>
-      <button type="button" className="btn icon" onClick={change} aria-label={`Theme: ${theme}`}>
-        <Icon size={14} />
-      </button>
+      <Button type="button" variant="outline" size="icon-sm" onClick={change} aria-label={`Theme: ${theme}`}>
+        <Icon />
+      </Button>
     </Tip>
   );
 }

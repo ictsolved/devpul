@@ -1,3 +1,5 @@
+import { Chip } from '../../components/list';
+
 interface Props {
   tags: Map<string, Set<string>>;
   selected: Record<string, string[]>;
@@ -13,17 +15,17 @@ export function TagChips({ tags, selected, onChange }: Props) {
     onChange({ ...selected, [key]: next });
   };
   return (
-    <div className="chips" role="group" aria-label="Tags">
+    <div className="flex flex-wrap gap-1" role="group" aria-label="Tags">
       {[...tags.entries()].flatMap(([key, values]) =>
         [...values].toSorted().map((value) => (
-          <button
-            type="button"
+          <Chip
             key={`${key}=${value}`}
-            className={`chip tag ${selected[key]?.includes(value) ? 'on' : ''}`}
+            className="font-mono"
+            on={selected[key]?.includes(value)}
             onClick={() => toggle(key, value)}
           >
             {key}={value}
-          </button>
+          </Chip>
         )),
       )}
     </div>
