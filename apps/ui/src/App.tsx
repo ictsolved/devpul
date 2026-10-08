@@ -30,7 +30,8 @@ import { SettingsDialog } from './features/settings/SettingsDialog';
 import { pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
 
-const store = new Store(load('settings', defaultSettings).maxEvents, load<[string, number][]>('cleared', []));
+const MB = 1024 * 1024;
+const store = new Store(load('settings', defaultSettings).maxMB * MB, load<[string, number][]>('cleared', []));
 const selectFns = new Map<string, (key: string | null) => void>();
 // Stable per tab, so list key handlers are not re-registered on every render.
 const selection = (tab: string) => {
@@ -82,8 +83,7 @@ export function App() {
   }, []);
 
   const drop = useCallback((pred: (e: DevEvent) => boolean) => {
-    const keys = store.remove(pred);
-    void persist.current?.delete(keys);
+    void persist.current?.delete(store.remove(pred));
   }, []);
 
   const onEvents = useCallback(
@@ -108,7 +108,7 @@ export function App() {
     let cancelled = false;
     void (async () => {
       if (settings.persist) {
-        const p = await Persist.open(settings.maxEvents);
+        const p = await Persist.open(settings.maxMB * MB);
         if (p && !cancelled) {
           persist.current = p;
           try {
@@ -130,12 +130,13 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    store.maxEvents = settings.maxEvents;
+    const maxBytes = settings.maxMB * MB;
+    store.setMaxBytes(maxBytes);
     const p = persist.current;
-    if (p) p.maxEvents = settings.maxEvents;
+    if (p) p.maxBytes = maxBytes;
     if (!ready) return;
     if (settings.persist && !p) {
-      void Persist.open(settings.maxEvents).then((opened) => {
+      void Persist.open(maxBytes).then((opened) => {
         persist.current = opened;
         opened?.put([...store.all]);
       });
@@ -143,7 +144,7 @@ export function App() {
       persist.current = null;
       void p.clear();
     }
-  }, [settings.persist, settings.maxEvents, ready]);
+  }, [settings.persist, settings.maxMB, ready]);
 
   useEffect(() => {
     if (!ready) return;
@@ -578,6 +579,7 @@ export function App() {
         open={settingsOpen}
         settings={settings}
         sessionKeys={sessionFields(latestSession).map(([k]) => k)}
+        memory={{ count: store.size, bytes: store.bytes, dropped: store.dropped }}
         usage={usage}
         pluginErrors={pluginOffers.errors}
         onChange={setSettings}

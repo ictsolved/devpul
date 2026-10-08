@@ -41,6 +41,12 @@ export interface Selection {
 // Enough for the sessions a backlog can still return.
 const MAX_CLEARED = 100;
 
+// Three full app backlogs (16 MB each), or 10k typical events plus a 5 MB body with room to spare.
+export const DEFAULT_MAX_MB = 50;
+
+// `app.*` events are small and carry a run's name, actions and plugins; the cap leaves them, as the app's limits do.
+export const evictable = (e: DevEvent): boolean => !e.kind.startsWith('app.');
+
 const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) => b.ts - a.ts || b.seq - a.seq;
 
 /** The newest run of each connection; earlier ones have exited. */
@@ -54,8 +60,12 @@ export function latestRuns(runs: ReadonlyMap<string, RunInfo>): RunInfo[] {
 }
 
 export class Store {
-  maxEvents: number;
+  /** Cap on the summed `size` of kept events; oldest go first. */
+  maxBytes: number;
   version = 0;
+  /** Events evicted by the cap since the page loaded or the last Clear. */
+  dropped = 0;
+  private total = 0;
 
   private events = new Map<string, DevEvent>();
   private order: DevEvent[] = [];
@@ -76,8 +86,8 @@ export class Store {
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   /** `cleared`: the highest `seq` per session at earlier Clears. */
-  constructor(maxEvents = 20000, cleared: readonly [string, number][] = []) {
-    this.maxEvents = maxEvents;
+  constructor(maxBytes = DEFAULT_MAX_MB * 1024 * 1024, cleared: readonly [string, number][] = []) {
+    this.maxBytes = maxBytes;
     this.cleared = new Map(cleared);
   }
 
@@ -95,24 +105,35 @@ export class Store {
       if (this.events.has(e.key)) continue;
       this.events.set(e.key, e);
       this.order.push(e);
+      this.total += e.size;
       this.index(e);
       added.push(e);
     }
     if (!added.length) return added;
-    if (this.order.length > this.maxEvents) this.evict();
+    if (this.total > this.maxBytes) this.evict();
     this.changed();
     return added;
   }
 
-  /** Drops matching events; returns their keys. */
-  remove(pred: (e: DevEvent) => boolean): string[] {
+  /** Drops matching events and returns them. */
+  remove(pred: (e: DevEvent) => boolean): DevEvent[] {
     const gone = this.order.filter(pred);
     if (!gone.length) return [];
     this.order = this.order.filter((e) => !pred(e));
-    for (const e of gone) this.events.delete(e.key);
+    for (const e of gone) {
+      this.events.delete(e.key);
+      this.total -= e.size;
+    }
     this.reindex();
     this.changed();
-    return gone.map((e) => e.key);
+    return gone;
+  }
+
+  setMaxBytes(maxBytes: number): void {
+    this.maxBytes = maxBytes;
+    if (this.total <= maxBytes) return;
+    this.evict();
+    this.changed();
   }
 
   /** Empties the store and remembers how far each session got. */
@@ -128,6 +149,8 @@ export class Store {
     }
     this.events.clear();
     this.order = [];
+    this.total = 0;
+    this.dropped = 0;
     this.selection.clear();
     this.reset();
     this.changed();
@@ -156,6 +179,11 @@ export class Store {
 
   get size(): number {
     return this.order.length;
+  }
+
+  /** Approximate encoded size of the kept events. */
+  get bytes(): number {
+    return this.total;
   }
 
   get httpRows(): HttpRow[] {
@@ -278,11 +306,21 @@ export class Store {
     this.httpSorted = null;
   }
 
+  // Down to 90%, so a steady stream does not reindex on every batch. The newest event always stays.
   private evict(): void {
-    const keep = Math.floor(this.maxEvents * 0.9);
-    const dropped = this.order.slice(0, this.order.length - keep);
-    this.order = this.order.slice(this.order.length - keep);
-    for (const e of dropped) this.events.delete(e.key);
+    const target = this.maxBytes * 0.9;
+    const newest = this.order.at(-1);
+    const gone = new Set<DevEvent>();
+    for (const e of this.order) {
+      if (this.total <= target) break;
+      if (e === newest || !evictable(e)) continue;
+      gone.add(e);
+      this.events.delete(e.key);
+      this.total -= e.size;
+    }
+    if (!gone.size) return;
+    this.order = this.order.filter((e) => !gone.has(e));
+    this.dropped += gone.size;
     this.reindex();
   }
 

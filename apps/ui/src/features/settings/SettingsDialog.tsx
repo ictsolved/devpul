@@ -13,6 +13,7 @@ interface Props {
   open: boolean;
   settings: Settings;
   sessionKeys: string[];
+  memory: { count: number; bytes: number; dropped: number };
   usage: { count: number; bytes: number } | null;
   pluginErrors: Record<string, string>;
   onChange: (next: Settings) => void;
@@ -83,7 +84,7 @@ function Check(props: { checked: boolean; onChange: (checked: boolean) => void; 
 }
 
 export function SettingsDialog(props: Props) {
-  const { open, settings, sessionKeys, usage, pluginErrors, onChange, onClear, onClose } = props;
+  const { open, settings, sessionKeys, memory, usage, pluginErrors, onChange, onClear, onClose } = props;
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => onChange({ ...settings, [key]: value });
 
@@ -128,20 +129,19 @@ export function SettingsDialog(props: Props) {
 
           <Heading>Storage</Heading>
           <label className={LABEL}>
-            Events kept
-            <NumberField
-              key={settings.maxEvents}
-              value={settings.maxEvents}
-              min={100}
-              onCommit={(v) => set('maxEvents', v)}
-            />
+            Events kept (MB, oldest dropped first)
+            <NumberField key={settings.maxMB} value={settings.maxMB} min={1} onCommit={(v) => set('maxMB', v)} />
           </label>
           <Check checked={settings.persist} onChange={(v) => set('persist', v)}>
-            Keep events in this browser across reloads (IndexedDB, oldest dropped first, 200 MB max)
+            Keep events in this browser across reloads (IndexedDB, same limit)
           </Check>
           <Check checked={!settings.clearOnRestart} onChange={(v) => set('clearOnRestart', !v)}>
             Keep earlier runs
           </Check>
+          <p className="text-muted-foreground">
+            In memory: {memory.count} events, {formatBytes(memory.bytes)}
+            {memory.dropped > 0 && `; ${memory.dropped} older events dropped at the limit`}
+          </p>
           {usage && (
             <p className="text-muted-foreground">
               Stored: {usage.count} events, {formatBytes(usage.bytes)}

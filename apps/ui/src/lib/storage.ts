@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DEFAULT_MAX_MB } from '../core/store';
 
 const PREFIX = 'devpul:';
 
@@ -45,7 +46,8 @@ function mergeShape<T>(fallback: T, value: unknown): T {
 export interface Settings {
   slowMs: number;
   verySlowMs: number;
-  maxEvents: number;
+  /** Cap on kept events, in memory and in IndexedDB. */
+  maxMB: number;
   persist: boolean;
   /** Drop an app's earlier events when it restarts or its URL is replaced. */
   clearOnRestart: boolean;
@@ -59,7 +61,7 @@ export interface Settings {
 export const defaultSettings: Settings = {
   slowMs: 2000,
   verySlowMs: 5000,
-  maxEvents: 20000,
+  maxMB: DEFAULT_MAX_MB,
   persist: true,
   clearOnRestart: true,
   headerFields: [],

@@ -25,6 +25,10 @@ const res = (id: number, seq: number, ts: number, status = 200) =>
     durationMs: 5,
   });
 
+// Three-digit seq and ts, so every event without pad has the same size.
+const custom = (i: number, pad = '') => vmEvent('custom', { session: 's', seq: 100 + i, ts: 100 + i, pad });
+const seqs = (store: Store) => store.all.map((e) => e.seq - 100);
+
 describe('Store', () => {
   it('pairs out of order responses and keeps pending rows', () => {
     const store = new Store();
@@ -104,11 +108,75 @@ describe('Store', () => {
     expect([...(store.tags.get('env') ?? [])].toSorted()).toEqual(['dev', 'qa']);
   });
 
-  it('evicts the oldest events past the limit', () => {
-    const store = new Store(10);
-    store.add(Array.from({ length: 12 }, (_, i) => vmEvent('custom', { session: 's', seq: i, ts: i })));
-    expect(store.size).toBe(9);
-    expect(store.all[0]?.seq).toBe(3);
+  describe('byte cap', () => {
+    const size = custom(0).size;
+
+    it('counts the size measured at ingestion', () => {
+      const store = new Store();
+      const events = [custom(1), custom(2, 'x'.repeat(1000))];
+      store.add(events);
+      expect(store.bytes).toBe(events[0]!.size + events[1]!.size);
+      expect(events[1]!.size - events[0]!.size).toBe(1000);
+    });
+
+    it('drops the oldest events down to 90% once over the cap', () => {
+      const store = new Store(size * 10);
+      store.add(Array.from({ length: 11 }, (_, i) => custom(i)));
+      expect(store.size).toBe(9);
+      expect(seqs(store)[0]).toBe(2);
+      expect(store.bytes).toBe(size * 9);
+      expect(store.dropped).toBe(2);
+    });
+
+    it('keeps everything under the cap', () => {
+      const store = new Store(size * 10);
+      store.add(Array.from({ length: 10 }, (_, i) => custom(i)));
+      expect(store.size).toBe(10);
+      expect(store.dropped).toBe(0);
+    });
+
+    it('drops many small events for one large one, and keeps the newest even when it alone is over', () => {
+      const store = new Store(size * 10);
+      store.add(Array.from({ length: 5 }, (_, i) => custom(i)));
+      store.add([custom(5, 'x'.repeat(size * 7))]);
+      expect(seqs(store)).toEqual([4, 5]);
+      store.add([custom(6, 'x'.repeat(size * 20))]);
+      expect(seqs(store)).toEqual([6]);
+      expect(store.dropped).toBe(6);
+    });
+
+    it('keeps app events past the cap', () => {
+      const session = vmEvent('app.session', { session: 's', seq: 99, ts: 99, name: 'demo' });
+      const store = new Store(size * 4);
+      store.add([session, ...Array.from({ length: 8 }, (_, i) => custom(i))]);
+      expect(store.all[0]).toBe(session);
+      expect(store.latestSession()).toBe(session);
+      expect(store.bytes).toBeLessThanOrEqual(size * 4);
+    });
+
+    it('reindexes HTTP rows after eviction', () => {
+      const store = new Store(req(1, 1, 100).size * 3);
+      store.add([req(1, 1, 100), req(2, 2, 101), req(3, 3, 102), req(4, 4, 103)]);
+      expect(store.httpRows.map((r) => r.id)).toEqual(['4', '3']);
+    });
+
+    it('applies a lower cap at once', () => {
+      const store = new Store(size * 10);
+      store.add(Array.from({ length: 8 }, (_, i) => custom(i)));
+      store.setMaxBytes(size * 4);
+      expect(store.size).toBe(3);
+      expect(store.dropped).toBe(5);
+    });
+
+    it('frees bytes on remove and resets on clear', () => {
+      const store = new Store();
+      store.add([custom(1), custom(2)]);
+      store.remove((e) => e.seq === 101);
+      expect(store.bytes).toBe(size);
+      store.clear();
+      expect(store.bytes).toBe(0);
+      expect(store.dropped).toBe(0);
+    });
   });
 
   it('ignores non devpul events and flags events without data', () => {
@@ -166,7 +234,7 @@ describe('Store clear', () => {
   });
 
   it('starts from stored marks and keeps the highest seq', () => {
-    const store = new Store(100, [['a', 5]]);
+    const store = new Store(undefined, [['a', 5]]);
     expect(store.sinceClear([log('a', 5), log('a', 6)]).map((e) => e.seq)).toEqual([6]);
     store.add([log('a', 6), log('b', 1)]);
     store.clear();
@@ -177,7 +245,7 @@ describe('Store clear', () => {
   });
 
   it('keeps the latest 100 sessions', () => {
-    const store = new Store(1000, [['old', 1]]);
+    const store = new Store(undefined, [['old', 1]]);
     store.add(Array.from({ length: 100 }, (_, i) => log(`s${i}`, 1)));
     store.clear();
     expect(store.clearedSeqs).toHaveLength(100);
