@@ -61,7 +61,7 @@ export const defaultSettings: Settings = {
   verySlowMs: 5000,
   maxEvents: 20000,
   persist: true,
-  clearOnRestart: false,
+  clearOnRestart: true,
   headerFields: [],
   pluginUrls: [],
   approvedPlugins: [],

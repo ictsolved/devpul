@@ -139,8 +139,8 @@ export function SettingsDialog(props: Props) {
           <Check checked={settings.persist} onChange={(v) => set('persist', v)}>
             Keep events in this browser across reloads (IndexedDB, oldest dropped first, 200 MB max)
           </Check>
-          <Check checked={settings.clearOnRestart} onChange={(v) => set('clearOnRestart', v)}>
-            Clear an app&apos;s earlier events when it restarts or its URL is replaced
+          <Check checked={!settings.clearOnRestart} onChange={(v) => set('clearOnRestart', !v)}>
+            Keep earlier runs
           </Check>
           {usage && (
             <p className="text-muted-foreground">
