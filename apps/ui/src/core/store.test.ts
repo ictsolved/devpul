@@ -150,6 +150,41 @@ describe('Store selection', () => {
   });
 });
 
+const log = (session: string, seq: number) => vmEvent('log', { session, seq, ts: seq });
+
+describe('Store clear', () => {
+  it('skips refetched events up to the last seq of each session', () => {
+    const store = new Store();
+    store.add([log('a', 1), log('a', 2), log('b', 1)]);
+    store.clear();
+    expect(store.clearedSeqs).toEqual([
+      ['a', 2],
+      ['b', 1],
+    ]);
+    const kept = store.sinceClear([log('a', 1), log('a', 2), log('a', 3), log('b', 1), log('c', 1)]);
+    expect(kept.map((e) => e.key)).toEqual(['a|3', 'c|1']);
+  });
+
+  it('starts from stored marks and keeps the highest seq', () => {
+    const store = new Store(100, [['a', 5]]);
+    expect(store.sinceClear([log('a', 5), log('a', 6)]).map((e) => e.seq)).toEqual([6]);
+    store.add([log('a', 6), log('b', 1)]);
+    store.clear();
+    expect(store.clearedSeqs).toEqual([
+      ['a', 6],
+      ['b', 1],
+    ]);
+  });
+
+  it('keeps the latest 100 sessions', () => {
+    const store = new Store(1000, [['old', 1]]);
+    store.add(Array.from({ length: 100 }, (_, i) => log(`s${i}`, 1)));
+    store.clear();
+    expect(store.clearedSeqs).toHaveLength(100);
+    expect(store.clearedSeqs[0]).toEqual(['s0', 1]);
+  });
+});
+
 describe('Store rows', () => {
   it('derives host and response size', () => {
     const store = new Store();

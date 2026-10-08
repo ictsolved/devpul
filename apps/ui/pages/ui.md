@@ -75,3 +75,5 @@ Exports contain whatever the app sent, tokens included. Use [redaction](%ROOT%do
 ## History
 
 Events are kept in the browser (IndexedDB, 20,000 events and 200 MB by default, oldest dropped first), so a reload keeps them. Change the limit, turn it off or clear it in Settings. Nothing leaves the browser.
+
+**Clear** empties every tab. Events the app sent before it do not come back when DevPul reconnects or reloads.

@@ -30,7 +30,7 @@ import { SettingsDialog } from './features/settings/SettingsDialog';
 import { pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
 
-const store = new Store(load('settings', defaultSettings).maxEvents);
+const store = new Store(load('settings', defaultSettings).maxEvents, load<[string, number][]>('cleared', []));
 const selectFns = new Map<string, (key: string | null) => void>();
 // Stable per tab, so list key handlers are not re-registered on every render.
 const selection = (tab: string) => {
@@ -150,7 +150,13 @@ export function App() {
     const map = live.current;
     for (const c of connections) {
       if (map.has(c.id)) continue;
-      const conn = new Connection(c.id, c.url, onEvents, () => setStates((s) => ({ ...s, [c.id]: conn.state })), nextN);
+      const conn = new Connection(
+        c.id,
+        c.url,
+        (events) => onEvents(store.sinceClear(events)),
+        () => setStates((s) => ({ ...s, [c.id]: conn.state })),
+        nextN,
+      );
       map.set(c.id, conn);
       conn.start();
     }
@@ -246,6 +252,7 @@ export function App() {
 
   const clearAll = () => {
     store.clear();
+    save('cleared', store.clearedSeqs);
     void persist.current?.clear();
     setUsage(persist.current ? { count: 0, bytes: 0 } : null);
   };

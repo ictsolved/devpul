@@ -38,6 +38,9 @@ export interface Selection {
   from?: { tab: string; key: string };
 }
 
+// Enough for the sessions a backlog can still return.
+const MAX_CLEARED = 100;
+
 const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) => b.ts - a.ts || b.seq - a.seq;
 
 /** The newest run of each connection; earlier ones have exited. */
@@ -68,11 +71,14 @@ export class Store {
   private runsSnapshot: Map<string, RunInfo> | null = null;
   private tagMap = new Map<string, Set<string>>();
   private selection = new Map<string, Selection>();
+  private cleared: Map<string, number>;
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(maxEvents = 20000) {
+  /** `cleared`: the highest `seq` per session at earlier Clears. */
+  constructor(maxEvents = 20000, cleared: readonly [string, number][] = []) {
     this.maxEvents = maxEvents;
+    this.cleared = new Map(cleared);
   }
 
   subscribe = (fn: () => void): (() => void) => {
@@ -109,12 +115,33 @@ export class Store {
     return gone.map((e) => e.key);
   }
 
+  /** Empties the store and remembers how far each session got. */
   clear(): void {
+    for (const e of this.order) {
+      const prev = this.cleared.get(e.session);
+      this.cleared.delete(e.session);
+      this.cleared.set(e.session, Math.max(prev ?? e.seq, e.seq));
+    }
+    for (const session of this.cleared.keys()) {
+      if (this.cleared.size <= MAX_CLEARED) break;
+      this.cleared.delete(session);
+    }
     this.events.clear();
     this.order = [];
     this.selection.clear();
     this.reset();
     this.changed();
+  }
+
+  /** Oldest first, for storage. */
+  get clearedSeqs(): [string, number][] {
+    return [...this.cleared];
+  }
+
+  /** Drops events at or below the last Clear of their session, as a backlog refetch repeats them. */
+  sinceClear(events: DevEvent[]): DevEvent[] {
+    if (!this.cleared.size) return events;
+    return events.filter((e) => e.seq > (this.cleared.get(e.session) ?? -Infinity));
   }
 
   selected(tab: string): Selection | undefined {
