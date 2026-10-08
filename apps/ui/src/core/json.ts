@@ -27,6 +27,20 @@ export function pretty(value: unknown): string {
   }
 }
 
+/** Splits after a newline near every `size` characters, or at `size` when a line is longer. */
+export function chunkLines(text: string, size: number): string[] {
+  const out: string[] = [];
+  let start = 0;
+  while (text.length - start > size) {
+    const nl = text.lastIndexOf('\n', start + size - 1);
+    const end = nl >= start ? nl + 1 : start + size;
+    out.push(text.slice(start, end));
+    start = end;
+  }
+  if (start < text.length || !out.length) out.push(text.slice(start));
+  return out;
+}
+
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;

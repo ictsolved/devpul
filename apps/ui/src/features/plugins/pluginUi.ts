@@ -1,6 +1,6 @@
 import { buttonVariants } from '@/components/ui/button';
 import { copyText } from '../../components/Copy';
-import { codeClass, jsonClass, kvClass, noteClass, treeToggleClass } from '../../components/JsonView';
+import { codeClass, jsonClass, kvClass, noteClass, OPEN_FIRST, treeToggleClass } from '../../components/JsonView';
 import { isObject, type Json, TRUNCATED } from '../../core/events';
 import { formatBytes, pretty } from '../../core/json';
 import type { PluginUi } from './plugins';
@@ -31,10 +31,11 @@ function leaf(value: Json): HTMLElement {
 function children(value: Json[] | { [key: string]: Json }, depth: number): HTMLElement {
   const ul = h('ul', depth ? 'pl-4' : undefined);
   const entries: [string, Json][] = Array.isArray(value) ? value.map((v, i) => [String(i), v]) : Object.entries(value);
+  const open = depth === 0 && entries.length <= OPEN_FIRST;
   let shown = 0;
   const more = h('li');
   const showMore = () => {
-    for (const [k, v] of entries.slice(shown, shown + CHILDREN)) ul.insertBefore(node(k, v, depth), more);
+    for (const [k, v] of entries.slice(shown, shown + CHILDREN)) ul.insertBefore(node(k, v, depth, open), more);
     shown += CHILDREN;
     more.replaceChildren();
     if (entries.length > shown) {
@@ -49,7 +50,7 @@ function children(value: Json[] | { [key: string]: Json }, depth: number): HTMLE
   return ul;
 }
 
-function node(name: string, value: Json, depth: number): HTMLElement {
+function node(name: string, value: Json, depth: number, open: boolean): HTMLElement {
   const li = h('li', 'wrap-anywhere');
   const empty = Array.isArray(value) ? value.length === 0 : isObject(value) && Object.keys(value).length === 0;
   if ((!isObject(value) && !Array.isArray(value)) || empty) {
@@ -64,13 +65,13 @@ function node(name: string, value: Json, depth: number): HTMLElement {
   toggle.append(chevron, h('span', jsonClass.key, name), ' ', h('span', 'text-muted-foreground', size));
   li.append(toggle);
   let list: HTMLElement | null = null;
-  const set = (open: boolean) => {
-    chevron.style.transform = open ? 'rotate(90deg)' : '';
-    if (open) li.append((list ??= children(value, depth + 1)));
+  const set = (on: boolean) => {
+    chevron.style.transform = on ? 'rotate(90deg)' : '';
+    if (on) li.append((list ??= children(value, depth + 1)));
     else list?.remove();
   };
   toggle.onclick = () => set(!list?.isConnected);
-  set(depth < 1);
+  set(open);
   return li;
 }
 

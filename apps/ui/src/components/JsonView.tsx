@@ -1,13 +1,18 @@
 import { cn } from 'cn';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { isObject, type Json, TRUNCATED } from '../core/events';
 import { headerValue } from '../core/fetch';
-import { formatBytes, highlight, pretty } from '../core/json';
+import { chunkLines, formatBytes, highlight, pretty } from '../core/json';
 
 const LIMIT = 100_000;
+const CHUNK = 50_000;
+// Coloring a few MB of JSON makes hundreds of thousands of spans; past this it stays plain.
+const HIGHLIGHT_LIMIT = 1_000_000;
 const CHILDREN = 200;
+// Top-level branches start open when there are this many or fewer.
+export const OPEN_FIRST = 10;
 
 // Shared with the plain DOM that plugins get from context.ui.
 export const codeClass = 'm-0 rounded-md bg-secondary px-2.5 py-2 whitespace-pre-wrap wrap-anywhere';
@@ -49,7 +54,6 @@ function Truncated({ marker }: { marker: Json }) {
 }
 
 function JsonViewInner({ value, mode = 'raw' }: { value: unknown; mode?: BodyMode }) {
-  const [all, setAll] = useState(false);
   if (isEmptyValue(value)) return <div className="text-muted-foreground">empty</div>;
   if (isObject(value) && value[TRUNCATED] !== undefined) return <Truncated marker={value[TRUNCATED]} />;
   if (mode === 'tree' && (isObject(value) || Array.isArray(value))) {
@@ -59,16 +63,27 @@ function JsonViewInner({ value, mode = 'raw' }: { value: unknown; mode?: BodyMod
       </div>
     );
   }
-  const text = pretty(value);
+  return <Raw value={value} />;
+}
+
+function Raw({ value }: { value: unknown }) {
+  const [all, setAll] = useState(false);
+  const text = useMemo(() => pretty(value), [value]);
   const long = text.length > LIMIT && !all;
-  const shown = long ? text.slice(0, LIMIT) : text;
+  const chunks = useMemo(() => chunkLines(long ? text.slice(0, LIMIT) : text, CHUNK), [text, long]);
+  const colored = typeof value !== 'string' && (long || text.length <= HIGHLIGHT_LIMIT);
   return (
     <div>
-      {typeof value === 'string' ? (
-        <pre className={codeClass}>{shown}</pre>
-      ) : (
-        <pre className={cn(codeClass, highlightClass)} dangerouslySetInnerHTML={{ __html: highlight(shown) }} />
-      )}
+      <pre className={cn(codeClass, colored && highlightClass)}>
+        {chunks.map((chunk, i) => (
+          <div
+            key={i}
+            // Off-screen chunks skip layout, so a body of several MB opens at once.
+            style={{ contentVisibility: 'auto', containIntrinsicSize: `auto ${lineCount(chunk)}lh` }}
+            {...(colored ? { dangerouslySetInnerHTML: { __html: highlight(chunk) } } : { children: chunk })}
+          />
+        ))}
+      </pre>
       {long && (
         <Button type="button" variant="outline" size="xs" onClick={() => setAll(true)}>
           Show all ({formatBytes(text.length)})
@@ -78,20 +93,30 @@ function JsonViewInner({ value, mode = 'raw' }: { value: unknown; mode?: BodyMod
   );
 }
 
+const lineCount = (text: string) => {
+  let n = 1;
+  for (let i = text.indexOf('\n'); i >= 0 && i < text.length - 1; i = text.indexOf('\n', i + 1)) n++;
+  return n;
+};
+
 export const JsonView = memo(JsonViewInner);
 
 function Children({ value, depth }: { value: Json[] | { [key: string]: Json }; depth: number }) {
   const [limit, setLimit] = useState(CHILDREN);
-  const entries: [string, Json][] = Array.isArray(value) ? value.map((v, i) => [String(i), v]) : Object.entries(value);
+  const shown: [string, Json][] = Array.isArray(value)
+    ? value.slice(0, limit).map((v, i) => [String(i), v])
+    : Object.entries(value).slice(0, limit);
+  const total = Array.isArray(value) ? value.length : Object.keys(value).length;
+  const open = depth === 0 && total <= OPEN_FIRST;
   return (
     <ul className={depth ? 'pl-4' : undefined}>
-      {entries.slice(0, limit).map(([k, v]) => (
-        <TreeNode key={k} name={k} value={v} depth={depth} />
+      {shown.map(([k, v]) => (
+        <TreeNode key={k} name={k} value={v} depth={depth} open={open} />
       ))}
-      {entries.length > limit && (
+      {total > limit && (
         <li>
           <Button type="button" variant="outline" size="xs" onClick={() => setLimit(limit + CHILDREN)}>
-            Show {Math.min(CHILDREN, entries.length - limit)} more of {entries.length - limit}
+            Show {Math.min(CHILDREN, total - limit)} more of {total - limit}
           </Button>
         </li>
       )}
@@ -99,8 +124,9 @@ function Children({ value, depth }: { value: Json[] | { [key: string]: Json }; d
   );
 }
 
-function TreeNode({ name, value, depth }: { name: string; value: Json; depth: number }) {
-  const [open, setOpen] = useState(depth < 1);
+function TreeNode(props: { name: string; value: Json; depth: number; open: boolean }) {
+  const { name, value, depth } = props;
+  const [open, setOpen] = useState(props.open);
   const branch = isObject(value) || Array.isArray(value);
   if (!branch || isEmptyValue(value)) {
     return (
@@ -112,7 +138,7 @@ function TreeNode({ name, value, depth }: { name: string; value: Json; depth: nu
   const size = Array.isArray(value) ? `[${value.length}]` : `{${Object.keys(value).length}}`;
   return (
     <li className="wrap-anywhere">
-      <button type="button" className={treeToggleClass} onClick={() => setOpen(!open)}>
+      <button type="button" className={treeToggleClass} onClick={() => setOpen(!open)} aria-expanded={open}>
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <span className={jsonClass.key}>{name}</span> <span className="text-muted-foreground">{size}</span>
       </button>

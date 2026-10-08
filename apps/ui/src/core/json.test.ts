@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBytes, highlight } from './json';
+import { chunkLines, formatBytes, highlight } from './json';
 
 describe('highlight', () => {
   it('escapes before tokenizing', () => {
@@ -32,5 +32,23 @@ describe('formatBytes', () => {
     expect(formatBytes(10)).toBe('10 B');
     expect(formatBytes(2048)).toBe('2.0 KB');
     expect(formatBytes(3 * 1024 * 1024)).toBe('3.0 MB');
+  });
+});
+
+describe('chunkLines', () => {
+  it('splits after newlines and joins back to the input', () => {
+    const text = 'aaa\nbbb\nccc\nddd\n';
+    const chunks = chunkLines(text, 9);
+    expect(chunks).toEqual(['aaa\nbbb\n', 'ccc\nddd\n']);
+    expect(chunks.join('')).toBe(text);
+  });
+
+  it('cuts a line longer than the size', () => {
+    expect(chunkLines('abcdefgh\nij', 3)).toEqual(['abc', 'def', 'gh\n', 'ij']);
+  });
+
+  it('keeps short and empty text whole', () => {
+    expect(chunkLines('abc', 10)).toEqual(['abc']);
+    expect(chunkLines('', 10)).toEqual(['']);
   });
 });
