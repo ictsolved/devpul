@@ -32,6 +32,12 @@ export interface RunInfo {
   info?: DevEvent;
 }
 
+/** A tab's selected item, and the item it was opened from, if any. */
+export interface Selection {
+  key: string;
+  from?: { tab: string; key: string };
+}
+
 const byNewest = (a: { ts: number; seq: number }, b: { ts: number; seq: number }) => b.ts - a.ts || b.seq - a.seq;
 
 /** The newest run of each connection; earlier ones have exited. */
@@ -61,6 +67,7 @@ export class Store {
   private runMap = new Map<string, RunInfo>();
   private runsSnapshot: Map<string, RunInfo> | null = null;
   private tagMap = new Map<string, Set<string>>();
+  private selection = new Map<string, Selection>();
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -105,8 +112,19 @@ export class Store {
   clear(): void {
     this.events.clear();
     this.order = [];
+    this.selection.clear();
     this.reset();
     this.changed();
+  }
+
+  selected(tab: string): Selection | undefined {
+    return this.selection.get(tab);
+  }
+
+  select(tab: string, key: string | null, from?: Selection['from']): void {
+    if (key === null) this.selection.delete(tab);
+    else this.selection.set(tab, from ? { key, from } : { key });
+    this.notify();
   }
 
   get size(): number {
@@ -265,9 +283,13 @@ export class Store {
     // Backlog replays deliver thousands of events at once; render once.
     this.timer = setTimeout(() => {
       this.timer = null;
-      this.version++;
-      for (const fn of this.listeners) fn();
+      this.notify();
     }, 50);
+  }
+
+  private notify(): void {
+    this.version++;
+    for (const fn of this.listeners) fn();
   }
 }
 

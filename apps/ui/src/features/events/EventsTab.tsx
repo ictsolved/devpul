@@ -1,11 +1,11 @@
 import type { RefObject } from 'react';
 import { CopyButton } from '../../components/Copy';
-import { EventList, type Facet } from '../../components/EventList';
+import { EventList, type Facet, type ListSelection } from '../../components/EventList';
 import { JsonView } from '../../components/JsonView';
 import type { DevEvent } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
 
-interface Props {
+interface Props extends ListSelection {
   events: DevEvent[];
   runLabel: (run: string) => string;
   filterRef: RefObject<HTMLInputElement | null>;
@@ -13,10 +13,12 @@ interface Props {
 
 const FACETS: Facet[] = [{ id: 'kind', label: 'Kind', of: (e) => e.kind }];
 
-export function EventsTab({ events, runLabel, filterRef }: Props) {
+export function EventsTab({ events, runLabel, filterRef, selected, onSelect }: Props) {
   return (
     <EventList
       id="events"
+      selected={selected}
+      onSelect={onSelect}
       events={events}
       filterRef={filterRef}
       placeholder="Filter, e.g. cart -kind:route tag:env=qa"

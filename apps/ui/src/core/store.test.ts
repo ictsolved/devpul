@@ -119,6 +119,37 @@ describe('Store', () => {
   });
 });
 
+describe('Store selection', () => {
+  it('keeps one selection per tab', () => {
+    const store = new Store();
+    store.select('http', 's1|1');
+    store.select('errors', 's1|5');
+    store.select('logs', 's1|7');
+    store.select('logs', null);
+    expect(store.selected('http')).toEqual({ key: 's1|1' });
+    expect(store.selected('errors')).toEqual({ key: 's1|5' });
+    expect(store.selected('logs')).toBeUndefined();
+  });
+
+  it('remembers where an item was opened from until another is picked', () => {
+    const store = new Store();
+    store.select('http', 's1|1', { tab: 'errors', key: 's1|5' });
+    expect(store.selected('http')?.from).toEqual({ tab: 'errors', key: 's1|5' });
+    store.select('http', 's1|2');
+    expect(store.selected('http')?.from).toBeUndefined();
+  });
+
+  it('notifies at once and forgets selections on clear', () => {
+    const store = new Store();
+    let calls = 0;
+    store.subscribe(() => calls++);
+    store.select('http', 's1|1');
+    expect(calls).toBe(1);
+    store.clear();
+    expect(store.selected('http')).toBeUndefined();
+  });
+});
+
 describe('Store rows', () => {
   it('derives host and response size', () => {
     const store = new Store();

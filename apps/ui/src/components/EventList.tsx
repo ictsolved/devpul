@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { type ReactNode, type RefObject, useCallback, useMemo, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback, useMemo } from 'react';
 import type { DevEvent } from '../core/events';
 import { matchesQuery, matchesTag, parseQuery } from '../core/filter';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,13 @@ export interface Group {
   first: number;
 }
 
-interface Props {
+/** A tab's selection, kept in the store. */
+export interface ListSelection {
+  selected: string | null;
+  onSelect: (key: string | null) => void;
+}
+
+interface Props extends ListSelection {
   id: string;
   events: readonly DevEvent[];
   filterRef: RefObject<HTMLInputElement | null>;
@@ -71,8 +77,8 @@ const haystack = (e: DevEvent) => {
 
 export function EventList(props: Props) {
   const { id, events, filterRef, placeholder, keys = [], field, facets = [], groupBy } = props;
+  const { selected, onSelect: setSelected } = props;
   const [state, setState] = useStored<Stored>(`${id}Filter`, { text: '', facets: {}, grouped: false });
-  const [selected, setSelected] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = parseQuery(state.text, ['kind', 'tag', ...keys]);

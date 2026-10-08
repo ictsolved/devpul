@@ -1,13 +1,13 @@
 import { cn } from 'cn';
 import type { RefObject } from 'react';
 import { CopyButton } from '../../components/Copy';
-import { EventList, type Facet } from '../../components/EventList';
+import { EventList, type Facet, type ListSelection } from '../../components/EventList';
 import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
 import { type DevEvent, str } from '../../core/events';
 import { formatTime } from '../../core/json';
 
-interface Props {
+interface Props extends ListSelection {
   logs: DevEvent[];
   runLabel: (run: string) => string;
   filterRef: RefObject<HTMLInputElement | null>;
@@ -42,10 +42,12 @@ function field(e: DevEvent, key: string, value: string): boolean {
   return false;
 }
 
-export function LogsTab({ logs, runLabel, filterRef }: Props) {
+export function LogsTab({ logs, runLabel, filterRef, selected, onSelect }: Props) {
   return (
     <EventList
       id="logs"
+      selected={selected}
+      onSelect={onSelect}
       events={logs}
       filterRef={filterRef}
       placeholder="Filter, e.g. sync level:warn,error name:auth"

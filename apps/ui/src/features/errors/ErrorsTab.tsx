@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '../../components/Copy';
-import { EventList, type Facet } from '../../components/EventList';
+import { EventList, type Facet, type ListSelection } from '../../components/EventList';
 import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
 import { type DevEvent, str } from '../../core/events';
@@ -13,7 +13,7 @@ const noteClass = 'mx-3 my-1.5 text-xs text-muted-foreground';
 const NEAR_BEFORE = 10_000;
 const NEAR_AFTER = 1_000;
 
-interface Props {
+interface Props extends ListSelection {
   errors: DevEvent[];
   requests: readonly HttpRow[];
   runLabel: (run: string) => string;
@@ -44,13 +44,15 @@ function report(e: DevEvent): string {
     .join('\n\n');
 }
 
-export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest }: Props) {
+export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest, selected, onSelect }: Props) {
   const near = (e: DevEvent) =>
     requests.filter((r) => r.run === e.run && r.ts >= e.ts - NEAR_BEFORE && r.ts <= e.ts + NEAR_AFTER).slice(0, 8);
 
   return (
     <EventList
       id="errors"
+      selected={selected}
+      onSelect={onSelect}
       events={errors}
       filterRef={filterRef}
       placeholder="Filter, e.g. timeout source:flutter type:State"

@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useRef } from 'react';
 import { CopyButton } from '../../components/Copy';
-import { EventList } from '../../components/EventList';
+import { EventList, type ListSelection } from '../../components/EventList';
 import { JsonView } from '../../components/JsonView';
 import type { DevEvent } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
@@ -9,7 +9,7 @@ import { type DevpulPlugin, type PluginContext, type PluginEvent, toPluginEvent 
 
 export type AppCall = (e: DevEvent, method: string, params?: Record<string, unknown>) => Promise<unknown>;
 
-interface Props {
+interface Props extends ListSelection {
   plugin: DevpulPlugin;
   /** The plugin's events, newest first. */
   events: DevEvent[];
@@ -98,11 +98,13 @@ function usePluginRender(
 
 export function PluginTab(props: Props) {
   if (props.plugin.renderTab) return <WholeTab {...props} />;
-  const { plugin, events, runLabel, filterRef, call } = props;
+  const { plugin, events, runLabel, filterRef, call, selected, onSelect } = props;
   return (
     <EventList
       key={plugin.id}
       id={`plugin:${plugin.id}`}
+      selected={selected}
+      onSelect={onSelect}
       events={events}
       filterRef={filterRef}
       placeholder="Filter, e.g. words -word kind: tag:k=v"

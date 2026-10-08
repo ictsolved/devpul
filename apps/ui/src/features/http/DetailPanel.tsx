@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { Braces, ListTree, SquareTerminal } from 'lucide-react';
+import { ArrowLeft, Braces, ListTree, SquareTerminal } from 'lucide-react';
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
@@ -29,9 +29,10 @@ const breakClass = 'font-mono text-xs break-all';
 interface Props {
   row: HttpRow;
   onClose: () => void;
+  onBack?: () => void;
 }
 
-function DetailPanelInner({ row, onClose }: Props) {
+function DetailPanelInner({ row, onClose, onBack }: Props) {
   const [mode, setMode] = useStored<BodyMode>('bodyMode', 'raw');
   const req = row.request?.data;
   const end = (row.response ?? row.error)?.data;
@@ -44,6 +45,12 @@ function DetailPanelInner({ row, onClose }: Props) {
       onClose={onClose}
       head={
         <>
+          {onBack && (
+            <Button type="button" variant="outline" size="xs" onClick={onBack}>
+              <ArrowLeft />
+              Back to error
+            </Button>
+          )}
           <Method method={row.method} />
           <StatusBadge row={row} />
           {row.durationMs !== undefined && <span className="text-muted-foreground">{row.durationMs} ms</span>}

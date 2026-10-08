@@ -13,7 +13,7 @@ import { fromSession } from './core/export';
 import { formatTime } from './core/json';
 import { Persist } from './core/persist';
 import { type ConnState, Connection } from './core/rpc';
-import { type RunInfo, Store } from './core/store';
+import { type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLocalOrigin, pastedUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
@@ -31,6 +31,13 @@ import { pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
 
 const store = new Store(load('settings', defaultSettings).maxEvents);
+const selectFns = new Map<string, (key: string | null) => void>();
+// Stable per tab, so list key handlers are not re-registered on every render.
+const selection = (tab: string) => {
+  let onSelect = selectFns.get(tab);
+  if (!onSelect) selectFns.set(tab, (onSelect = (key) => store.select(tab, key)));
+  return { selected: store.selected(tab)?.key ?? null, onSelect };
+};
 let counter = 0;
 const nextN = () => ++counter;
 const localOrigin = isLocalOrigin(location.hostname);
@@ -43,7 +50,6 @@ export function App() {
   const [states, setStates] = useState<Record<string, ConnState>>({});
   const [ready, setReady] = useState(false);
   const [tab, setTabState] = useState(() => load('tab', 'http'));
-  const [httpSelected, setHttpSelected] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null);
@@ -240,7 +246,6 @@ export function App() {
 
   const clearAll = () => {
     store.clear();
-    setHttpSelected(null);
     void persist.current?.clear();
     setUsage(persist.current ? { count: 0, bytes: 0 } : null);
   };
@@ -372,6 +377,12 @@ export function App() {
       : pageTitle;
   }, [showMain, errors.length, latestSession]);
 
+  const openIn = (to: string, key: string, from?: Selection['from']) => {
+    store.select(to, key, from);
+    setTab(to);
+  };
+  const httpFrom = store.selected('http')?.from;
+
   const openSettings = () => {
     setUsage(persist.current ? { count: persist.current.count, bytes: persist.current.bytes } : null);
     setSettingsOpen(true);
@@ -496,8 +507,8 @@ export function App() {
                     settings={settings}
                     runLabel={runLabel}
                     filterRef={filterRef}
-                    selected={httpSelected}
-                    onSelect={setHttpSelected}
+                    {...selection('http')}
+                    onBack={httpFrom && (() => openIn(httpFrom.tab, httpFrom.key))}
                   />
                 )}
                 {activeTab === 'errors' && (
@@ -506,16 +517,22 @@ export function App() {
                     requests={store.httpRows}
                     runLabel={runLabel}
                     filterRef={filterRef}
+                    {...selection('errors')}
                     onOpenRequest={(key) => {
-                      setHttpSelected(key);
-                      setTab('http');
+                      const error = store.selected('errors');
+                      openIn('http', key, error && { tab: 'errors', key: error.key });
                     }}
                   />
                 )}
-                {activeTab === 'logs' && <LogsTab logs={logs} runLabel={runLabel} filterRef={filterRef} />}
-                {activeTab === 'events' && <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} />}
+                {activeTab === 'logs' && (
+                  <LogsTab logs={logs} runLabel={runLabel} filterRef={filterRef} {...selection('logs')} />
+                )}
+                {activeTab === 'events' && (
+                  <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} {...selection('events')} />
+                )}
                 {activePlugin && (
                   <PluginTab
+                    {...selection(activeTab)}
                     plugin={activePlugin}
                     events={pluginEvents[activePlugin.id] ?? []}
                     fallback={pluginFallback}

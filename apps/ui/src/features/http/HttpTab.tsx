@@ -62,9 +62,11 @@ interface Props {
   filterRef: React.RefObject<HTMLInputElement | null>;
   selected: string | null;
   onSelect: (key: string | null) => void;
+  /** Set when the selected request was opened from an error. */
+  onBack?: () => void;
 }
 
-export function HttpTab({ store, settings, runLabel, filterRef, selected, onSelect }: Props) {
+export function HttpTab({ store, settings, runLabel, filterRef, selected, onSelect, onBack }: Props) {
   const [filter, setFilter] = useStored<HttpFilter>('httpFilter', emptyFilter);
   const [sort, setSort] = useStored<Sort>('httpSort', defaultSort);
 
@@ -113,7 +115,11 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
 
   return (
     <Split
-      detail={selectedRow && <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} />}
+      detail={
+        selectedRow && (
+          <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} onBack={onBack} />
+        )
+      }
     >
       <div className={toolbarClass}>
         <Tip content={SYNTAX} code>
