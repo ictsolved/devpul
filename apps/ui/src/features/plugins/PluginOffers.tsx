@@ -1,7 +1,7 @@
 import { Puzzle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { type Approval, type Listed, toLoad } from '../../core/approvals';
+import { type Approval, approvedAndCached, type Listed, toLoad } from '../../core/approvals';
 import type { DevEvent } from '../../core/events';
 import { parseInfo } from '../../core/info';
 import { formatBytes } from '../../core/json';
@@ -73,14 +73,15 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
   }, [urls, fail]);
 
   useEffect(() => {
+    if (!cache) return;
     for (const run of latestRuns(runs)) {
       const info = run.info;
       const state = states[run.conn];
       // Asked on resume.
       if (!info || state?.status !== 'open' || isPaused(state, info.isolateId)) continue;
-      for (const { id, version } of parseInfo(info.data).plugins) {
+      for (const { id, version, hash: reported } of parseInfo(info.data).plugins) {
         const once = `${run.run}|${id}`;
-        if (asked.current.has(once)) continue;
+        if (asked.current.has(once) || approvedAndCached(approvals, id, reported, (h) => cache.has(h))) continue;
         asked.current.add(once);
         void fetchOffer(info, id, call).then(
           async (source) => {
@@ -92,13 +93,16 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
         );
       }
     }
-  }, [runs, states, call, appName, fail]);
+  }, [cache, approvals, runs, states, call, appName, fail]);
 
   const listed = useMemo(
     () =>
       latestRuns(runs).flatMap((run) =>
         run.info
-          ? parseInfo(run.info.data).plugins.map(({ id }): Listed => ({ id, hash: fetched[`${run.run}|${id}`]?.hash }))
+          ? parseInfo(run.info.data).plugins.map(({ id, hash }): Listed => ({
+              id,
+              hash: fetched[`${run.run}|${id}`]?.hash ?? hash,
+            }))
           : [],
       ),
     [runs, fetched],

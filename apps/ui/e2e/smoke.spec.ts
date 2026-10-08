@@ -110,9 +110,14 @@ test('offers the app plugin and loads it once allowed', async ({ page, vm }) => 
   await page.getByRole('tab', { name: /^Events/ }).click();
   await expect(page.getByRole('grid', { name: 'Events' }).getByRole('row', { name: /cart\.updated/ })).toHaveCount(0);
 
+  // The handshake hash matches the approved, cached source, so the app is not asked for it again.
+  expect(vm.callsTo('ext.devpul.plugin')).toHaveLength(1);
   await page.reload();
   await expect(page.getByRole('tab', { name: /^Cart/ })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect.poll(() => vm.callsTo('ext.devpul.backlog').length).toBe(2);
+  await page.waitForTimeout(300);
+  expect(vm.callsTo('ext.devpul.plugin')).toHaveLength(1);
 });
 
 test('runs an action with params', async ({ page, vm }) => {

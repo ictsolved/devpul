@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Approval, approve, toLoad } from './approvals';
+import { type Approval, approve, approvedAndCached, toLoad } from './approvals';
 
 const all = () => true;
 
@@ -48,5 +48,23 @@ describe('approve', () => {
       { id: 'b', hash: 'h2' },
       { id: 'a', hash: 'h3', version: '2' },
     ]);
+  });
+});
+
+const notGone = (hash: string) => hash !== 'gone';
+
+describe('approvedAndCached', () => {
+  const approvals: Approval[] = [
+    { id: 'a', hash: 'h1' },
+    { id: 'b', hash: 'h2', off: true },
+  ];
+
+  it('needs an approval for that package and hash, and its source', () => {
+    expect(approvedAndCached(approvals, 'a', 'h1', notGone)).toBe(true);
+    expect(approvedAndCached(approvals, 'b', 'h2', notGone)).toBe(true);
+    expect(approvedAndCached(approvals, 'a', 'h2', notGone)).toBe(false);
+    expect(approvedAndCached(approvals, 'c', 'h1', notGone)).toBe(false);
+    expect(approvedAndCached(approvals, 'a', undefined, notGone)).toBe(false);
+    expect(approvedAndCached([{ id: 'a', hash: 'gone' }], 'a', 'gone', notGone)).toBe(false);
   });
 });

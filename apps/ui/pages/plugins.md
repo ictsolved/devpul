@@ -43,7 +43,7 @@ export default { api: 1, id: 'cart', label: 'Cart', kinds: ['cart.updated'] };
 void installCartTab() => Devpul.plugin('my_cart', () => _plugin);
 ```
 
-The first argument is the package name. When an app offers a plugin, DevPul shows the package, size and SHA-256 of the source and runs it only after you allow it. An approval covers one package at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app sends its source, and with stored or opened sessions when the app is gone. Settings lists approvals with package, version and hash; switch one off to stop loading it, or remove it. Sources larger than 512 KB are refused.
+The first argument is the package name. When an app offers a plugin, DevPul shows the package, size and SHA-256 of the source and runs it only after you allow it. An approval covers one package at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the package; a source the app sends is hashed by DevPul itself. Settings lists approvals with package, version and hash; switch one off to stop loading it, or remove it. Sources larger than 512 KB are refused.
 
 The source is read only when the UI asks, and only in debug builds.
 

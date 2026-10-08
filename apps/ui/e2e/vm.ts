@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
@@ -119,14 +120,28 @@ export class FakeVm {
   private constructor(server: WebSocketServer, options: VmOptions) {
     this.server = server;
     this.url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/e2eToken=/`;
-    this.events = options.events ?? fixtureEvents();
-    this.info = options.info ?? (contract('info.json') as JsonObject);
     this.plugins = options.plugins ?? { my_plugin: PLUGIN };
+    this.info = this.hashed(options.info ?? (contract('info.json') as JsonObject));
+    this.events = (options.events ?? fixtureEvents()).map((e) =>
+      e.kind === 'devpul.app.info' ? { ...e, data: { ...e.data, data: this.hashed(e.data.data) } } : e,
+    );
     server.on('connection', (ws) => {
       this.streams.set(ws, new Set());
       ws.on('message', (text) => this.handle(ws, String(text)));
       ws.on('close', () => this.streams.delete(ws));
     });
+  }
+
+  // Plugins list the hash of the source served here, as `devpul` does.
+  private hashed(info: JsonObject): JsonObject {
+    const plugins = Array.isArray(info.plugins) ? (info.plugins as JsonObject[]) : [];
+    return {
+      ...info,
+      plugins: plugins.map((p) => {
+        const source = this.plugins[String(p.id)];
+        return source === undefined ? p : { ...p, hash: createHash('sha256').update(source).digest('hex') };
+      }),
+    };
   }
 
   static async start(options: VmOptions = {}): Promise<FakeVm> {
