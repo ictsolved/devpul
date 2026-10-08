@@ -28,6 +28,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -w apps/ui
 
   publish:
     runs-on: ubuntu-latest
