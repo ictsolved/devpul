@@ -16,13 +16,15 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { appName } from '../../components/SessionHeader';
 import type { DevEvent, Json } from '../../core/events';
 import { type ActionInfo, type ActionParam, parseInfo } from '../../core/info';
-import type { ConnState } from '../../core/rpc';
+import { type ConnState, isPaused } from '../../core/rpc';
 import { latestRuns, type RunInfo } from '../../core/store';
 
 export interface AppActions {
   app: string;
   event: DevEvent;
   actions: ActionInfo[];
+  /** Stopped in the debugger; an action sent now would run on resume. */
+  paused: boolean;
 }
 
 export type RunAction = (event: DevEvent, name: string, args?: Record<string, Json>) => void;
@@ -32,7 +34,15 @@ export function appActions(runs: ReadonlyMap<string, RunInfo>, states: Record<st
   return latestRuns(runs).flatMap((r) => {
     if (!r.info || states[r.conn]?.status !== 'open') return [];
     const list = parseInfo(r.info.data).actions;
-    return list.length ? [{ app: appName(r.session) ?? r.conn, event: r.info, actions: list }] : [];
+    if (!list.length) return [];
+    return [
+      {
+        app: appName(r.session) ?? r.conn,
+        event: r.info,
+        actions: list,
+        paused: isPaused(states[r.conn], r.info.isolateId),
+      },
+    ];
   });
 }
 
@@ -69,12 +79,17 @@ export function ActionsMenu({ apps, onRun }: Props) {
         >
           {apps.map((a) => (
             <DropdownMenuGroup key={a.event.key}>
-              {apps.length > 1 && (
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{a.app}</DropdownMenuLabel>
+              {(apps.length > 1 || a.paused) && (
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  {apps.length > 1 && a.app}
+                  {apps.length > 1 && a.paused && ': '}
+                  {a.paused && 'paused in the debugger'}
+                </DropdownMenuLabel>
               )}
               {a.actions.map((action) => (
                 <DropdownMenuItem
                   key={action.name}
+                  disabled={a.paused}
                   onSelect={() =>
                     action.params.length ? setForm({ event: a.event, action }) : onRun(a.event, action.name)
                   }
@@ -91,6 +106,7 @@ export function ActionsMenu({ apps, onRun }: Props) {
         <ActionDialog
           key={`${form.event.key}|${form.action.name}`}
           action={form.action}
+          paused={apps.find((a) => a.event.key === form.event.key)?.paused ?? false}
           onRun={(args) => onRun(form.event, form.action.name, args)}
           onClose={() => setForm(null)}
         />
@@ -99,8 +115,13 @@ export function ActionsMenu({ apps, onRun }: Props) {
   );
 }
 
-function ActionDialog(props: { action: ActionInfo; onRun: (args: Record<string, Json>) => void; onClose: () => void }) {
-  const { action, onRun, onClose } = props;
+function ActionDialog(props: {
+  action: ActionInfo;
+  paused: boolean;
+  onRun: (args: Record<string, Json>) => void;
+  onClose: () => void;
+}) {
+  const { action, paused, onRun, onClose } = props;
   const [values, setValues] = useState<Record<string, Json>>(() =>
     Object.fromEntries(action.params.map((p) => [p.name, p.initial])),
   );
@@ -127,9 +148,10 @@ function ActionDialog(props: { action: ActionInfo; onRun: (args: Record<string, 
               onChange={(v) => setValues({ ...values, [p.name]: v })}
             />
           ))}
-          <Button type="submit" size="sm">
+          <Button type="submit" size="sm" disabled={paused}>
             Run
           </Button>
+          {paused && <p className="text-xs text-muted-foreground">The app is paused in the debugger.</p>}
         </form>
       </DialogContent>
     </Dialog>

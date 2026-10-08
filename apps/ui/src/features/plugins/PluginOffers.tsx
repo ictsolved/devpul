@@ -6,7 +6,7 @@ import type { DevEvent } from '../../core/events';
 import { parseInfo } from '../../core/info';
 import { formatBytes } from '../../core/json';
 import { SourceCache } from '../../core/persist';
-import type { ConnState } from '../../core/rpc';
+import { type ConnState, isPaused } from '../../core/rpc';
 import { latestRuns, type RunInfo } from '../../core/store';
 import type { AppCall } from './PluginTab';
 import { loadPlugin, MAX_SOURCE, registry, sha256 } from './plugins';
@@ -75,7 +75,9 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
   useEffect(() => {
     for (const run of latestRuns(runs)) {
       const info = run.info;
-      if (!info || states[run.conn]?.status !== 'open') continue;
+      const state = states[run.conn];
+      // Asked on resume.
+      if (!info || state?.status !== 'open' || isPaused(state, info.isolateId)) continue;
       for (const { id, version } of parseInfo(info.data).plugins) {
         const once = `${run.run}|${id}`;
         if (asked.current.has(once)) continue;

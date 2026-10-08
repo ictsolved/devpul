@@ -13,7 +13,7 @@ import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
 import { formatTime } from './core/json';
 import { Persist } from './core/persist';
-import { type ConnState, Connection } from './core/rpc';
+import { type ConnState, Connection, isPaused } from './core/rpc';
 import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
@@ -333,7 +333,9 @@ export function App() {
 
   const actions = useMemo(() => appActions(runs, states), [runs, states]);
   const limitApps = latestRuns(runs).flatMap((run) =>
-    run.info && states[run.conn]?.status === 'open' ? [{ name: runName(run), run }] : [],
+    run.info && states[run.conn]?.status === 'open'
+      ? [{ name: runName(run), run, paused: isPaused(states[run.conn], run.info.isolateId) }]
+      : [],
   );
 
   const errors = store.errors;

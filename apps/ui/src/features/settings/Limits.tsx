@@ -11,6 +11,7 @@ export interface LimitApp {
   name: string;
   /** A live run with an `app.info` event. */
   run: RunInfo;
+  paused: boolean;
 }
 
 type SetLimit = (event: DevEvent, kind: string, perSecond: number | null) => void;
@@ -23,13 +24,14 @@ export function Limits({ apps, call }: { apps: LimitApp[]; call: AppCall }) {
   // By the `app.info` event they update; a newer event replaces them.
   const [fresh, setFresh] = useState<Record<string, AppInfo>>({});
   const [error, setError] = useState<string | null>(null);
-  const infoKeys = apps.map((a) => a.run.info?.key).join('|');
+  // A paused app is asked again on resume.
+  const infoKeys = apps.map((a) => (a.paused ? '' : a.run.info?.key)).join('|');
 
   // `dropped` in app.info is as of the last limit change; ask for current counts.
   useEffect(() => {
-    for (const { run } of apps) {
+    for (const { run, paused } of apps) {
       const info = run.info;
-      if (!info) continue;
+      if (!info || paused) continue;
       call(info, 'ext.devpul.info').then(
         (result) => isObject(result) && setFresh((f) => ({ ...f, [info.key]: parseInfo(result) })),
         () => {},
@@ -50,12 +52,13 @@ export function Limits({ apps, call }: { apps: LimitApp[]; call: AppCall }) {
   if (!apps.length) return <p className="text-muted-foreground">Mute or cap event kinds of a connected app here.</p>;
   return (
     <>
-      {apps.map(({ name, run }) =>
+      {apps.map(({ name, run, paused }) =>
         run.info ? (
           <AppLimits
             key={run.info.key}
             name={apps.length > 1 ? name : undefined}
             run={run}
+            paused={paused}
             info={fresh[run.info.key] ?? parseInfo(run.info.data)}
             onSet={set}
           />
@@ -66,8 +69,8 @@ export function Limits({ apps, call }: { apps: LimitApp[]; call: AppCall }) {
   );
 }
 
-function AppLimits(props: { name?: string; run: RunInfo; info: AppInfo; onSet: SetLimit }) {
-  const { name, run, info, onSet } = props;
+function AppLimits(props: { name?: string; run: RunInfo; paused: boolean; info: AppInfo; onSet: SetLimit }) {
+  const { name, run, paused, info, onSet } = props;
   const event = run.info;
   if (!event) return null;
   const kinds = [
@@ -76,6 +79,7 @@ function AppLimits(props: { name?: string; run: RunInfo; info: AppInfo; onSet: S
   return (
     <div className="my-1.5">
       {name && <p className="font-medium">{name}</p>}
+      {paused && <p className="text-muted-foreground">Paused in the debugger.</p>}
       {kinds.length === 0 ? (
         <p className="text-muted-foreground">No events yet.</p>
       ) : (
@@ -102,6 +106,7 @@ function AppLimits(props: { name?: string; run: RunInfo; info: AppInfo; onSet: S
                     <Checkbox
                       aria-label={`Mute ${kind}`}
                       checked={own === 0}
+                      disabled={paused}
                       onCheckedChange={(checked) => onSet(event, kind, checked === true ? 0 : null)}
                     />
                   </td>
@@ -112,7 +117,7 @@ function AppLimits(props: { name?: string; run: RunInfo; info: AppInfo; onSet: S
                       aria-label={`${kind} per second`}
                       value={own || null}
                       min={1}
-                      disabled={own === 0}
+                      disabled={paused || own === 0}
                       onCommit={(n) => onSet(event, kind, n)}
                       onClear={() => onSet(event, kind, null)}
                     />

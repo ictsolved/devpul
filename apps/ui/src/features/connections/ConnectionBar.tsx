@@ -94,6 +94,7 @@ export function ConnectionBar(props: Props) {
                 <li className="inline-flex items-center gap-1.5 rounded-full border py-px pr-1 pl-[9px] text-xs">
                   <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
                   <span>{names[c.id] ?? connectionLabel(c.url)}</span>
+                  {s?.paused.length ? <span className="text-warning">paused</span> : null}
                   <button
                     type="button"
                     className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"

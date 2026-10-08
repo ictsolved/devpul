@@ -48,6 +48,10 @@ The local server takes the URL as an argument and opens that link for you:
 npx devpul http://127.0.0.1:41234/AbCdEf12=/
 ```
 
+## Paused in the debugger
+
+While the app is stopped at a breakpoint, its connection shows **paused** and DevPul sends it nothing: actions, plugin calls and limit changes are disabled, since the app would run them only on resume. DevPul fetches what it missed once the app resumes. A call the running app does not answer within 5 s fails with an error.
+
 ## Fixed port (optional)
 
 Run with a fixed DDS port and no token, then paste `127.0.0.1:8181` once. DevPul keeps the URL, so the connection survives restarts.

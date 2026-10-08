@@ -15,25 +15,35 @@ export interface ConnState {
   everOpened: boolean;
   /** `app`: the app's devpul package is too old for this UI. `ui`: the reverse. */
   incompatible?: 'app' | 'ui';
+  /** Isolates stopped in the debugger. */
+  paused: string[];
 }
 
 interface Pending {
   resolve: (value: unknown) => void;
   reject: (reason: unknown) => void;
+  timer?: ReturnType<typeof setTimeout>;
 }
 
 const RETRY_MS = 2000;
+export const CALL_TIMEOUT_MS = 5000;
 const BACKLOG = 'ext.devpul.backlog';
 const INFO = 'ext.devpul.info';
 
+export const isPaused = (state: ConnState | undefined, isolateId: string | undefined): boolean =>
+  isolateId !== undefined && state?.paused.includes(isolateId) === true;
+
 export class Connection {
-  state: ConnState = { status: 'closed', everOpened: false };
+  state: ConnState = { status: 'closed', everOpened: false, paused: [] };
 
   private ws: WebSocket | null = null;
   private nextId = 1;
   private pending = new Map<number, Pending>();
   private retry: ReturnType<typeof setTimeout> | null = null;
   private stopped = true;
+  private paused = new Set<string>();
+  // Isolates whose handshake or backlog a pause cut off; attached again on resume.
+  private reattach = new Set<string>();
 
   constructor(
     readonly id: string,
@@ -57,15 +67,28 @@ export class Connection {
     this.ws = null;
   }
 
-  /** Calls a VM service method. Service extensions need an `isolateId`. */
+  /**
+   * Calls a VM service method. Service extensions need an `isolateId`; a paused
+   * isolate would run them on resume, so they are refused while it is paused.
+   */
   call(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     const ws = this.ws;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       return Promise.reject(new Error('not connected'));
     }
+    const ext = method.startsWith('ext.');
+    if (ext && typeof params.isolateId === 'string' && this.paused.has(params.isolateId)) {
+      return Promise.reject(new Error('The app is paused in the debugger.'));
+    }
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
+      const timer = ext
+        ? setTimeout(() => {
+            this.pending.delete(id);
+            reject(new Error(`No answer from the app within ${CALL_TIMEOUT_MS / 1000} s.`));
+          }, CALL_TIMEOUT_MS)
+        : undefined;
+      this.pending.set(id, { resolve, reject, timer });
       ws.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }));
     });
   }
@@ -79,6 +102,24 @@ export class Connection {
     if (this.state.incompatible === side) return;
     this.state = { ...this.state, incompatible: side };
     this.onState();
+  }
+
+  private setPaused(isolateId: string, paused: boolean): void {
+    if (this.paused.has(isolateId) === paused) return;
+    if (paused) this.paused.add(isolateId);
+    else this.paused.delete(isolateId);
+    this.state = { ...this.state, paused: [...this.paused] };
+    this.onState();
+  }
+
+  private debugEvent(iso: IsolateRef, kind: unknown): void {
+    if (!iso.id || typeof kind !== 'string') return;
+    if (kind.startsWith('Pause')) {
+      this.setPaused(iso.id, true);
+    } else if (kind === 'Resume') {
+      this.setPaused(iso.id, false);
+      if (this.reattach.delete(iso.id)) void this.attach(iso);
+    }
   }
 
   private accept(raw: VmExtensionEvent, out: DevEvent[]): void {
@@ -105,8 +146,14 @@ export class Connection {
     ws.onclose = () => {
       if (this.ws !== ws) return;
       this.ws = null;
-      for (const p of this.pending.values()) p.reject(new Error('closed'));
+      for (const p of this.pending.values()) {
+        clearTimeout(p.timer);
+        p.reject(new Error('closed'));
+      }
       this.pending.clear();
+      this.paused.clear();
+      this.reattach.clear();
+      this.state = { ...this.state, paused: [] };
       this.setStatus('closed');
       this.scheduleRetry();
     };
@@ -122,21 +169,27 @@ export class Connection {
   }
 
   private async subscribe(): Promise<void> {
-    try {
-      await this.call('streamListen', { streamId: 'Extension' });
-    } catch {
-      // Already subscribed.
-    }
-    try {
-      await this.call('streamListen', { streamId: 'Isolate' });
-    } catch {
-      // Not offered by every debug service.
+    for (const streamId of ['Extension', 'Isolate', 'Debug']) {
+      try {
+        await this.call('streamListen', { streamId });
+      } catch {
+        // Already subscribed, or not offered by this debug service.
+      }
     }
     try {
       const vm = await this.call('getVM');
       const isolates = isObject(vm) && Array.isArray(vm.isolates) ? vm.isolates : [];
       for (const iso of isolates) {
-        if (isObject(iso)) await this.attach(iso as IsolateRef);
+        if (!isObject(iso) || typeof iso.id !== 'string') continue;
+        try {
+          const full = await this.call('getIsolate', { isolateId: iso.id });
+          if (isObject(full) && isObject(full.pauseEvent)) {
+            this.debugEvent({ id: iso.id }, full.pauseEvent.kind);
+          }
+        } catch {
+          // Taken as running.
+        }
+        await this.attach(iso as IsolateRef);
       }
     } catch {
       // The live stream still works.
@@ -150,6 +203,10 @@ export class Connection {
     try {
       info = await this.call(INFO, { isolateId: iso.id });
     } catch {
+      if (this.paused.has(iso.id)) {
+        this.reattach.add(iso.id);
+        return;
+      }
       // Not a DevPul isolate yet, or one older than the handshake.
       try {
         const full = await this.call('getIsolate', { isolateId: iso.id });
@@ -176,6 +233,7 @@ export class Connection {
     try {
       result = await this.call(BACKLOG, { isolateId: id });
     } catch {
+      if (this.paused.has(id)) this.reattach.add(id);
       return;
     }
     let group = iso.isolateGroupId;
@@ -218,6 +276,7 @@ export class Connection {
       const p = this.pending.get(msg.id);
       if (!p) return;
       this.pending.delete(msg.id);
+      clearTimeout(p.timer);
       if ('error' in msg) p.reject(msg.error);
       else p.resolve(msg.result);
       return;
@@ -229,13 +288,17 @@ export class Connection {
       const events: DevEvent[] = [];
       this.accept(event as VmExtensionEvent, events);
       if (events.length) this.onEvents(events);
-    } else if (
-      streamId === 'Isolate' &&
-      event.kind === 'ServiceExtensionAdded' &&
-      event.extensionRPC === INFO &&
-      isObject(event.isolate)
-    ) {
-      void this.attach(event.isolate as IsolateRef);
+      return;
+    }
+    if (!isObject(event.isolate) || typeof event.isolate.id !== 'string') return;
+    const iso = event.isolate as IsolateRef;
+    if (streamId === 'Debug') {
+      this.debugEvent(iso, event.kind);
+    } else if (streamId === 'Isolate' && event.kind === 'IsolateExit') {
+      this.setPaused(event.isolate.id, false);
+      this.reattach.delete(event.isolate.id);
+    } else if (streamId === 'Isolate' && event.kind === 'ServiceExtensionAdded' && event.extensionRPC === INFO) {
+      void this.attach(iso);
     }
   }
 }
