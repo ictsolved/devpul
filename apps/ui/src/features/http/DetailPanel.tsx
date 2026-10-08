@@ -32,7 +32,7 @@ interface Props {
 }
 
 function DetailPanelInner({ row, onClose }: Props) {
-  const [mode, setMode] = useStored<BodyMode>('bodyMode', 'tree');
+  const [mode, setMode] = useStored<BodyMode>('bodyMode', 'raw');
   const req = row.request?.data;
   const end = (row.response ?? row.error)?.data;
   const curl = str(req?.curl);

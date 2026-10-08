@@ -43,7 +43,7 @@ Click a column header in HTTP to sort by it; click again to flip the direction. 
 
 ## Details
 
-Select a row to see it on the right. Headers and params show as tables, bodies as a JSON tree; switch to raw JSON with the Raw button. Copy the URL, any section, a curl command or a `fetch()` call for the browser console.
+Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch to a tree with the Tree button. Copy the URL, any section, a curl command or a `fetch()` call for the browser console.
 
 In Errors, **Group repeats** folds identical errors into one row with a count, and each error lists the requests made in the 10 seconds before it. Click one to open it in HTTP.
 
