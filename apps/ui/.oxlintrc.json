@@ -24,6 +24,12 @@
   },
   "overrides": [
     {
+      "files": ["e2e/**"],
+      "rules": {
+        "react-hooks/rules-of-hooks": "off"
+      }
+    },
+    {
       "files": ["src/core/**"],
       "rules": {
         "no-restricted-imports": [

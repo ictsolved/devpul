@@ -4,6 +4,7 @@ pubspec_overrides.yaml
 node_modules/
 dist/
 coverage/
+test-results/
 *.log
 .DS_Store
 .idea/
