@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { type RefObject, useCallback } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet, type ListSelection } from '../../components/EventList';
 import { JsonView } from '../../components/JsonView';
@@ -14,9 +14,29 @@ interface Props extends ListSelection {
 const FACETS: Facet[] = [{ id: 'kind', label: 'Kind', of: (e) => e.kind }];
 
 export function EventsTab({ events, runLabel, filterRef, selected, onSelect }: Props) {
+  const cells = useCallback(
+    (e: DevEvent) => (
+      <>
+        <span role="gridcell" className="text-muted-foreground">
+          {formatTime(e.ts)}
+        </span>
+        <span role="gridcell" className="truncate font-semibold">
+          {e.kind}
+        </span>
+        <span role="gridcell" className="truncate text-muted-foreground">
+          {runLabel(e.run)}
+        </span>
+        <span role="gridcell" className="truncate text-muted-foreground">
+          {preview(e)}
+        </span>
+      </>
+    ),
+    [runLabel],
+  );
   return (
     <EventList
       id="events"
+      label="Events"
       selected={selected}
       onSelect={onSelect}
       events={events}
@@ -25,14 +45,7 @@ export function EventsTab({ events, runLabel, filterRef, selected, onSelect }: P
       facets={FACETS}
       columns="96px minmax(120px, 220px) minmax(0, 180px) minmax(0, 1fr)"
       empty="No custom events yet. Send them with Devpul.emit."
-      cells={(e) => (
-        <>
-          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
-          <span className="truncate font-semibold">{e.kind}</span>
-          <span className="truncate text-muted-foreground">{runLabel(e.run)}</span>
-          <span className="truncate text-muted-foreground">{preview(e)}</span>
-        </>
-      )}
+      cells={cells}
       head={(e) => (
         <>
           <span className="font-mono font-semibold">{e.kind}</span>

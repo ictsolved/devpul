@@ -1,7 +1,7 @@
-import type { RefObject } from 'react';
+import { type RefObject, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '../../components/Copy';
-import { EventList, type Facet, type ListSelection } from '../../components/EventList';
+import { EventList, type Facet, type Group, type ListSelection } from '../../components/EventList';
 import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
 import { type DevEvent, str } from '../../core/events';
@@ -47,10 +47,41 @@ function report(e: DevEvent): string {
 export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest, selected, onSelect }: Props) {
   const near = (e: DevEvent) =>
     requests.filter((r) => r.run === e.run && r.ts >= e.ts - NEAR_BEFORE && r.ts <= e.ts + NEAR_AFTER).slice(0, 8);
+  const cells = useCallback(
+    (e: DevEvent, group?: Group) => (
+      <>
+        <span role="gridcell" className="text-muted-foreground">
+          {formatTime(e.ts)}
+        </span>
+        <span role="gridcell">
+          <Source e={e} />
+          {e.data.silent === true && (
+            <Badge variant="secondary" className="ml-1 rounded-sm text-muted-foreground">
+              silent
+            </Badge>
+          )}
+        </span>
+        <span role="gridcell" className="truncate font-semibold">
+          {typeOf(e)}
+        </span>
+        <span role="gridcell" className="truncate">
+          {str(e.data.message) ?? ''}
+        </span>
+        <span role="gridcell" className="text-right text-muted-foreground">
+          {group && group.count > 1 ? `x${group.count}` : ''}
+        </span>
+        <span role="gridcell" className="truncate text-muted-foreground">
+          {runLabel(e.run)}
+        </span>
+      </>
+    ),
+    [runLabel],
+  );
 
   return (
     <EventList
       id="errors"
+      label="Errors"
       selected={selected}
       onSelect={onSelect}
       events={errors}
@@ -62,23 +93,7 @@ export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest
       groupBy={groupKey}
       columns="96px 72px minmax(80px, 200px) minmax(0, 1fr) 40px minmax(0, 160px)"
       empty="No errors yet."
-      cells={(e, group) => (
-        <>
-          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
-          <span>
-            <Source e={e} />
-            {e.data.silent === true && (
-              <Badge variant="secondary" className="ml-1 rounded-sm text-muted-foreground">
-                silent
-              </Badge>
-            )}
-          </span>
-          <span className="truncate font-semibold">{typeOf(e)}</span>
-          <span className="truncate">{str(e.data.message) ?? ''}</span>
-          <span className="text-right text-muted-foreground">{group && group.count > 1 ? `x${group.count}` : ''}</span>
-          <span className="truncate text-muted-foreground">{runLabel(e.run)}</span>
-        </>
-      )}
+      cells={cells}
       head={(e) => (
         <>
           <Source e={e} />

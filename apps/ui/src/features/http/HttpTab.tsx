@@ -1,11 +1,10 @@
 import { cn } from 'cn';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Split } from '../../components/Panes';
 import { VirtualList } from '../../components/VirtualList';
 import {
-  emptyClass,
   filterClass,
   PauseButton,
   rowClass,
@@ -100,17 +99,17 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
     [store.runs],
   );
   const selectedRow = selected ? rows.find((r) => r.key === selected) : undefined;
-  const selectedIndex = items.findIndex((i) => i.type === 'row' && i.row.key === selected);
+  const selectedIndex = selected ? items.findIndex((i) => i.type === 'row' && i.row.key === selected) : -1;
 
   const sortBy = (key: SortKey) =>
     setSort(sort.key === key ? { key, desc: !sort.desc } : { key, desc: !ASCENDING_FIRST.includes(key) });
 
   const slowClass = (row: HttpRow) => {
     const ms = row.durationMs;
-    if (ms === undefined) return '';
+    if (ms === undefined) return undefined;
     if (ms >= settings.verySlowMs) return 'font-semibold text-destructive';
     if (ms >= settings.slowMs) return 'font-semibold text-warning';
-    return '';
+    return undefined;
   };
 
   return (
@@ -164,67 +163,95 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
         <span className="flex-1" />
         <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
       </div>
-      <div className={cn(GRID, 'h-[26px] border-b')} role="row">
-        {COLUMNS.map((c) => (
-          <button
-            type="button"
-            key={c.key}
-            className={cn(
-              'inline-flex cursor-pointer items-center gap-0.5 text-[11px] tracking-[0.04em] text-muted-foreground uppercase hover:text-foreground',
-              c.num && 'justify-end',
-              sort.key === c.key && 'text-foreground',
-            )}
-            onClick={() => sortBy(c.key)}
-            aria-sort={sort.key === c.key ? (sort.desc ? 'descending' : 'ascending') : undefined}
-          >
-            {c.label}
-            {sort.key === c.key && (sort.desc ? <ArrowDown size={11} /> : <ArrowUp size={11} />)}
-          </button>
-        ))}
-      </div>
-      {items.length === 0 ? (
-        <div className={emptyClass}>{rows.length ? 'No requests match the filter.' : 'No HTTP requests yet.'}</div>
-      ) : (
-        <VirtualList
-          items={items}
-          rowHeight={ROW}
-          scrollToIndex={selectedIndex}
-          render={(item) =>
-            item.type === 'divider' ? (
+      <VirtualList
+        label="Requests"
+        empty={rows.length ? 'No requests match the filter.' : 'No HTTP requests yet.'}
+        items={items}
+        rowHeight={ROW}
+        selectedIndex={selectedIndex}
+        header={
+          <div className={cn(GRID, 'h-[26px] flex-none border-b')} role="row" aria-rowindex={1}>
+            {COLUMNS.map((c) => (
               <div
-                key={item.key}
-                className="flex items-center border-b bg-secondary px-3 text-[11px] font-semibold text-primary"
-                style={{ height: ROW }}
+                key={c.key}
+                role="columnheader"
+                className={cn('flex', c.num && 'justify-end')}
+                aria-sort={sort.key === c.key ? (sort.desc ? 'descending' : 'ascending') : undefined}
               >
+                <button
+                  type="button"
+                  className={cn(
+                    'inline-flex cursor-pointer items-center gap-0.5 text-[11px] tracking-[0.04em] text-muted-foreground uppercase hover:text-foreground',
+                    sort.key === c.key && 'text-foreground',
+                  )}
+                  onClick={() => sortBy(c.key)}
+                >
+                  {c.label}
+                  {sort.key === c.key && (sort.desc ? <ArrowDown size={11} /> : <ArrowUp size={11} />)}
+                </button>
+              </div>
+            ))}
+          </div>
+        }
+        render={(item, rowProps) =>
+          item.type === 'divider' ? (
+            <div
+              key={item.key}
+              {...rowProps}
+              role="row"
+              className="flex items-center border-b bg-secondary px-3 text-[11px] font-semibold text-primary"
+              style={{ height: ROW }}
+            >
+              <span role="gridcell" aria-colspan={COLUMNS.length}>
                 {runLabel(item.run)}
-              </div>
-            ) : (
-              <div
-                key={item.row.key}
-                role="row"
-                aria-selected={item.row.key === selected}
-                className={cn(GRID, rowClass(item.row.key === selected))}
-                style={{ height: ROW }}
-                onClick={() => onSelect(item.row.key)}
-              >
-                <span className="text-muted-foreground">{item.row.id}</span>
-                <span className="text-muted-foreground">{formatTime(item.row.ts)}</span>
-                <Method method={item.row.method} />
-                <span>
-                  <StatusBadge row={item.row} />
-                </span>
-                <span className={cn('text-right', slowClass(item.row))}>{item.row.durationMs ?? ''}</span>
-                <span className="text-right text-muted-foreground">
-                  {item.row.size === undefined ? '' : formatBytes(item.row.size)}
-                </span>
-                <Tip content={item.row.url} code whenCut>
-                  <span className="truncate">{item.row.url}</span>
-                </Tip>
-              </div>
-            )
-          }
-        />
-      )}
+              </span>
+            </div>
+          ) : (
+            <div
+              key={item.row.key}
+              {...rowProps}
+              role="row"
+              aria-selected={item.row.key === selected}
+              className={cn(GRID, rowClass(item.row.key === selected))}
+              style={{ height: ROW }}
+              onClick={() => onSelect(item.row.key)}
+            >
+              <Cells row={item.row} slow={slowClass(item.row)} />
+            </div>
+          )
+        }
+      />
     </Split>
   );
 }
+
+// The row element changes with the selection; its cells only when the request does.
+const Cells = memo(function Cells({ row, slow }: { row: HttpRow; slow?: string }) {
+  return (
+    <>
+      <span role="gridcell" className="text-muted-foreground">
+        {row.id}
+      </span>
+      <span role="gridcell" className="text-muted-foreground">
+        {formatTime(row.ts)}
+      </span>
+      <span role="gridcell">
+        <Method method={row.method} />
+      </span>
+      <span role="gridcell">
+        <StatusBadge row={row} />
+      </span>
+      <span role="gridcell" className={cn('text-right', slow)}>
+        {row.durationMs ?? ''}
+      </span>
+      <span role="gridcell" className="text-right text-muted-foreground">
+        {row.size === undefined ? '' : formatBytes(row.size)}
+      </span>
+      <Tip content={row.url} code whenCut>
+        <span role="gridcell" className="truncate">
+          {row.url}
+        </span>
+      </Tip>
+    </>
+  );
+});

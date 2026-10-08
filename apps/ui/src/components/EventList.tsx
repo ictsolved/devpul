@@ -1,22 +1,12 @@
 import { cn } from 'cn';
-import { type ReactNode, type RefObject, useCallback, useMemo } from 'react';
+import { memo, type ReactNode, type RefObject, useCallback, useMemo } from 'react';
 import type { DevEvent } from '../core/events';
 import { matchesQuery, matchesTag, parseQuery } from '../core/filter';
 import { Input } from '@/components/ui/input';
 import { useStored } from '../lib/storage';
 import { Detail, Split } from './Panes';
 import { VirtualList } from './VirtualList';
-import {
-  Chip,
-  emptyClass,
-  filterClass,
-  PauseButton,
-  rowClass,
-  toolbarClass,
-  useListKeys,
-  usePause,
-  ValueChips,
-} from './list';
+import { Chip, filterClass, PauseButton, rowClass, toolbarClass, useListKeys, usePause, ValueChips } from './list';
 
 const ROW = 26;
 
@@ -41,8 +31,12 @@ export interface ListSelection {
   onSelect: (key: string | null) => void;
 }
 
+type Cells = (e: DevEvent, group?: Group) => ReactNode;
+
 interface Props extends ListSelection {
   id: string;
+  /** Names the grid. */
+  label: string;
   events: readonly DevEvent[];
   filterRef: RefObject<HTMLInputElement | null>;
   placeholder: string;
@@ -53,7 +47,8 @@ interface Props extends ListSelection {
   /** Offers a toggle that folds events with the same key into one row. */
   groupBy?: (e: DevEvent) => string;
   columns: string;
-  cells: (e: DevEvent, group?: Group) => ReactNode;
+  /** One `role="gridcell"` element per column. Keep it stable (module level or useCallback): rows re-render when it changes. */
+  cells: Cells;
   head: (e: DevEvent, group?: Group) => ReactNode;
   body: (e: DevEvent, group?: Group) => ReactNode;
   empty: string;
@@ -173,25 +168,35 @@ export function EventList(props: Props) {
         )}
         <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
       </div>
-      {rows.length === 0 ? (
-        <div className={emptyClass}>{events.length ? 'Nothing matches the filter.' : props.empty}</div>
-      ) : (
-        <VirtualList
-          items={rows}
-          rowHeight={ROW}
-          scrollToIndex={current ? rows.indexOf(current) : -1}
-          render={(e) => (
+      <VirtualList
+        label={props.label}
+        empty={events.length ? 'Nothing matches the filter.' : props.empty}
+        items={rows}
+        rowHeight={ROW}
+        selectedIndex={current ? rows.indexOf(current) : -1}
+        render={(e, rowProps) => {
+          const group = groupOf(e);
+          return (
             <div
               key={e.key}
+              {...rowProps}
+              role="row"
+              aria-selected={selected === keyOf(e)}
               className={cn('grid items-center gap-2 px-3', rowClass(selected === keyOf(e)))}
               style={{ height: ROW, gridTemplateColumns: props.columns }}
               onClick={() => setSelected(keyOf(e))}
             >
-              {props.cells(e, groupOf(e))}
+              <Row e={e} count={group?.count} first={group?.first} cells={props.cells} />
             </div>
-          )}
-        />
-      )}
+          );
+        }}
+      />
     </Split>
   );
 }
+
+// Group counts as numbers, since regrouping makes new Group objects for unchanged groups.
+const Row = memo(function Row(props: { e: DevEvent; count?: number; first?: number; cells: Cells }) {
+  const { e, count, first, cells } = props;
+  return cells(e, count === undefined || first === undefined ? undefined : { count, first });
+});

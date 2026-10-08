@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type ListSelection } from '../../components/EventList';
 import { JsonView } from '../../components/JsonView';
@@ -98,11 +98,34 @@ function usePluginRender(
 
 export function PluginTab(props: Props) {
   if (props.plugin.renderTab) return <WholeTab {...props} />;
-  const { plugin, events, runLabel, filterRef, call, selected, onSelect } = props;
+  return <PluginList {...props} />;
+}
+
+function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSelect }: Props) {
+  const cells = useCallback(
+    (e: DevEvent) => (
+      <>
+        <span role="gridcell" className="text-muted-foreground">
+          {formatTime(e.ts)}
+        </span>
+        <span role="gridcell" className="truncate font-semibold">
+          {e.kind}
+        </span>
+        <span role="gridcell" className="truncate text-muted-foreground">
+          {runLabel(e.run)}
+        </span>
+        <span role="gridcell" className="truncate">
+          {summary(plugin, e)}
+        </span>
+      </>
+    ),
+    [plugin, runLabel],
+  );
   return (
     <EventList
       key={plugin.id}
       id={`plugin:${plugin.id}`}
+      label={plugin.label}
       selected={selected}
       onSelect={onSelect}
       events={events}
@@ -110,14 +133,7 @@ export function PluginTab(props: Props) {
       placeholder="Filter, e.g. words -word kind: tag:k=v"
       columns="96px minmax(120px, 200px) minmax(0, 160px) minmax(0, 1fr)"
       empty={`No events for ${plugin.label} yet.`}
-      cells={(e) => (
-        <>
-          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
-          <span className="truncate font-semibold">{e.kind}</span>
-          <span className="truncate text-muted-foreground">{runLabel(e.run)}</span>
-          <span className="truncate">{summary(plugin, e)}</span>
-        </>
-      )}
+      cells={cells}
       head={(e) => (
         <>
           <span className="font-mono font-semibold">{e.kind}</span>

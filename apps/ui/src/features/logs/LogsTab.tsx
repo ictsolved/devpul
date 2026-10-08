@@ -42,10 +42,30 @@ function field(e: DevEvent, key: string, value: string): boolean {
   return false;
 }
 
+function cells(e: DevEvent) {
+  return (
+    <>
+      <span role="gridcell" className="text-muted-foreground">
+        {formatTime(e.ts)}
+      </span>
+      <span role="gridcell">
+        <Level e={e} />
+      </span>
+      <span role="gridcell" className="truncate text-muted-foreground">
+        {nameOf(e) ?? ''}
+      </span>
+      <span role="gridcell" className="truncate">
+        {str(e.data.message) ?? ''}
+      </span>
+    </>
+  );
+}
+
 export function LogsTab({ logs, runLabel, filterRef, selected, onSelect }: Props) {
   return (
     <EventList
       id="logs"
+      label="Logs"
       selected={selected}
       onSelect={onSelect}
       events={logs}
@@ -56,14 +76,7 @@ export function LogsTab({ logs, runLabel, filterRef, selected, onSelect }: Props
       facets={FACETS}
       columns="96px 56px minmax(0, 140px) minmax(0, 1fr)"
       empty="No logs yet. Send them with Devpul.log."
-      cells={(e) => (
-        <>
-          <span className="text-muted-foreground">{formatTime(e.ts)}</span>
-          <Level e={e} />
-          <span className="truncate text-muted-foreground">{nameOf(e) ?? ''}</span>
-          <span className="truncate">{str(e.data.message) ?? ''}</span>
-        </>
-      )}
+      cells={cells}
       head={(e) => (
         <>
           <Level e={e} />

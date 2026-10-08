@@ -66,6 +66,7 @@ export function Chip({ on, className, ...props }: ComponentProps<'button'> & { o
   return (
     <button
       type="button"
+      aria-pressed={on}
       className={cn(
         'cursor-pointer rounded-full border px-2.5 py-px text-xs whitespace-nowrap hover:bg-accent',
         on && 'border-primary bg-primary-soft text-foreground hover:bg-primary-soft',

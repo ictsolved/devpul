@@ -279,17 +279,23 @@ export function App() {
   };
 
   const runs = store.runs;
-  const runLabel = useCallback(
-    (run: string) => {
-      const info = runs.get(run);
-      if (!info) return run;
-      const conn = connections.find((c) => c.id === info.conn);
-      const name = appName(info.session) ?? (conn ? connectionLabel(conn.url) : 'app');
-      const ver = str(info.session?.data.version);
-      return `${name}${ver ? ` ${ver}` : ''} - ${formatTime(info.first)}`;
-    },
+  // Runs change with every event; the labels rarely do. A stable runLabel lets list rows skip re-rendering.
+  const labels = useMemo(
+    () =>
+      JSON.stringify(
+        [...runs.values()].map((info) => {
+          const conn = connections.find((c) => c.id === info.conn);
+          const name = appName(info.session) ?? (conn ? connectionLabel(conn.url) : 'app');
+          const ver = str(info.session?.data.version);
+          return [info.run, `${name}${ver ? ` ${ver}` : ''} - ${formatTime(info.first)}`];
+        }),
+      ),
     [runs, connections],
   );
+  const runLabel = useMemo(() => {
+    const byRun = new Map<string, string>(JSON.parse(labels) as [string, string][]);
+    return (run: string) => byRun.get(run) ?? run;
+  }, [labels]);
 
   const names = useMemo(() => {
     const out: Record<string, string> = {};
@@ -468,6 +474,8 @@ export function App() {
                   <TabsTrigger
                     key={t.id}
                     value={t.id}
+                    // Radix keeps the tab stop on the last focused tab, which digit keys do not move.
+                    tabIndex={t.id === activeTab ? 0 : -1}
                     // The default focus ring and border crowd the dense strip.
                     className="flex-none px-2.5 text-[13px] font-normal text-muted-foreground group-data-[orientation=horizontal]/tabs:after:bottom-0 after:bg-primary focus-visible:border-transparent focus-visible:ring-0 [&_svg:not([class*='size-'])]:size-3.5"
                   >
