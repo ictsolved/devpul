@@ -82,7 +82,7 @@ export default (devpul) => {
 | `context.ui.keyValues(object)` | A two-column table element; values that are not strings show as JSON.                                                                                                                                                                                                      |
 | `context.ui.copy(text, label)` | A copy button element. `text` may be a function, read on click.                                                                                                                                                                                                            |
 
-`render` runs again when the selection changes. Use the page's CSS variables, such as `var(--muted)`, `var(--accent)` and `var(--border)`, and the `code` class for preformatted text, so the plugin follows the theme.
+`render` runs again when the selection changes. Use the page's CSS variables, such as `var(--muted-foreground)`, `var(--primary)` and `var(--border)`, and the `code` class for preformatted text, so the plugin follows the theme.
 
 ## Talking to the app
 

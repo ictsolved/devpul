@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { type BodyMode, isEmptyValue, JsonView, KeyValues } from '../../components/JsonView';
 import { Section } from '../../components/Section';
+import { Tip } from '../../components/Tip';
 import { isObject, str } from '../../core/events';
 import { toFetch } from '../../core/fetch';
 import { formatBytes, formatTime, pretty } from '../../core/json';
@@ -42,15 +43,12 @@ function DetailPanelInner({ row, onClose }: Props) {
         <span className="muted">#{row.id}</span>
         <span className="muted">{formatTime(row.ts)}</span>
         <span className="grow" />
-        <button
-          type="button"
-          className="btn small"
-          onClick={() => setMode(mode === 'tree' ? 'raw' : 'tree')}
-          data-tip="Switch between tree and raw JSON"
-        >
-          {mode === 'tree' ? <Braces size={13} /> : <ListTree size={13} />}
-          {mode === 'tree' ? 'Raw' : 'Tree'}
-        </button>
+        <Tip content="Switch between tree and raw JSON">
+          <button type="button" className="btn small" onClick={() => setMode(mode === 'tree' ? 'raw' : 'tree')}>
+            {mode === 'tree' ? <Braces size={13} /> : <ListTree size={13} />}
+            {mode === 'tree' ? 'Raw' : 'Tree'}
+          </button>
+        </Tip>
         {curl && <CopyButton text={() => curl} label="curl" icon={<SquareTerminal size={13} />} />}
         {fetchCode && <CopyButton text={() => fetchCode} label="fetch" />}
         <button type="button" className="btn small icon" onClick={onClose} aria-label="Close detail">

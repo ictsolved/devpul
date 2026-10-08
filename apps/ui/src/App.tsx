@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { appName, SessionHeader, sessionFields } from './components/SessionHeader';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { ThemeToggle } from './components/ThemeToggle';
-import { Tooltip } from './components/Tooltip';
+import { Tip } from './components/Tip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
 import { formatTime } from './core/json';
@@ -335,7 +336,7 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, select, dialog')) return;
+      if ((e.target as HTMLElement | null)?.closest('input, textarea, select, [role=dialog], [role=menu]')) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === '?') {
         e.preventDefault();
@@ -372,18 +373,15 @@ export function App() {
     setSettingsOpen(true);
   };
 
+  const settingsButton = (
+    <button type="button" className={`btn ${showMain ? '' : 'icon'}`} onClick={openSettings} aria-label="Settings">
+      <SettingsIcon size={14} />
+      {showMain && <span className="label">Settings</span>}
+    </button>
+  );
   const tools = (
     <>
-      <button
-        type="button"
-        className={`btn ${showMain ? '' : 'icon'}`}
-        onClick={openSettings}
-        aria-label="Settings"
-        data-tip={showMain ? undefined : 'Settings'}
-      >
-        <SettingsIcon size={14} />
-        {showMain && <span className="label">Settings</span>}
-      </button>
+      {showMain ? settingsButton : <Tip content="Settings">{settingsButton}</Tip>}
       <ThemeToggle />
     </>
   );
@@ -420,92 +418,89 @@ export function App() {
             {connectionBar(false)}
             <nav className="actions">
               {tools}
-              <a
-                className="btn"
-                href={pageUrl('help/')}
-                target="_blank"
-                rel="noopener"
-                data-tip="Help opens in a new tab. Press ? for shortcuts."
-              >
-                <CircleHelp size={14} />
-                <span className="label">Help</span>
-              </a>
+              <Tip content="Help opens in a new tab. Press ? for shortcuts.">
+                <a className="btn" href={pageUrl('help/')} target="_blank" rel="noopener">
+                  <CircleHelp size={14} />
+                  <span className="label">Help</span>
+                </a>
+              </Tip>
             </nav>
           </header>
-          <div className="subbar">
-            <div className="tabs" role="tablist">
-              {tabs.map((t) => (
-                <button
-                  type="button"
-                  role="tab"
-                  key={t.id}
-                  aria-selected={activeTab === t.id}
-                  className={`tab ${activeTab === t.id ? 'on' : ''}`}
-                  onClick={() => setTab(t.id)}
-                >
-                  {t.icon && <span className="tab-icon" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />}
-                  {t.label}
-                  {t.count > 0 && <span className={`count ${t.alert ? 'alert' : ''}`}>{t.count}</span>}
-                </button>
-              ))}
+          <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
+            <div className="subbar">
+              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto p-0">
+                {tabs.map((t) => (
+                  <TabsTrigger
+                    key={t.id}
+                    value={t.id}
+                    className="flex-none px-2.5 text-[13px] font-normal text-muted-foreground after:bg-primary group-data-[orientation=horizontal]/tabs:after:bottom-0"
+                  >
+                    {t.icon && <span className="tab-icon" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />}
+                    {t.label}
+                    {t.count > 0 && <span className={`count ${t.alert ? 'alert' : ''}`}>{t.count}</span>}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <SessionHeader session={latestSession} fields={settings.headerFields} runs={runs.size} />
+              {notice && (
+                <span className="notice" role="status">
+                  {notice}
+                </span>
+              )}
+              <ActionsMenu apps={actions} onRun={runAction} />
+              <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
+              <button type="button" className="btn small" onClick={clearAll}>
+                <Trash2 size={13} />
+                Clear
+              </button>
             </div>
-            <SessionHeader session={latestSession} fields={settings.headerFields} runs={runs.size} />
-            {notice && (
-              <span className="notice" role="status">
-                {notice}
-              </span>
-            )}
-            <ActionsMenu apps={actions} onRun={runAction} />
-            <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
-            <button type="button" className="btn small" onClick={clearAll}>
-              <Trash2 size={13} />
-              Clear
-            </button>
-          </div>
-          <PluginOffers
-            offers={pluginOffers.offers}
-            onAllow={(o) => {
-              setSettings({ ...settings, approvedPlugins: [...settings.approvedPlugins, o.key] });
-              pluginOffers.allow(o);
-            }}
-            onDismiss={pluginOffers.dismiss}
-          />
-          <main className="content">
-            {activeTab === 'http' && (
-              <HttpTab
-                store={store}
-                settings={settings}
-                runLabel={runLabel}
-                filterRef={filterRef}
-                selected={httpSelected}
-                onSelect={setHttpSelected}
-              />
-            )}
-            {activeTab === 'errors' && (
-              <ErrorsTab
-                errors={errors}
-                requests={store.httpRows}
-                runLabel={runLabel}
-                filterRef={filterRef}
-                onOpenRequest={(key) => {
-                  setHttpSelected(key);
-                  setTab('http');
-                }}
-              />
-            )}
-            {activeTab === 'logs' && <LogsTab logs={logs} runLabel={runLabel} filterRef={filterRef} />}
-            {activeTab === 'events' && <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} />}
-            {activePlugin && (
-              <PluginTab
-                plugin={activePlugin}
-                events={pluginEvents[activePlugin.id] ?? []}
-                fallback={pluginFallback}
-                runLabel={runLabel}
-                filterRef={filterRef}
-                call={callApp}
-              />
-            )}
-          </main>
+            <PluginOffers
+              offers={pluginOffers.offers}
+              onAllow={(o) => {
+                setSettings({ ...settings, approvedPlugins: [...settings.approvedPlugins, o.key] });
+                pluginOffers.allow(o);
+              }}
+              onDismiss={pluginOffers.dismiss}
+            />
+            <main className="content">
+              <TabsContent value={activeTab} className="flex min-h-0 min-w-0">
+                {activeTab === 'http' && (
+                  <HttpTab
+                    store={store}
+                    settings={settings}
+                    runLabel={runLabel}
+                    filterRef={filterRef}
+                    selected={httpSelected}
+                    onSelect={setHttpSelected}
+                  />
+                )}
+                {activeTab === 'errors' && (
+                  <ErrorsTab
+                    errors={errors}
+                    requests={store.httpRows}
+                    runLabel={runLabel}
+                    filterRef={filterRef}
+                    onOpenRequest={(key) => {
+                      setHttpSelected(key);
+                      setTab('http');
+                    }}
+                  />
+                )}
+                {activeTab === 'logs' && <LogsTab logs={logs} runLabel={runLabel} filterRef={filterRef} />}
+                {activeTab === 'events' && <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} />}
+                {activePlugin && (
+                  <PluginTab
+                    plugin={activePlugin}
+                    events={pluginEvents[activePlugin.id] ?? []}
+                    fallback={pluginFallback}
+                    runLabel={runLabel}
+                    filterRef={filterRef}
+                    call={callApp}
+                  />
+                )}
+              </TabsContent>
+            </main>
+          </Tabs>
         </>
       )}
 
@@ -536,7 +531,6 @@ export function App() {
         onClear={clearAll}
         onClose={() => setSettingsOpen(false)}
       />
-      <Tooltip />
     </div>
   );
 }

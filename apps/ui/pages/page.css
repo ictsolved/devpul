@@ -5,13 +5,13 @@
 html,
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--background);
+  color: var(--foreground);
   font: 15px/1.65 var(--sans);
 }
 
 a {
-  color: var(--accent);
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -29,7 +29,7 @@ pre {
   align-items: center;
   gap: 16px;
   padding: 10px 20px;
-  background: var(--panel);
+  background: var(--card);
   border-bottom: 1px solid var(--border);
 }
 
@@ -38,7 +38,7 @@ pre {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--foreground);
   text-decoration: none;
 }
 
@@ -49,13 +49,13 @@ pre {
 }
 
 .top nav a {
-  color: var(--muted);
+  color: var(--muted-foreground);
   text-decoration: none;
 }
 
 .top nav a:hover,
 .top nav a[aria-current] {
-  color: var(--text);
+  color: var(--foreground);
 }
 
 .theme,
@@ -65,8 +65,8 @@ pre {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 10px;
-  background: var(--panel);
-  color: var(--text);
+  background: var(--card);
+  color: var(--foreground);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -88,9 +88,9 @@ pre {
 }
 
 .open {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--panel);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--card);
 }
 
 .layout {
@@ -113,7 +113,7 @@ pre {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin: 18px 0 6px;
 }
 
@@ -131,16 +131,16 @@ pre {
   display: block;
   padding: 3px 8px;
   border-radius: 5px;
-  color: var(--text);
+  color: var(--foreground);
   text-decoration: none;
 }
 
 .side a:hover {
-  background: var(--panel-2);
+  background: var(--secondary);
 }
 
 .side a[aria-current] {
-  background: var(--accent-soft);
+  background: var(--primary-soft);
   font-weight: 600;
 }
 
@@ -174,11 +174,11 @@ pre {
 
 .doc .anchor:hover::after {
   content: ' #';
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .doc :not(pre) > code {
-  background: var(--panel-2);
+  background: var(--secondary);
   border-radius: 4px;
   padding: 1px 5px;
   overflow-wrap: anywhere;
@@ -186,7 +186,7 @@ pre {
 
 .doc pre {
   position: relative;
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
@@ -197,27 +197,27 @@ pre {
 .hljs-keyword,
 .hljs-built_in,
 .hljs-literal {
-  color: var(--j-lit);
+  color: var(--json-literal);
 }
 
 .hljs-string,
 .hljs-regexp {
-  color: var(--j-str);
+  color: var(--json-string);
 }
 
 .hljs-number {
-  color: var(--j-num);
+  color: var(--json-number);
 }
 
 .hljs-title,
 .hljs-type,
 .hljs-attr {
-  color: var(--j-key);
+  color: var(--json-key);
 }
 
 .hljs-comment,
 .hljs-meta {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .doc pre .copy {
@@ -228,8 +228,8 @@ pre {
   font-size: 11px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: var(--panel-2);
-  color: var(--muted);
+  background: var(--secondary);
+  color: var(--muted-foreground);
   padding: 1px 7px;
   cursor: pointer;
   opacity: 0;
@@ -268,14 +268,14 @@ pre {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .doc blockquote {
   margin: 16px 0;
   padding: 8px 14px;
-  border-left: 3px solid var(--accent);
-  background: var(--panel);
+  border-left: 3px solid var(--primary);
+  background: var(--card);
   border-radius: 0 6px 6px 0;
 }
 
@@ -303,11 +303,11 @@ pre {
   margin: 0 auto;
   padding: 16px 20px 32px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
 
@@ -345,7 +345,7 @@ pre {
 
   .side a[aria-current] {
     background: none;
-    color: var(--accent);
+    color: var(--primary);
   }
 
   .top {

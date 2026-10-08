@@ -11,7 +11,7 @@ export function useListKeys(
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const typing = target?.closest('input, textarea, select');
-      if (target?.closest('dialog')) return;
+      if (target?.closest('[role=dialog], [role=menu]')) return;
       if (e.key === 'Escape') {
         if (typing) target?.blur();
         else select(null);

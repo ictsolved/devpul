@@ -64,7 +64,7 @@ export default {
           button.textContent = twins.has(item.id) ? `${item.name} #${item.id}` : item.name;
           style(button, {
             border: '0',
-            background: item.id === selected ? 'var(--select)' : 'transparent',
+            background: item.id === selected ? 'var(--selection)' : 'transparent',
             width: '100%',
             textAlign: 'left',
             padding: '4px 8px',

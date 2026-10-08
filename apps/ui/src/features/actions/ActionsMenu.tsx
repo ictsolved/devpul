@@ -1,6 +1,14 @@
-import { X, Zap } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { Menu, MenuItem } from '../../components/Menu';
+import { Zap } from 'lucide-react';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { appName } from '../../components/SessionHeader';
 import type { DevEvent, Json } from '../../core/events';
 import { type ActionInfo, type ActionParam, parseInfo } from '../../core/info';
@@ -42,24 +50,37 @@ export function ActionsMenu({ apps, onRun }: Props) {
   if (!apps.length) return null;
   return (
     <>
-      <Menu label="Actions" icon={<Zap size={13} />}>
-        {apps.map((a) => (
-          <div key={a.event.key} className="menu-group">
-            {apps.length > 1 && <div className="menu-label">{a.app}</div>}
-            {a.actions.map((action) => (
-              <MenuItem
-                key={action.name}
-                onClick={() =>
-                  action.params.length ? setForm({ event: a.event, action }) : onRun(a.event, action.name)
-                }
-              >
-                {action.name}
-                {action.params.length > 0 && '…'}
-              </MenuItem>
-            ))}
-          </div>
-        ))}
-      </Menu>
+      <DropdownMenu>
+        <DropdownMenuTrigger className="btn small">
+          <Zap size={13} />
+          Actions
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="min-w-50"
+          // Focusing the trigger would move focus out of a form opened from the menu and close it.
+          onCloseAutoFocus={(e) => form && e.preventDefault()}
+        >
+          {apps.map((a) => (
+            <DropdownMenuGroup key={a.event.key}>
+              {apps.length > 1 && (
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{a.app}</DropdownMenuLabel>
+              )}
+              {a.actions.map((action) => (
+                <DropdownMenuItem
+                  key={action.name}
+                  onSelect={() =>
+                    action.params.length ? setForm({ event: a.event, action }) : onRun(a.event, action.name)
+                  }
+                >
+                  {action.name}
+                  {action.params.length > 0 && '…'}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
       {form && (
         <ActionDialog
           key={`${form.event.key}|${form.action.name}`}
@@ -74,43 +95,38 @@ export function ActionsMenu({ apps, onRun }: Props) {
 
 function ActionDialog(props: { action: ActionInfo; onRun: (args: Record<string, Json>) => void; onClose: () => void }) {
   const { action, onRun, onClose } = props;
-  const ref = useRef<HTMLDialogElement>(null);
   const [values, setValues] = useState<Record<string, Json>>(() =>
     Object.fromEntries(action.params.map((p) => [p.name, p.initial])),
   );
-  useEffect(() => {
-    ref.current?.showModal();
-  }, []);
 
   return (
-    <dialog ref={ref} className="dialog narrow" onClose={onClose} aria-label={action.name}>
-      <div className="dialog-head">
-        <h2>{action.name}</h2>
-        <button type="button" className="btn small icon" onClick={onClose} aria-label="Close">
-          <X size={14} />
-        </button>
-      </div>
-      <form
-        className="dialog-body form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onRun(values);
-          onClose();
-        }}
-      >
-        {action.params.map((p) => (
-          <Field
-            key={p.name}
-            param={p}
-            value={values[p.name] ?? null}
-            onChange={(v) => setValues({ ...values, [p.name]: v })}
-          />
-        ))}
-        <button type="submit" className="btn primary">
-          Run
-        </button>
-      </form>
-    </dialog>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent aria-describedby={undefined}>
+        <DialogHeader>
+          <DialogTitle>{action.name}</DialogTitle>
+        </DialogHeader>
+        <form
+          className="dialog-body form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onRun(values);
+            onClose();
+          }}
+        >
+          {action.params.map((p) => (
+            <Field
+              key={p.name}
+              param={p}
+              value={values[p.name] ?? null}
+              onChange={(v) => setValues({ ...values, [p.name]: v })}
+            />
+          ))}
+          <button type="submit" className="btn primary">
+            Run
+          </button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

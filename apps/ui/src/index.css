@@ -1,0 +1,62 @@
+@layer theme, base, legacy, components, utilities;
+
+@import 'tailwindcss' source('.');
+@import 'tw-animate-css';
+@import './tokens.css';
+/* Above preflight, below utilities, so a Tailwind class wins over a leftover rule. */
+@import './styles.css' layer(legacy);
+
+/* No data-theme follows the system. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary-soft: var(--primary-soft);
+  --color-selection: var(--selection);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-json-key: var(--json-key);
+  --color-json-string: var(--json-string);
+  --color-json-number: var(--json-number);
+  --color-json-literal: var(--json-literal);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}

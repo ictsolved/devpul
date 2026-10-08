@@ -1,5 +1,6 @@
 import { Plug, X } from 'lucide-react';
 import { useState } from 'react';
+import { Tip } from '../../components/Tip';
 import type { ConnState } from '../../core/rpc';
 import { connectionLabel, toWsUrl } from '../../core/url';
 
@@ -72,13 +73,15 @@ export function ConnectionBar(props: Props) {
             const s = states[c.id];
             const status = s?.status ?? 'closed';
             return (
-              <li key={c.id} className="conn" data-tip={c.url} data-tip-code>
-                <span className={`dot ${status}`} aria-label={status} />
-                <span>{names[c.id] ?? connectionLabel(c.url)}</span>
-                <button type="button" className="x" onClick={() => onRemove(c.id)} aria-label={`Remove ${c.url}`}>
-                  <X size={12} />
-                </button>
-              </li>
+              <Tip key={c.id} content={c.url} code>
+                <li className="conn">
+                  <span className={`dot ${status}`} aria-label={status} />
+                  <span>{names[c.id] ?? connectionLabel(c.url)}</span>
+                  <button type="button" className="x" onClick={() => onRemove(c.id)} aria-label={`Remove ${c.url}`}>
+                    <X size={12} />
+                  </button>
+                </li>
+              </Tip>
             );
           })}
         </ul>

@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { PAGES, renderPage } from './pages/render.ts';
@@ -55,7 +56,10 @@ function sitePlugin(): Plugin {
 
 export default defineConfig({
   base: './',
-  plugins: [react(), sitePlugin()],
+  plugins: [react(), tailwindcss(), sitePlugin()],
+  resolve: {
+    alias: { '@': join(import.meta.dirname, 'src') },
+  },
   build: {
     sourcemap: false,
   },

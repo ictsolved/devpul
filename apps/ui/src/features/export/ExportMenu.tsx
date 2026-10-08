@@ -1,6 +1,11 @@
 import { FileDown } from 'lucide-react';
 import { version } from '../../../package.json';
-import { Menu, MenuItem } from '../../components/Menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toHar, toSession } from '../../core/export';
 import type { Store } from '../../core/store';
 import { download } from '../../lib/download';
@@ -14,12 +19,20 @@ interface Props {
 
 export function ExportMenu({ store, onOpenFile }: Props) {
   return (
-    <Menu label="Export" icon={<FileDown size={13} />}>
-      <MenuItem onClick={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>HTTP as HAR</MenuItem>
-      <MenuItem onClick={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}>
-        Session file (all events)
-      </MenuItem>
-      <MenuItem onClick={onOpenFile}>Open a session file</MenuItem>
-    </Menu>
+    <DropdownMenu>
+      <DropdownMenuTrigger className="btn small">
+        <FileDown size={13} />
+        Export
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-50">
+        <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>
+          HTTP as HAR
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}>
+          Session file (all events)
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onOpenFile}>Open a session file</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useMemo } from 'react';
 import { VirtualList } from '../../components/VirtualList';
 import { PauseButton, useListKeys, usePause, ValueChips } from '../../components/list';
+import { Tip } from '../../components/Tip';
 import {
   defaultSort,
   emptyFilter,
@@ -99,17 +100,17 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
     <div className={`pane-split ${selectedRow ? 'has-detail' : ''}`}>
       <div className="pane-main">
         <div className="toolbar">
-          <input
-            ref={filterRef}
-            className="filter"
-            type="search"
-            placeholder="Filter, e.g. login -health status:4xx ms:>500"
-            data-tip={SYNTAX}
-            data-tip-code
-            value={filter.text}
-            onChange={(e) => setFilter({ ...filter, text: e.target.value })}
-            aria-label="Filter requests"
-          />
+          <Tip content={SYNTAX} code>
+            <input
+              ref={filterRef}
+              className="filter"
+              type="search"
+              placeholder="Filter, e.g. login -health status:4xx ms:>500"
+              value={filter.text}
+              onChange={(e) => setFilter({ ...filter, text: e.target.value })}
+              aria-label="Filter requests"
+            />
+          </Tip>
           <ValueChips
             label="Status"
             values={STATUSES}
@@ -184,9 +185,9 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
                   </span>
                   <span className="num ms">{item.row.durationMs ?? ''}</span>
                   <span className="num muted">{item.row.size === undefined ? '' : formatBytes(item.row.size)}</span>
-                  <span className="url" data-tip={item.row.url} data-tip-code>
-                    {item.row.url}
-                  </span>
+                  <Tip content={item.row.url} code whenCut>
+                    <span className="url">{item.row.url}</span>
+                  </Tip>
                 </div>
               )
             }

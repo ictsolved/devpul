@@ -1,5 +1,6 @@
 import { type DevEvent, type Json, str } from '../core/events';
 import { formatTime } from '../core/json';
+import { Tip } from './Tip';
 
 const DEFAULT_COUNT = 4;
 
@@ -32,14 +33,16 @@ export function SessionHeader({ session, fields, runs }: Props) {
   const shown = fields.length ? all.filter(([k]) => fields.includes(k)) : all.slice(0, DEFAULT_COUNT);
   const tip = JSON.stringify(Object.fromEntries(all), null, 2);
   return (
-    <div className="session" data-tip={tip} data-tip-code>
-      {shown.map(([k, v]) => (
-        <span key={k} className="field">
-          <span className="muted">{k}</span> {typeof v === 'string' ? v : JSON.stringify(v)}
-        </span>
-      ))}
-      <span className="muted">started {formatTime(session.ts)}</span>
-      {runs > 1 && <span className="muted">{runs} runs</span>}
-    </div>
+    <Tip content={tip} code align="end">
+      <div className="session">
+        {shown.map(([k, v]) => (
+          <span key={k} className="field">
+            <span className="muted">{k}</span> {typeof v === 'string' ? v : JSON.stringify(v)}
+          </span>
+        ))}
+        <span className="muted">started {formatTime(session.ts)}</span>
+        {runs > 1 && <span className="muted">{runs} runs</span>}
+      </div>
+    </Tip>
   );
 }
