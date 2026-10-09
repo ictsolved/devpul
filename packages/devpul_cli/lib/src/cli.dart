@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:pub_semver/pub_semver.dart';
+
 import 'cache.dart';
 import 'instance.dart';
 import 'plugins/app.dart';
@@ -18,6 +20,8 @@ Usage: devpul [options] [vm-service-url]
        devpul list
        devpul sync [--check]
        devpul cache clean
+       devpul create <dir> [--js] [--dart]
+       devpul check [dir]
 
 Serves the DevPul UI on 127.0.0.1 and opens it, connected to the app when a
 VM service URL is given. run starts flutter run, or dart run outside a
@@ -43,6 +47,14 @@ Plugins, run in the app root:
                Copies plugins added from a folder again when it changed.
     --check    exit 1 when either is stale instead
   cache clean  delete the git mirrors devpul keeps
+
+Plugin authoring:
+  create       write a plugin folder named after the plugin id, or the
+               files missing from one. A new plugin gets both halves unless
+               one is picked; an existing one gets the picked half added.
+    --js       a JS module for a tab
+    --dart     Dart for the app, such as an observer
+  check        validate a plugin folder the way add and the registry do
 ''';
 
 const defaultPort = 7171;
@@ -102,7 +114,15 @@ Options parseArgs(List<String> args) {
   return options;
 }
 
-const _pluginCommands = {'add', 'remove', 'list', 'sync', 'cache'};
+const _pluginCommands = {
+  'add',
+  'remove',
+  'list',
+  'sync',
+  'cache',
+  'create',
+  'check',
+};
 
 /// The parsed arguments of a plugin command.
 typedef PluginArgs = ({
@@ -120,6 +140,8 @@ PluginArgs parsePluginArgs(List<String> args) {
     'sync' => ({'--check'}, <String>{}, 0),
     'remove' => (<String>{}, <String>{}, 1),
     'cache' => (<String>{}, <String>{}, 1),
+    'create' => ({'--js', '--dart'}, <String>{}, 1),
+    'check' => (<String>{}, <String>{}, 1),
     _ => (<String>{}, <String>{}, 0),
   };
   final rest = <String>[];
@@ -140,6 +162,7 @@ PluginArgs parsePluginArgs(List<String> args) {
       rest.add(tail[i]);
     }
   }
+  if (command == 'check' && rest.isEmpty) rest.add('.');
   if (rest.length != count) {
     throw FormatException(switch (count) {
       0 => '$command takes no arguments',
@@ -181,9 +204,22 @@ Future<int> _plugins(List<String> args) async {
     },
   );
   try {
-    if (parsed.command == 'cache') {
-      plugins.cacheClean(cacheDir(), console);
-      return 0;
+    switch (parsed.command) {
+      case 'cache':
+        plugins.cacheClean(cacheDir(), console);
+        return 0;
+      case 'create':
+        final version = await devpulVersion();
+        plugins.create(
+          parsed.rest.single,
+          console,
+          js: parsed.flags.contains('--js'),
+          dart: parsed.flags.contains('--dart'),
+          devpul: version,
+        );
+        return 0;
+      case 'check':
+        return plugins.check(parsed.rest.single, console) ? 0 : 1;
     }
     final app = App.open(Directory.current.path);
     switch (parsed.command) {
@@ -262,6 +298,26 @@ Future<int> runCli(List<String> args) async {
   await _interrupted();
   await ui.close();
   return 0;
+}
+
+/// The version of the devpul package this CLI runs with.
+Future<Version> devpulVersion() async {
+  final lib = await Isolate.resolvePackageUri(
+    Uri.parse('package:devpul/devpul.dart'),
+  );
+  final pubspec = lib == null
+      ? null
+      : File.fromUri(lib.resolve('../pubspec.yaml'));
+  final match = pubspec != null && pubspec.existsSync()
+      ? RegExp(
+          r'^version:\s*(\S+)',
+          multiLine: true,
+        ).firstMatch(pubspec.readAsStringSync())
+      : null;
+  if (match == null) {
+    throw PluginException('cannot read the devpul package version');
+  }
+  return Version.parse(match[1]!);
 }
 
 /// The UI build that ships in the devpul package. Null in a compiled

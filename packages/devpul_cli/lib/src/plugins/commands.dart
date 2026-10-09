@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'app.dart';
+import 'check.dart';
+import 'create.dart' as template;
 import 'fetch.dart';
 import 'lock.dart';
 import 'manifest.dart';
@@ -316,3 +318,40 @@ String describe(LockEntry entry) => [
   if (entry.ref case final ref?) '#$ref',
   if (entry.commit case final commit?) 'at ${commit.substring(0, 7)}',
 ].join(' ');
+
+void create(
+  String dir,
+  Console console, {
+  required bool js,
+  required bool dart,
+  required Version devpul,
+}) {
+  final written = template.create(dir, js: js, dart: dart, devpul: devpul);
+  if (written.isEmpty) {
+    console.out.writeln('Nothing to write in $dir.');
+    return;
+  }
+  final module = checkFolder(dir).manifest?.source != null;
+  console.out
+    ..writeln('Wrote ${written.join(', ')} in $dir.')
+    ..writeln(
+      'Run it:    cd $dir && dart pub get && '
+      'devpul ${module ? '--plugin . ' : ''}run example/main.dart',
+    )
+    ..writeln('Check it:  devpul check $dir')
+    ..writeln('In an app: devpul add <path to $dir>');
+}
+
+/// Prints every problem with the plugin folder [dir]; false when there are
+/// any.
+bool check(String dir, Console console) {
+  final (:manifest, files: _, :problems) = checkFolder(dir);
+  if (problems.isEmpty) {
+    console.out.writeln('${manifest!.id} ${manifest.version} passes.');
+    return true;
+  }
+  for (final problem in problems) {
+    console.err.writeln(problem);
+  }
+  return false;
+}

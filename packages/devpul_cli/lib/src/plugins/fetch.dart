@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'app.dart';
+import 'check.dart';
 import 'lock.dart';
 import 'manifest.dart';
 import 'registry.dart';
@@ -361,13 +362,17 @@ Future<(Manifest, Map<String, String>)> _read(
   } on ManifestException catch (e) {
     throw PluginException('$e');
   }
-  return (
-    manifest,
-    {
-      manifestPath: text,
-      for (final file in manifest.files) file: await read(file),
-    },
-  );
+  final files = {
+    manifestPath: text,
+    for (final file in manifest.files) file: await read(file),
+  };
+  final problems = checkFiles(manifest, files);
+  if (problems.isNotEmpty) {
+    throw PluginException(
+      '${manifest.id} ${manifest.version}: ${problems.join('; ')}',
+    );
+  }
+  return (manifest, files);
 }
 
 String _looseId(String? text, String where) {

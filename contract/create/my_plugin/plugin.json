@@ -1,0 +1,13 @@
+{
+  "id": "my_plugin",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": "^1.0.0",
+  "description": "The values the app sets, in a My plugin tab.",
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulMyPlugin.set('count', count);"],
+  "source": "my_plugin.js",
+  "dart": "my_plugin.dart",
+  "files": ["icon.svg", "my_plugin.dart", "my_plugin.js"]
+}

@@ -515,13 +515,13 @@ void main() {
 
       test('when the folder changed', () async {
         expect(await sync(app, output.console(), check: true), isTrue);
-        js(folder).writeAsStringSync('// changed\n');
+        js(folder).writeAsStringSync('export default {}; // changed\n');
         expect(await sync(app, output.console(), check: true), isFalse);
         expect(output.err.toString(), contains('lib/devpul/cart differs from'));
         expect(await sync(app, output.console()), isTrue);
         expect(
           js(app.pluginDir('cart').path).readAsStringSync(),
-          '// changed\n',
+          'export default {}; // changed\n',
         );
         expect(app.generated.readAsStringSync(), contains('// changed'));
         expect(

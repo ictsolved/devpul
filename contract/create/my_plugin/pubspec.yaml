@@ -1,0 +1,9 @@
+name: devpul_plugin_my_plugin
+description: Analyzes and runs the my_plugin plugin in place. Not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  devpul: ^1.0.0

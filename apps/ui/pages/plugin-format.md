@@ -19,6 +19,8 @@ cart/
   example/      optional, never copied
 ```
 
+`devpul create cart` writes this layout with a `pubspec.yaml` for working on the Dart in place and `devpul.d.ts` with the plugin API types; neither is copied. `devpul check` validates a folder the way `devpul add` and the registry do.
+
 ## plugin.json
 
 ```json
@@ -61,11 +63,11 @@ The id names the folder, the `Devpul.plugin` id the UI keeps approvals for, and 
 
 ### Module
 
-The module follows the [plugin API](%ROOT%docs/plugins/#api). It does not export a name `icon`: the generated file appends `export const icon = "<svg ...>"` with the icon file, and the UI uses it for each tab that sets no icon.
+The module follows the [plugin API](%ROOT%docs/plugins/#api): one file with a default export and no imports. It does not export a name `icon`: the generated file appends `export const icon = "<svg ...>"` with the icon file, and the UI uses it for each tab that sets no icon.
 
 ### Dart
 
-The generated file exports every plugin's `dart` library into one namespace, so public names start with `Devpul<Id>` or `devpul<Id>`, such as `DevpulCart`. The Dart imports `package:devpul`, the packages in `requires` and its own files.
+The generated file exports every plugin's `dart` library into one namespace, so public names start with `Devpul<Id>` or `devpul<Id>`, such as `DevpulCart`. The Dart imports `package:devpul`, the packages in `requires` and its own files in `files`.
 
 A plugin with only Dart adds no tab. It sends events to the built-in tabs, as an adapter for another HTTP client would for Network, and its events show in Events.
 
