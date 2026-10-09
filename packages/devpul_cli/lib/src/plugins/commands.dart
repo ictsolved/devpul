@@ -232,7 +232,8 @@ Future<bool> outdated(
   }
   if (latest) {
     console.out.writeln(
-      'devpul update --latest takes the latest, rewriting constraints.',
+      'devpul update --major-versions takes the latest, rewriting '
+      'constraints.',
     );
   }
   if (cliBehind) console.out.writeln('devpul upgrade updates devpul_cli.');
@@ -248,7 +249,7 @@ Future<(T?, String?)> _catch<T>(Future<T> future) async {
 }
 
 /// Moves plugins to the newest version their constraint allows, or with
-/// [latest] the newest overall, refs to their commit now, and URL and
+/// [majorVersions] the newest overall, refs to their commit now, and URL and
 /// folder plugins to what they serve now. Shows the diff and asks before
 /// writing unless [yes].
 Future<void> update(
@@ -256,7 +257,7 @@ Future<void> update(
   Fetcher fetcher,
   Console console, {
   String? id,
-  bool latest = false,
+  bool majorVersions = false,
   bool yes = false,
 }) async {
   final lock = app.readLock();
@@ -276,7 +277,11 @@ Future<void> update(
   final changed = <String, Fetched>{};
   for (final id in ids) {
     final entry = lock.plugins[id]!;
-    final fetched = await fetcher.refetch(id, entry, latest: latest);
+    final fetched = await fetcher.refetch(
+      id,
+      entry,
+      majorVersions: majorVersions,
+    );
     if (fetched.manifest.id != id) {
       throw PluginException(
         '${describe(entry)} holds ${fetched.manifest.id}, not $id',
@@ -317,7 +322,7 @@ Future<void> update(
     final command = [
       'devpul update',
       ?id,
-      if (latest) '--latest',
+      if (majorVersions) '--major-versions',
       '--yes',
     ].join(' ');
     if (console.ask == null) {

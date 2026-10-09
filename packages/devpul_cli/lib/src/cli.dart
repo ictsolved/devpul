@@ -21,7 +21,7 @@ Usage: devpul [options] [vm-service-url]
        devpul list
        devpul sync [--check]
        devpul outdated [--exit-code]
-       devpul update [id] [--latest] [--yes]
+       devpul update [id] [--major-versions] [--yes]
        devpul upgrade
        devpul cache clean
        devpul create <dir> [--js] [--dart]
@@ -58,7 +58,8 @@ Plugins, run in the app root:
                write lib/devpul/plugins.dart. Shows the diff and asks
                first. Refs move to their commit, folders and plugin.json
                URLs to what they hold now.
-    --latest   take the latest version, rewriting the constraint
+    --major-versions  take the latest version, rewriting the
+                      constraint when it does not allow it
     --yes      write without the diff and run the pub add a plugin needs
   upgrade      dart pub global activate devpul_cli
   cache clean  delete the git mirrors devpul keeps
@@ -157,7 +158,7 @@ PluginArgs parsePluginArgs(List<String> args) {
     'add' => ({'--yes'}, {'--path'}, 1),
     'sync' => ({'--check'}, <String>{}, 0),
     'outdated' => ({'--exit-code'}, <String>{}, 0),
-    'update' => ({'--latest', '--yes'}, <String>{}, 1),
+    'update' => ({'--major-versions', '--yes'}, <String>{}, 1),
     'remove' => (<String>{}, <String>{}, 1),
     'cache' => (<String>{}, <String>{}, 1),
     'create' => ({'--js', '--dart'}, <String>{}, 1),
@@ -282,7 +283,7 @@ Future<int> _plugins(List<String> args) async {
           Fetcher(root: app.root, cache: cacheDir()),
           console,
           id: parsed.rest.firstOrNull,
-          latest: parsed.flags.contains('--latest'),
+          majorVersions: parsed.flags.contains('--major-versions'),
           yes: parsed.flags.contains('--yes'),
         );
     }

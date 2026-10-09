@@ -35,7 +35,7 @@ devpul sync --check                       # in CI: exit 1 when it is stale
 devpul outdated                           # current, upgradable and latest versions
 devpul outdated --exit-code               # in CI: exit 1 when anything is behind
 devpul update                             # all plugins, within their constraints
-devpul update cart --latest               # breaking versions, constraint rewritten
+devpul update cart --major-versions       # breaking versions, constraint rewritten
 devpul upgrade                            # dart pub global activate devpul_cli
 devpul cache clean
 ```

@@ -256,7 +256,7 @@ void main() {
     expect(add.flags, {'--yes'});
     expect(add.options, {'--path': 'cart'});
     expect(parsePluginArgs(['sync', '--check']).flags, {'--check'});
-    expect(parsePluginArgs(['update', '--latest']).rest, isEmpty);
+    expect(parsePluginArgs(['update', '--major-versions']).rest, isEmpty);
     expect(parsePluginArgs(['update', 'cart', '--yes']).rest, ['cart']);
     expect(parsePluginArgs(['outdated', '--exit-code']).flags, {'--exit-code'});
     for (final args in [
@@ -614,7 +614,7 @@ void main() {
         outdated(app, fresh(), output.console(), cli: Version(1, 4, 0));
     Future<void> updateRun({
       String? id,
-      bool latest = false,
+      bool majorVersions = false,
       bool yes = false,
       bool? answer,
     }) => update(
@@ -622,7 +622,7 @@ void main() {
       fresh(),
       output.console(answer: answer),
       id: id,
-      latest: latest,
+      majorVersions: majorVersions,
       yes: yes,
     );
 
@@ -636,7 +636,7 @@ cart        1.0.0    1.1.0       2.0.0
 flags       0.3.1    0.3.1       0.3.1
 devpul_cli  1.4.0                1.5.0
 devpul update takes the upgradable versions.
-devpul update --latest takes the latest, rewriting constraints.
+devpul update --major-versions takes the latest, rewriting constraints.
 devpul upgrade updates devpul_cli.
 ''');
     });
@@ -706,9 +706,9 @@ devpul_cli  1.4.0                can't check
       expect(output.out.toString(), contains('cart 1.1.0 is up to date.'));
     });
 
-    test('update --latest rewrites the constraint', () async {
+    test('update --major-versions rewrites the constraint', () async {
       release(tagged, '2.0.0');
-      await updateRun(id: 'cart', latest: true, yes: true);
+      await updateRun(id: 'cart', majorVersions: true, yes: true);
       final out = output.out.toString();
       expect(out, contains('cart 1.0.0 to 2.0.0, constraint ^1.0.0 to ^2.0.0'));
       expect(out, isNot(contains('diff --git')));

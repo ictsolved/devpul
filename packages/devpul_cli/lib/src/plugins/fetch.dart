@@ -190,10 +190,14 @@ final class Fetcher {
   };
 
   /// Fetches what [entry] moves to on update: the newest tag within its
-  /// constraint, or with [latest] the newest overall, keeping the
+  /// constraint, or with [majorVersions] the newest overall, keeping the
   /// constraint when it allows that one. Refs and other sources fetch what
   /// they point at now.
-  Future<Fetched> refetch(String id, LockEntry entry, {bool latest = false}) {
+  Future<Fetched> refetch(
+    String id,
+    LockEntry entry, {
+    bool majorVersions = false,
+  }) {
     if (isFolder(entry.url)) return fetchFolder(root, entry.url);
     if (parseSource(entry.url) case UrlSource(:final url)) return _url(url);
     return _git(
@@ -201,7 +205,7 @@ final class Fetcher {
       entry.path,
       ref: entry.ref,
       constraint: entry.constraint,
-      latest: latest,
+      majorVersions: majorVersions,
       id: id,
     );
   }
@@ -319,7 +323,7 @@ final class Fetcher {
     String? path, {
     String? ref,
     VersionConstraint? constraint,
-    bool latest = false,
+    bool majorVersions = false,
     String? id,
   }) async {
     final repo = await _mirror(url);
@@ -337,7 +341,7 @@ final class Fetcher {
       final all = await repo.tags('$id-v');
       final allowed = [
         for (final version in all.keys)
-          if (latest || (constraint?.allows(version) ?? true)) version,
+          if (majorVersions || (constraint?.allows(version) ?? true)) version,
       ];
       if (allowed.isEmpty) {
         throw PluginException(
