@@ -3,7 +3,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 flutter pub get
-dart format --output=none --set-exit-if-changed packages examples tool
+dart format --output=none --set-exit-if-changed packages examples contract tool
 dart analyze --fatal-infos
 for p in devpul devpul_dio devpul_http devpul_cli; do
   (cd packages/$p && dart test)

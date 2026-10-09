@@ -16,8 +16,10 @@ executables:
   devpul: devpul
 
 dependencies:
+  crypto: ^3.0.7
   # Holds the UI build.
   devpul: ^0.2.0
+  pub_semver: ^2.2.1
 
 dev_dependencies:
   lints: ^6.1.0

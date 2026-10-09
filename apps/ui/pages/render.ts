@@ -33,6 +33,7 @@ export const PAGES: Entry[] = [
   { path: 'docs/flutter/', file: 'flutter.md', group: 'Packages' },
   { path: 'docs/extend/', file: 'extend.md', group: 'Extend' },
   { path: 'docs/plugins/', file: 'plugins.md', group: 'Extend' },
+  { path: 'docs/plugins/format/', file: 'plugin-format.md', group: 'Extend' },
   { path: 'docs/adapters/', file: 'adapters.md', group: 'Extend' },
   { path: 'docs/events/', file: 'events.md', group: 'Extend' },
   { path: 'help/', file: 'help.md', group: 'Help' },

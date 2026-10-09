@@ -31,19 +31,22 @@ The app side is plain events:
 Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 ```
 
-## Shipping a plugin in a Dart package
+## Shipping a plugin
 
-A package offers its plugin to the UI with `Devpul.plugin`, usually from the code that also sends its events:
+A plugin folder with a `plugin.json` is copied into the app and registered by a generated file; [Plugin format](%ROOT%docs/plugins/format/) has the layout.
+
+A Dart package can also offer its plugin itself with `Devpul.plugin`, usually from the code that also sends its events:
 
 ```dart
 const _plugin = r'''
 export default { api: 1, id: 'cart', label: 'Cart', kinds: ['cart.updated'] };
 ''';
 
-void installCartTab() => Devpul.plugin('my_cart', () => _plugin);
+void installCartTab() =>
+    Devpul.plugin('cart', () => _plugin, version: '1.0.0', origin: 'my_cart');
 ```
 
-The first argument is the package name. When an app offers a plugin, DevPul shows the package, size and SHA-256 of the source and runs it only after you allow it. An approval covers one package at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the package; a source the app sends is hashed by DevPul itself. Settings lists approvals with package, version and hash; switch one off to stop loading it, or remove it. Sources larger than 512 KB are refused.
+The first argument is the plugin id. `origin` says where the plugin comes from, such as a package name or git URL. When an app offers a plugin, DevPul shows the id, size and SHA-256 of the source and runs it only after you allow it. An approval covers one id at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. Settings lists approvals with id, version and hash; switch one off to stop loading it, or remove it. Sources larger than 512 KB are refused.
 
 The source is read only when the UI asks, and only in debug builds.
 
@@ -54,7 +57,7 @@ The source is read only when the UI asks, and only in debug builds.
 | `api`       | `1`                                            | The plugin API it was written for. A UI with another API refuses it with a message.                                                |
 | `id`        | string                                         | Unique. Registering the same id again replaces the plugin.                                                                         |
 | `label`     | string                                         | Tab name.                                                                                                                          |
-| `icon`      | string                                         | Optional. SVG markup shown in the tab; `stroke="currentColor"` follows the theme.                                                  |
+| `icon`      | string                                         | Optional. SVG markup shown in the tab; `stroke="currentColor"` follows the theme. Defaults to the module's `icon` export.          |
 | `kinds`     | string[] or `(kind) => boolean`                | Optional. Event kinds the tab takes. Claimed kinds leave the Events tab.                                                           |
 | `summarize` | `(event) => string`                            | Optional. One line in the list.                                                                                                    |
 | `render`    | `(el, event, context) => void \| (() => void)` | Optional. Fills `el` for the selected event. May return a cleanup function. Without it, the detail shows the event as a JSON tree. |
@@ -128,6 +131,6 @@ A plugin on any static server that sets CORS headers works too: add its URL in S
 
 ## Security
 
-A plugin runs with full access to the page: every event, header and body DevPul has seen, from every app. Allow only plugins from packages you trust.
+A plugin runs with full access to the page: every event, header and body DevPul has seen, from every app. Allow only plugins from sources you trust.
 
 The page's Content Security Policy applies to plugins: no `eval` or `new Function`, no inline event handler attributes such as `onclick="..."`, no scripts from other origins. `fetch`, websockets, `style` properties and `data:` or `blob:` images work.

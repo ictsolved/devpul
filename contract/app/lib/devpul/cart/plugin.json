@@ -1,0 +1,14 @@
+{
+  "id": "cart",
+  "version": "1.2.0",
+  "api": 1,
+  "devpul": "^1.0.0",
+  "description": "Cart contents and totals in a Cart tab.",
+  "tags": ["shop", "state"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulCart.changed(items, total);"],
+  "source": "cart.js",
+  "dart": "cart.dart",
+  "files": ["cart.dart", "cart.js", "icon.svg"]
+}

@@ -1,0 +1,202 @@
+---
+title: Plugin format
+description: The DevPul plugin folder and plugin.json, the vendored copy and devpul.lock in an app, the generated lib/devpul/plugins.dart, and registry.json.
+---
+
+# Plugin format
+
+A plugin is a folder with a `plugin.json`, an ES module for the UI and optional Dart for the app. An app copies the folder into `lib/devpul/<id>/`, records it in `devpul.lock` and calls `DevpulPlugins.install()` from the generated `lib/devpul/plugins.dart`, which offers every plugin to the UI with [`Devpul.plugin`](%ROOT%docs/plugins/#shipping-a-plugin) in debug builds.
+
+## Plugin folder
+
+```
+cart/
+  plugin.json
+  cart.js       ES module the UI runs
+  cart.dart     Dart the app calls, optional
+  icon.svg      tab icon, optional
+  README.md
+  example/      optional, never copied
+```
+
+## plugin.json
+
+```json
+{
+  "id": "cart",
+  "version": "1.2.0",
+  "api": 1,
+  "devpul": "^1.0.0",
+  "description": "Cart contents and totals in a Cart tab.",
+  "tags": ["shop", "state"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulCart.changed(items, total);"],
+  "requires": { "collection": "^1.18.0" },
+  "source": "cart.js",
+  "dart": "cart.dart",
+  "files": ["cart.dart", "cart.js", "icon.svg"]
+}
+```
+
+| Field         | Required | Value                                                                                                                       |
+| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | yes      | A lowercase letter, then up to 31 lowercase letters, digits or `_`.                                                         |
+| `version`     | yes      | A semantic version, such as `1.2.0` or `2.0.0-dev.1`.                                                                       |
+| `api`         | yes      | `1`, the [plugin API](%ROOT%docs/plugins/#api) the module is written for.                                                   |
+| `devpul`      | yes      | A pub version constraint on the `devpul` package the app uses.                                                              |
+| `description` | yes      | One line, up to 160 characters.                                                                                             |
+| `tags`        |          | Up to 5, each up to 20 lowercase letters, digits or `-`.                                                                    |
+| `icon`        |          | An SVG file in `files`, shown as the tab icon.                                                                              |
+| `readme`      |          | A file in the folder, shown in the registry. Not copied unless it is in `files`.                                            |
+| `usage`       |          | 1 to 3 lines of wiring the app adds by hand, up to 100 characters each.                                                     |
+| `requires`    |          | Packages the Dart imports besides `devpul`, with pub version constraints. The app depends on them itself.                   |
+| `source`      | yes      | The ES module, a `.js` file in `files`, up to 512 KB.                                                                       |
+| `dart`        |          | A `.dart` library in `files`, exported by the generated file.                                                               |
+| `files`       | yes      | Every file copied into the app besides `plugin.json`: relative paths with `/`, no `.` or `..` segments and no hidden files. |
+
+Other fields are rejected.
+
+The id names the folder, the `Devpul.plugin` id the UI keeps approvals for, and the plugin's git tags: `<id>-v<version>`, such as `cart-v1.2.0`.
+
+### Module
+
+The module follows the [plugin API](%ROOT%docs/plugins/#api). It does not export a name `icon`: the generated file appends `export const icon = "<svg ...>"` with the icon file, and the UI uses it for each tab that sets no icon.
+
+### Dart
+
+The generated file exports every plugin's `dart` library into one namespace, so public names start with `Devpul<Id>` or `devpul<Id>`, such as `DevpulCart`. The Dart imports `package:devpul`, the packages in `requires` and its own files.
+
+Code the app calls in every build, such as an observer in `main`, does nothing in release builds behind a constant such as `kDebugMode`, so the compiler drops the plugin there.
+
+## In the app
+
+```
+devpul.lock
+lib/devpul/
+  plugins.dart  generated
+  cart/         copied, committed
+    plugin.json
+    cart.dart
+    cart.js
+    icon.svg
+```
+
+Everything is committed, so plugin code shows up in the app's diffs and builds need no network or cache.
+
+```dart
+import 'devpul/plugins.dart';
+
+void main() {
+  DevpulPlugins.install();
+  runApp(const App());
+}
+```
+
+### devpul.lock
+
+```json
+{
+  "format": 1,
+  "plugins": {
+    "cart": {
+      "url": "https://example.com/plugins.git",
+      "path": "cart",
+      "constraint": "^1.2.0",
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "version": "1.2.0",
+      "hash": "abaf05812a3ec7f4b4f17a0d801d5175808b3b6a5847e3fcbabc032641328f4e"
+    },
+    "flags": {
+      "url": "https://example.com/flags/plugin.json",
+      "version": "0.3.1",
+      "hash": "9adea98c93e0d8a2d88dfff7a850d1dd6764b3d1530699657bedaba0f9d96a4a"
+    }
+  }
+}
+```
+
+| Field        |                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| `format`     | `1`.                                                                                          |
+| `plugins`    | By id, sorted.                                                                                |
+| `url`        | A git repository, a `plugin.json` URL, or a folder path relative to the app.                  |
+| `path`       | The plugin folder inside a git repository.                                                    |
+| `ref`        | The git ref the plugin is pinned to.                                                          |
+| `constraint` | The versions an update may move to, read from the `<id>-v<version>` tags.                     |
+| `commit`     | The resolved git commit.                                                                      |
+| `version`    | The copied version.                                                                           |
+| `hash`       | SHA-256 of the copied folder: `sha256sum` lines of its files sorted by path, CRLF read as LF. |
+
+The hash can be checked by hand:
+
+```sh
+cd lib/devpul/cart
+find . -type f | sed 's|^\./||' | LC_ALL=C sort | xargs sha256sum | sha256sum
+```
+
+### lib/devpul/plugins.dart
+
+```dart
+// Generated by devpul from devpul.lock. Do not edit.
+//
+// cart 1.2.0 from https://example.com/plugins.git
+//   DevpulCart.changed(items, total);
+
+// dart format off
+// ignore_for_file: type=lint
+
+import 'package:devpul/devpul.dart';
+
+export 'cart/cart.dart';
+
+const _debug =
+    !bool.fromEnvironment('dart.vm.product') &&
+    !bool.fromEnvironment('dart.vm.profile');
+
+abstract final class DevpulPlugins {
+  static void install() {
+    if (!_debug) return;
+    Devpul.plugin(
+      'cart',
+      () => r'''
+export default { ... };
+export const icon = "<svg ...>";
+''',
+      version: '1.2.0',
+      origin: 'https://example.com/plugins.git',
+    );
+  }
+}
+```
+
+The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. The handshake lists `origin`, the lock's `url`.
+
+- Not named `.g.dart`, so ignore rules for build_runner output leave it committed.
+- `// dart format off` keeps it the same under any formatter settings.
+- `dart.vm.product` and `dart.vm.profile` are the constants behind Flutter's `kReleaseMode` and `kProfileMode`, so release and profile builds drop every plugin on every platform, and so does `dart compile exe`. `dart compile js` sets neither; pass `-Ddart.vm.product=true`.
+
+## registry.json
+
+One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it.
+
+```json
+{
+  "format": 1,
+  "plugins": [
+    {
+      "id": "cart",
+      "version": "1.3.0",
+      "api": 1,
+      "devpul": "^1.0.0",
+      "description": "Cart contents and totals in a Cart tab.",
+      "tags": ["shop", "state"],
+      "icon": "<svg ...>",
+      "usage": ["DevpulCart.changed(items, total);"],
+      "requires": {},
+      "url": "https://example.com/plugins.git",
+      "path": "cart"
+    }
+  ]
+}
+```

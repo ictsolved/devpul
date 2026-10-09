@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type DevEvent, fromVm, type JsonObject } from './events';
 import { fromSession, toSession } from './export';
 import { parseInfo } from './info';
+import { parseRegistry } from './registry';
 import { Store } from './store';
 
 // Fixtures written by the Dart packages' golden tests (tool/update_goldens.sh).
@@ -61,6 +62,14 @@ describe('contract', () => {
         hash: '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec',
       },
     ]);
+  });
+
+  it('reads the registry', () => {
+    expect(parseRegistry(read('registry.json'))).toEqual([
+      { id: 'cart', version: '1.3.0', url: 'https://example.com/plugins.git', path: 'cart' },
+      { id: 'flags', version: '0.3.1', url: 'https://example.com/flags/plugin.json' },
+    ]);
+    expect(() => parseRegistry({ format: 2, plugins: [] })).toThrow('not format 1');
   });
 
   it('writes contract/session.json and reads it back', () => {

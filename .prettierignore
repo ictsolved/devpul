@@ -5,3 +5,4 @@ pubspec.yaml
 analysis_options.yaml
 .claude/
 contract/*.json
+contract/app/

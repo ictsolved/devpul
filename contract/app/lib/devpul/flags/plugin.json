@@ -1,0 +1,9 @@
+{
+  "id": "flags",
+  "version": "0.3.1",
+  "api": 1,
+  "devpul": ">=1.0.0 <3.0.0",
+  "description": "Feature flags the app reports, as a table.",
+  "source": "flags.js",
+  "files": ["flags.js"]
+}

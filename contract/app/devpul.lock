@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "plugins": {
+    "cart": {
+      "url": "https://example.com/plugins.git",
+      "path": "cart",
+      "constraint": "^1.2.0",
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "version": "1.2.0",
+      "hash": "abaf05812a3ec7f4b4f17a0d801d5175808b3b6a5847e3fcbabc032641328f4e"
+    },
+    "flags": {
+      "url": "https://example.com/flags/plugin.json",
+      "version": "0.3.1",
+      "hash": "9adea98c93e0d8a2d88dfff7a850d1dd6764b3d1530699657bedaba0f9d96a4a"
+    }
+  }
+}
