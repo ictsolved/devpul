@@ -228,15 +228,15 @@ Future<bool> outdated(
     );
   }
   if (upgradable) {
-    console.out.writeln('devpul update takes the upgradable versions.');
+    console.out.writeln('devpul upgrade takes the upgradable versions.');
   }
   if (latest) {
     console.out.writeln(
-      'devpul update --major-versions takes the latest, rewriting '
+      'devpul upgrade --major-versions takes the latest, rewriting '
       'constraints.',
     );
   }
-  if (cliBehind) console.out.writeln('devpul upgrade updates devpul_cli.');
+  if (cliBehind) console.out.writeln('devpul update updates devpul_cli.');
   return behind || cliBehind;
 }
 
@@ -252,7 +252,7 @@ Future<(T?, String?)> _catch<T>(Future<T> future) async {
 /// [majorVersions] the newest overall, refs to their commit now, and URL and
 /// folder plugins to what they serve now. Shows the diff and asks before
 /// writing unless [yes].
-Future<void> update(
+Future<void> upgrade(
   App app,
   Fetcher fetcher,
   Console console, {
@@ -320,7 +320,7 @@ Future<void> update(
   if (!yes) {
     await _diff(vendored, changed, console);
     final command = [
-      'devpul update',
+      'devpul upgrade',
       ?id,
       if (majorVersions) '--major-versions',
       '--yes',
@@ -334,7 +334,14 @@ Future<void> update(
     }
   }
   for (final fetched in changed.values) {
-    await _requires(app, packages, fetched, console, yes: yes, retry: 'update');
+    await _requires(
+      app,
+      packages,
+      fetched,
+      console,
+      yes: yes,
+      retry: 'upgrade',
+    );
   }
 
   final files = {
@@ -392,7 +399,7 @@ Future<void> _diff(
   Map<String, Fetched> changed,
   Console console,
 ) async {
-  final temp = Directory.systemTemp.createTempSync('devpul_update');
+  final temp = Directory.systemTemp.createTempSync('devpul_upgrade');
   try {
     for (final side in ['a', 'b']) {
       Directory(p.join(temp.path, side)).createSync();

@@ -21,8 +21,8 @@ Usage: devpul [options] [vm-service-url]
        devpul list
        devpul sync [--check]
        devpul outdated [--exit-code]
-       devpul update [id] [--major-versions] [--yes]
-       devpul upgrade
+       devpul upgrade [id] [--major-versions] [--yes]
+       devpul update
        devpul cache clean
        devpul create <dir> [--js] [--dart]
        devpul check [dir]
@@ -54,14 +54,14 @@ Plugins, run in the app root:
   outdated     plugin versions: current, upgradable within the constraint,
                latest. Also lists devpul_cli against pub.dev.
     --exit-code  exit 1 when anything is behind
-  update       move one plugin, or all, to the upgradable version, then
+  upgrade      move one plugin, or all, to the upgradable version, then
                write lib/devpul/plugins.dart. Shows the diff and asks
                first. Refs move to their commit, folders and plugin.json
                URLs to what they hold now.
     --major-versions  take the latest version, rewriting the
                       constraint when it does not allow it
     --yes      write without the diff and run the pub add a plugin needs
-  upgrade      dart pub global activate devpul_cli
+  update       update devpul: dart pub global activate devpul_cli
   cache clean  delete the git mirrors devpul keeps
 
 Plugin authoring:
@@ -136,8 +136,8 @@ const _pluginCommands = {
   'list',
   'sync',
   'outdated',
-  'update',
   'upgrade',
+  'update',
   'cache',
   'create',
   'check',
@@ -158,7 +158,7 @@ PluginArgs parsePluginArgs(List<String> args) {
     'add' => ({'--yes'}, {'--path'}, 1),
     'sync' => ({'--check'}, <String>{}, 0),
     'outdated' => ({'--exit-code'}, <String>{}, 0),
-    'update' => ({'--major-versions', '--yes'}, <String>{}, 1),
+    'upgrade' => ({'--major-versions', '--yes'}, <String>{}, 1),
     'remove' => (<String>{}, <String>{}, 1),
     'cache' => (<String>{}, <String>{}, 1),
     'create' => ({'--js', '--dart'}, <String>{}, 1),
@@ -184,7 +184,7 @@ PluginArgs parsePluginArgs(List<String> args) {
     }
   }
   if (command == 'check' && rest.isEmpty) rest.add('.');
-  if (rest.length != count && !(command == 'update' && rest.isEmpty)) {
+  if (rest.length != count && !(command == 'upgrade' && rest.isEmpty)) {
     throw FormatException(switch (count) {
       0 => '$command takes no arguments',
       _ when rest.isEmpty => '$command needs an argument',
@@ -242,7 +242,7 @@ Future<int> _plugins(List<String> args) async {
         return 0;
       case 'check':
         return plugins.check(parsed.rest.single, console) ? 0 : 1;
-      case 'upgrade':
+      case 'update':
         // The SDK running devpul is the one whose pub cache holds it.
         final process = await Process.start(Platform.resolvedExecutable, [
           'pub',
@@ -277,8 +277,8 @@ Future<int> _plugins(List<String> args) async {
           cli: await devpulVersion(),
         );
         if (behind && parsed.flags.contains('--exit-code')) return 1;
-      case 'update':
-        await plugins.update(
+      case 'upgrade':
+        await plugins.upgrade(
           app,
           Fetcher(root: app.root, cache: cacheDir()),
           console,

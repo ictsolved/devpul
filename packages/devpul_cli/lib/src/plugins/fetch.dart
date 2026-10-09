@@ -189,7 +189,7 @@ final class Fetcher {
     LocalSource(:final path) => fetchFolder(root, path),
   };
 
-  /// Fetches what [entry] moves to on update: the newest tag within its
+  /// Fetches what [entry] moves to on upgrade: the newest tag within its
   /// constraint, or with [majorVersions] the newest overall, keeping the
   /// constraint when it allows that one. Refs and other sources fetch what
   /// they point at now.

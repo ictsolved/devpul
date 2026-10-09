@@ -256,8 +256,8 @@ void main() {
     expect(add.flags, {'--yes'});
     expect(add.options, {'--path': 'cart'});
     expect(parsePluginArgs(['sync', '--check']).flags, {'--check'});
-    expect(parsePluginArgs(['update', '--major-versions']).rest, isEmpty);
-    expect(parsePluginArgs(['update', 'cart', '--yes']).rest, ['cart']);
+    expect(parsePluginArgs(['upgrade', '--major-versions']).rest, isEmpty);
+    expect(parsePluginArgs(['upgrade', 'cart', '--yes']).rest, ['cart']);
     expect(parsePluginArgs(['outdated', '--exit-code']).flags, {'--exit-code'});
     for (final args in [
       ['add'],
@@ -268,9 +268,9 @@ void main() {
       ['remove'],
       ['cache'],
       ['cache', 'purge'],
-      ['update', 'a', 'b'],
+      ['upgrade', 'a', 'b'],
       ['outdated', '--yes'],
-      ['upgrade', 'x'],
+      ['update', 'x'],
     ]) {
       expect(
         () => parsePluginArgs(args),
@@ -587,7 +587,7 @@ void main() {
     expect(output.out.toString(), endsWith('Nothing cached.\n'));
   });
 
-  group('outdated and update', () {
+  group('outdated and upgrade', () {
     late String tagged;
     late String pub;
     // One fetcher per command, as in the CLI: a fetcher fetches each mirror
@@ -612,12 +612,12 @@ void main() {
     ).readAsStringSync();
     Future<bool> outdatedRun() =>
         outdated(app, fresh(), output.console(), cli: Version(1, 4, 0));
-    Future<void> updateRun({
+    Future<void> upgradeRun({
       String? id,
       bool majorVersions = false,
       bool yes = false,
       bool? answer,
-    }) => update(
+    }) => upgrade(
       app,
       fresh(),
       output.console(answer: answer),
@@ -635,9 +635,9 @@ Plugin      Current  Upgradable  Latest
 cart        1.0.0    1.1.0       2.0.0
 flags       0.3.1    0.3.1       0.3.1
 devpul_cli  1.4.0                1.5.0
-devpul update takes the upgradable versions.
-devpul update --major-versions takes the latest, rewriting constraints.
-devpul upgrade updates devpul_cli.
+devpul upgrade takes the upgradable versions.
+devpul upgrade --major-versions takes the latest, rewriting constraints.
+devpul update updates devpul_cli.
 ''');
     });
 
@@ -665,10 +665,10 @@ devpul_cli  1.4.0                can't check
       expect(output.err.toString(), contains('devpul_cli: ${base}api'));
     });
 
-    test('update shows the diff, asks, and keeps the constraint', () async {
+    test('upgrade shows the diff, asks, and keeps the constraint', () async {
       release(tagged, '1.1.0');
       release(tagged, '2.0.0');
-      await updateRun(answer: false);
+      await upgradeRun(answer: false);
       final out = output.out.toString();
       expect(out, contains('cart 1.0.0 to 1.1.0\n'));
       expect(out, contains('flags 0.3.1 is up to date.'));
@@ -684,11 +684,11 @@ devpul_cli  1.4.0                can't check
       expect(app.readLock().plugins['cart']!.version, Version(1, 0, 0));
 
       await expectLater(
-        updateRun(id: 'cart'),
-        fails('nothing written; run devpul update cart --yes to write it'),
+        upgradeRun(id: 'cart'),
+        fails('nothing written; run devpul upgrade cart --yes to write it'),
       );
 
-      await updateRun(answer: true);
+      await upgradeRun(answer: true);
       final entry = app.readLock().plugins['cart']!;
       expect(
         [entry.version, '${entry.constraint}'],
@@ -702,13 +702,13 @@ devpul_cli  1.4.0                can't check
       );
 
       output = Output();
-      await updateRun(yes: true);
+      await upgradeRun(yes: true);
       expect(output.out.toString(), contains('cart 1.1.0 is up to date.'));
     });
 
-    test('update --major-versions rewrites the constraint', () async {
+    test('upgrade --major-versions rewrites the constraint', () async {
       release(tagged, '2.0.0');
-      await updateRun(id: 'cart', majorVersions: true, yes: true);
+      await upgradeRun(id: 'cart', majorVersions: true, yes: true);
       final out = output.out.toString();
       expect(out, contains('cart 1.0.0 to 2.0.0, constraint ^1.0.0 to ^2.0.0'));
       expect(out, isNot(contains('diff --git')));
@@ -716,7 +716,7 @@ devpul_cli  1.4.0                can't check
       expect('${app.readLock().plugins['cart']!.constraint}', '^2.0.0');
     });
 
-    test('update moves a ref to its commit now', () async {
+    test('upgrade moves a ref to its commit now', () async {
       fresh();
       await addArg('${Uri.file(tagged)}#main');
       File(
@@ -732,7 +732,7 @@ devpul_cli  1.4.0                can't check
           'cart        1.0.0 ${app.readLock().plugins['cart']!.commit!.substring(0, 7)}  1.0.0 ${head.substring(0, 7)}',
         ),
       );
-      await updateRun(id: 'cart', yes: true);
+      await upgradeRun(id: 'cart', yes: true);
       final entry = app.readLock().plugins['cart']!;
       expect([entry.ref, entry.commit], ['main', head]);
       expect(
@@ -741,17 +741,17 @@ devpul_cli  1.4.0                can't check
       );
     });
 
-    test('update stops on edits and unknown ids', () async {
+    test('upgrade stops on edits and unknown ids', () async {
       release(tagged, '1.1.0');
       await expectLater(
-        updateRun(id: 'nope'),
+        upgradeRun(id: 'nope'),
         fails('nope is not in devpul.lock'),
       );
       File(
         p.join(app.pluginDir('cart').path, 'cart.js'),
       ).writeAsStringSync('// edited\n');
       await expectLater(
-        updateRun(yes: true),
+        upgradeRun(yes: true),
         fails(contains('has edits that devpul.lock does not')),
       );
       expect(app.readLock().plugins['cart']!.version, Version(1, 0, 0));
