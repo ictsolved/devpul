@@ -1,4 +1,5 @@
 import { isObject } from './events';
+import { compareVersions, isBreaking, parseVersion } from './semver';
 
 /** A plugin `registry.json` lists, at its latest version. */
 export interface RegistryPlugin {
@@ -19,4 +20,24 @@ export function parseRegistry(data: unknown): RegistryPlugin[] {
       ? [{ id: p.id, version: p.version, url: p.url, ...(typeof p.path === 'string' && { path: p.path }) }]
       : [],
   );
+}
+
+export type Update =
+  | { state: 'current' }
+  | { state: 'available'; version: string; command: string }
+  /** Not in the registry under this id and source, or no semver version. */
+  | { state: 'unlisted' };
+
+/** How a plugin, as its app reports it, stands against [registry]. */
+export function checkUpdate(
+  plugin: { id: string; version?: string; origin?: string },
+  registry: readonly RegistryPlugin[],
+): Update {
+  const entry = registry.find((r) => r.id === plugin.id && r.url === plugin.origin);
+  const current = plugin.version === undefined ? undefined : parseVersion(plugin.version);
+  const latest = entry && parseVersion(entry.version);
+  if (!entry || !current || !latest) return { state: 'unlisted' };
+  if (compareVersions(current, latest) >= 0) return { state: 'current' };
+  const flag = isBreaking(current, latest) ? ' --major-versions' : '';
+  return { state: 'available', version: entry.version, command: `devpul upgrade ${plugin.id}${flag}` };
 }
