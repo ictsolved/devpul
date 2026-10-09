@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'cache.dart';
 import 'server.dart';
 
 /// Records the port and token of a serving devpul, so a later one on the same
 /// port can hand it a URL.
-File stateFile(int port) => File('${_stateDir()}/server-$port.json');
+File stateFile(int port) => File('${cacheDir()}/server-$port.json');
 
 void writeState(UiServer server) {
   final file = stateFile(server.port);
@@ -26,13 +27,6 @@ void deleteState(int port) {
   } on FileSystemException {
     // Already gone.
   }
-}
-
-String _stateDir() {
-  final env = Platform.environment;
-  if (Platform.isWindows) return '${env['LOCALAPPDATA']}\\devpul';
-  if (Platform.isMacOS) return '${env['HOME']}/Library/Caches/devpul';
-  return '${env['XDG_CACHE_HOME'] ?? '${env['HOME']}/.cache'}/devpul';
 }
 
 /// A devpul that another process serves on [port].
