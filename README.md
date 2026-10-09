@@ -62,7 +62,6 @@ The [example app](examples/devpul_example) uses every package.
 | [devpul_http](packages/devpul_http)       | `DevpulClient` for package:http.                                                                                               |
 | [devpul_flutter](packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`.                                              |
 | [devpul_cli](packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1.                                                   |
-| [devpul (npm)](launcher)                  | `npx devpul` serves the UI on 127.0.0.1.                                                                                       |
 
 ## In the browser
 

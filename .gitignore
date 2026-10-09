@@ -12,4 +12,3 @@ test-results/
 .idea/
 *.iml
 pubspec.lock
-launcher/ui/
