@@ -1,7 +1,7 @@
 {
   "name": "devpul",
-  "version": "0.2.1",
-  "description": "Serve the DevPul UI on 127.0.0.1: inspect Dart and Flutter HTTP calls, errors, logs and events in your browser.",
+  "version": "0.3.0",
+  "description": "Deprecated: the DevPul command line is the Dart package devpul_cli.",
   "keywords": [
     "flutter",
     "dart",
@@ -26,13 +26,9 @@
   },
   "files": [
     "bin",
-    "ui",
     "LICENSE"
   ],
   "engines": {
     "node": ">=18"
-  },
-  "scripts": {
-    "prepack": "npm run build -w devpul-ui --prefix .. && node -e \"const f=require('fs');f.rmSync('ui',{recursive:true,force:true});f.cpSync('../apps/ui/dist','ui',{recursive:true});for(const x of ['CNAME','robots.txt','sitemap.xml','llms.txt','sw.js'])f.rmSync('ui/'+x,{force:true})\""
   }
 }
