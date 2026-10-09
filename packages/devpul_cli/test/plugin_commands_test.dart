@@ -475,33 +475,80 @@ void main() {
   group('sync', () {
     setUp(() => copyDir(contract, app.root));
 
-    test('--check passes on contract/app and fails once stale', () {
-      expect(sync(app, output.console(), check: true), isTrue);
+    test('--check passes on contract/app and fails once stale', () async {
+      expect(await sync(app, output.console(), check: true), isTrue);
       app.generated.writeAsStringSync('// stale\n');
-      expect(sync(app, output.console(), check: true), isFalse);
+      expect(await sync(app, output.console(), check: true), isFalse);
       expect(output.err.toString(), contains('plugins.dart is stale'));
-      expect(sync(app, output.console()), isTrue);
+      expect(await sync(app, output.console()), isTrue);
       expect(
         app.generated.readAsStringSync(),
         File('$contract/$generatedFile').readAsStringSync(),
       );
-      expect(sync(app, output.console(), check: true), isTrue);
+      expect(await sync(app, output.console(), check: true), isTrue);
     });
 
-    test('warns about edited plugins and fails on missing files', () {
+    test('warns about edited plugins and fails on missing files', () async {
       File(
         p.join(app.pluginDir('flags').path, 'flags.js'),
       ).writeAsStringSync('// edited\n');
-      expect(sync(app, output.console()), isTrue);
+      expect(await sync(app, output.console()), isTrue);
       expect(
         output.err.toString(),
         contains('flags differs from its devpul.lock hash'),
       );
       File(p.join(app.pluginDir('cart').path, 'cart.js')).deleteSync();
-      expect(
-        () => sync(app, output.console()),
+      await expectLater(
+        sync(app, output.console()),
         fails('lib/devpul/cart/cart.js is missing'),
       );
+    });
+
+    group('copies a folder plugin again', () {
+      late String folder;
+      setUp(() async {
+        folder = p.join(temp.path, 'folder${n++}');
+        copyDir(p.join(repo, 'cart'), folder);
+        await addSource(LocalSource(folder));
+      });
+      File js(String dir) => File(p.join(dir, 'cart.js'));
+
+      test('when the folder changed', () async {
+        expect(await sync(app, output.console(), check: true), isTrue);
+        js(folder).writeAsStringSync('// changed\n');
+        expect(await sync(app, output.console(), check: true), isFalse);
+        expect(output.err.toString(), contains('lib/devpul/cart differs from'));
+        expect(await sync(app, output.console()), isTrue);
+        expect(
+          js(app.pluginDir('cart').path).readAsStringSync(),
+          '// changed\n',
+        );
+        expect(app.generated.readAsStringSync(), contains('// changed'));
+        expect(
+          app.edited(app.readLock(), app.allVendored(app.readLock())),
+          isEmpty,
+        );
+        expect(await sync(app, output.console(), check: true), isTrue);
+      });
+
+      test('when the copy is missing', () async {
+        app.pluginDir('cart').deleteSync(recursive: true);
+        expect(await sync(app, output.console()), isTrue);
+        expect(js(app.pluginDir('cart').path).existsSync(), isTrue);
+      });
+
+      test('but not over edits to the copy', () async {
+        js(app.pluginDir('cart').path).writeAsStringSync('// edited\n');
+        expect(await sync(app, output.console(), check: true), isFalse);
+        await expectLater(
+          sync(app, output.console()),
+          fails(contains('make them in')),
+        );
+        expect(
+          js(app.pluginDir('cart').path).readAsStringSync(),
+          '// edited\n',
+        );
+      });
     });
   });
 

@@ -6,6 +6,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'app.dart';
 import 'fetch.dart';
 import 'lock.dart';
+import 'manifest.dart';
 import 'render.dart';
 
 /// Where a plugin command writes, and how it asks.
@@ -39,19 +40,7 @@ Future<void> add(
   final manifest = fetched.manifest;
   final id = manifest.id;
   final name = '$id ${manifest.version}';
-
-  final devpul = packages.versions['devpul'];
-  if (devpul == null || !packages.dependencies.contains('devpul')) {
-    throw PluginException(
-      'the app does not depend on devpul; run '
-      '${packages.flutter ? 'flutter' : 'dart'} pub add devpul',
-    );
-  }
-  if (!manifest.devpul.allows(devpul)) {
-    throw PluginException(
-      '$name needs devpul ${manifest.devpul}; the app has $devpul',
-    );
-  }
+  _supports(packages, manifest);
   final dir = p.relative(app.pluginDir(id).path, from: app.root);
   if (lock.plugins[id] case final entry?) {
     if (vendored[id] case final files? when filesHash(files) != entry.hash) {
@@ -92,6 +81,22 @@ Future<void> add(
   }
 }
 
+void _supports(Packages packages, Manifest manifest) {
+  final devpul = packages.versions['devpul'];
+  if (devpul == null || !packages.dependencies.contains('devpul')) {
+    throw PluginException(
+      'the app does not depend on devpul; run '
+      '${packages.flutter ? 'flutter' : 'dart'} pub add devpul',
+    );
+  }
+  if (!manifest.devpul.allows(devpul)) {
+    throw PluginException(
+      '${manifest.id} ${manifest.version} needs devpul ${manifest.devpul}; '
+      'the app has $devpul',
+    );
+  }
+}
+
 /// Stops unless the app depends on every package the plugin requires, at a
 /// version it allows. Runs pub add only on [yes] or a yes answer.
 Future<void> _requires(
@@ -100,6 +105,7 @@ Future<void> _requires(
   Fetched fetched,
   Console console, {
   required bool yes,
+  String retry = 'add',
 }) async {
   final manifest = fetched.manifest;
   final name = '${manifest.id} ${manifest.version}';
@@ -133,7 +139,7 @@ Future<void> _requires(
   final run =
       yes || (console.ask != null && await console.ask!('Run $command?'));
   if (!run || console.pubAdd == null) {
-    throw PluginException('nothing written; run $command, then add again');
+    throw PluginException('nothing written; run $command, then $retry again');
   }
   console.out.writeln(command);
   final code = await console.pubAdd!(executable, args);
@@ -194,28 +200,95 @@ void list(App app, Console console) {
   }
 }
 
-/// Renders the generated file, or with [check] reports whether it is
-/// current. Returns false when [check] finds it stale.
-bool sync(App app, Console console, {bool check = false}) {
+/// Copies plugins added from a folder again where the folder changed, then
+/// renders the generated file. With [check] it writes nothing and returns
+/// false when either is stale.
+Future<bool> sync(App app, Console console, {bool check = false}) async {
   if (!app.hasLock) throw PluginException('no devpul.lock in ${app.root}');
   final lock = app.readLock();
   final vendored = app.allVendored(lock);
-  for (final id in app.edited(lock, vendored)) {
-    console.err.writeln(
-      '${p.relative(app.pluginDir(id).path, from: app.root)} differs from '
-      'its devpul.lock hash.',
-    );
+  final edited = app.edited(lock, vendored).toSet();
+  String dir(String id) => p.relative(app.pluginDir(id).path, from: app.root);
+
+  final changed = <String, Fetched>{};
+  for (final MapEntry(key: id, value: entry) in lock.plugins.entries) {
+    if (!isFolder(entry.url)) continue;
+    final fetched = await fetchFolder(app.root, entry.url);
+    if (fetched.manifest.id != id) {
+      throw PluginException(
+        '${entry.url} holds ${fetched.manifest.id}, not $id',
+      );
+    }
+    if (edited.contains(id) && !check) {
+      throw PluginException(
+        '${dir(id)} has edits that devpul.lock does not; make them in '
+        '${entry.url}, or run devpul remove $id to drop them',
+      );
+    }
+    if (fetched.entry.hash != entry.hash ||
+        !vendored.containsKey(id) ||
+        edited.contains(id)) {
+      changed[id] = fetched;
+    }
   }
-  final text = renderApp(lock, vendored);
-  final current = app.generated.existsSync()
-      ? app.generated.readAsStringSync()
-      : null;
+  for (final id in edited) {
+    if (!changed.containsKey(id)) {
+      console.err.writeln('${dir(id)} differs from its devpul.lock hash.');
+    }
+  }
+
   if (check) {
-    if (current == text) return true;
+    for (final MapEntry(key: id, value: fetched) in changed.entries) {
+      console.err.writeln(
+        '${dir(id)} differs from ${fetched.entry.url}; run devpul sync.',
+      );
+    }
+    final current = app.generated.existsSync()
+        ? app.generated.readAsStringSync()
+        : null;
+    if (current == renderApp(lock, vendored)) return changed.isEmpty;
     console.err.writeln('$generatedFile is stale; run devpul sync.');
     return false;
   }
-  if (current == text) {
+
+  if (changed.isNotEmpty) {
+    final packages = app.packages();
+    for (final fetched in changed.values) {
+      _supports(packages, fetched.manifest);
+      await _requires(
+        app,
+        packages,
+        fetched,
+        console,
+        yes: false,
+        retry: 'sync',
+      );
+    }
+    final files = {
+      for (final MapEntry(key: id, value: fetched) in changed.entries)
+        id: fetched.files,
+    };
+    app.write(
+      Lock({
+        ...lock.plugins,
+        for (final MapEntry(key: id, value: fetched) in changed.entries)
+          id: fetched.entry,
+      }),
+      {...vendored, ...files},
+      replace: files,
+    );
+    for (final MapEntry(key: id, value: fetched) in changed.entries) {
+      console.out.writeln(
+        'Copied $id ${fetched.manifest.version} from ${fetched.entry.url} '
+        'to ${dir(id)}.',
+      );
+    }
+    console.out.writeln('Wrote devpul.lock and $generatedFile.');
+    return true;
+  }
+
+  final text = renderApp(lock, vendored);
+  if (app.generated.existsSync() && app.generated.readAsStringSync() == text) {
     console.out.writeln('$generatedFile is up to date.');
   } else {
     app.generated

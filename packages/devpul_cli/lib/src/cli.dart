@@ -39,8 +39,9 @@ Plugins, run in the app root:
     --yes      run the pub add a plugin needs without asking
   remove       delete a plugin's folder and lock entry
   list         plugins in devpul.lock
-  sync         write lib/devpul/plugins.dart from devpul.lock, offline
-    --check    exit 1 when it is stale instead
+  sync         write lib/devpul/plugins.dart from devpul.lock, offline.
+               Copies plugins added from a folder again when it changed.
+    --check    exit 1 when either is stale instead
   cache clean  delete the git mirrors devpul keeps
 ''';
 
@@ -200,7 +201,7 @@ Future<int> _plugins(List<String> args) async {
         plugins.list(app, console);
       case 'sync':
         final check = parsed.flags.contains('--check');
-        if (!plugins.sync(app, console, check: check)) return 1;
+        if (!await plugins.sync(app, console, check: check)) return 1;
     }
     return 0;
   } on PluginException catch (e) {

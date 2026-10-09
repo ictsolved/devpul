@@ -52,11 +52,14 @@ final class LocalSource extends Source {
 
 final _scp = RegExp(r'^[\w.-]+@[\w.-]+:');
 
+/// Whether a devpul.lock `url` is a folder rather than a URL.
+bool isFolder(String url) => !url.contains('://') && !_scp.hasMatch(url);
+
 /// Reads `<name | git-url | plugin.json-url | folder>[#ref|@version]`.
 /// [path] is the plugin folder in a git repository. Throws a
 /// [FormatException] for a usage error.
 Source parseSource(String arg, {String? path}) {
-  final url = arg.contains('://') || _scp.hasMatch(arg);
+  final url = !isFolder(arg);
   final local =
       !url &&
       (arg.startsWith('.') ||
@@ -168,7 +171,7 @@ final class Fetcher {
       constraint: constraint,
     ),
     UrlSource(:final url) => _url(url),
-    LocalSource(:final path) => _local(path),
+    LocalSource(:final path) => fetchFolder(root, path),
   };
 
   Future<Fetched> _registry(RegistrySource source) async {
@@ -219,28 +222,6 @@ final class Fetcher {
       (path) => _get(base.resolve(path)),
     );
     return Fetched(manifest, files, url: url);
-  }
-
-  Future<Fetched> _local(String path) async {
-    final dir = p.normalize(p.absolute(root, path));
-    if (!File(p.join(dir, 'plugin.json')).existsSync()) {
-      throw PluginException('no plugin.json in $dir');
-    }
-    final (manifest, files) = await _read('plugin.json', (file) async {
-      final f = File(p.joinAll([dir, ...p.posix.split(file)]));
-      try {
-        return utf8.decode(f.readAsBytesSync());
-      } on FileSystemException {
-        throw PluginException('$file is missing in $dir');
-      } on FormatException {
-        throw PluginException('${f.path} is not UTF-8 text');
-      }
-    });
-    return Fetched(
-      manifest,
-      files,
-      url: p.posix.joinAll(p.split(p.relative(dir, from: root))),
-    );
   }
 
   Future<Fetched> _git(
@@ -340,6 +321,30 @@ final class Fetcher {
     }
     return repo;
   }
+}
+
+/// Reads the plugin folder at [path], relative to [root]. The entry's `url`
+/// is the folder relative to [root].
+Future<Fetched> fetchFolder(String root, String path) async {
+  final dir = p.normalize(p.absolute(root, path));
+  if (!File(p.join(dir, 'plugin.json')).existsSync()) {
+    throw PluginException('no plugin.json in $dir');
+  }
+  final (manifest, files) = await _read('plugin.json', (file) async {
+    final f = File(p.joinAll([dir, ...p.posix.split(file)]));
+    try {
+      return utf8.decode(f.readAsBytesSync());
+    } on FileSystemException {
+      throw PluginException('$file is missing in $dir');
+    } on FormatException {
+      throw PluginException('${f.path} is not UTF-8 text');
+    }
+  });
+  return Fetched(
+    manifest,
+    files,
+    url: p.posix.joinAll(p.split(p.relative(dir, from: root))),
+  );
 }
 
 /// Reads [manifestPath] with [read], then every file it lists.

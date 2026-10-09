@@ -35,7 +35,7 @@ devpul sync --check                       # in CI: exit 1 when it is stale
 devpul cache clean
 ```
 
-`add` copies the plugin into `lib/devpul/<id>/`, records it in `devpul.lock` and writes `lib/devpul/plugins.dart`; commit all three and call `DevpulPlugins.install()` in `main`. Git versions come from `<id>-v<version>` tags; `@` takes a pub version constraint, `#` a branch, tag or commit. A plugin that needs a package the app lacks stops `add` with the `pub add` command; `--yes` runs it. `add` will not overwrite a vendored copy with local edits.
+`add` copies the plugin into `lib/devpul/<id>/`, records it in `devpul.lock` and writes `lib/devpul/plugins.dart`; commit all three and call `DevpulPlugins.install()` in `main`. Git versions come from `<id>-v<version>` tags; `@` takes a pub version constraint, `#` a branch, tag or commit. A plugin that needs a package the app lacks stops `add` with the `pub add` command; `--yes` runs it. `add` will not overwrite a vendored copy with local edits. `sync` copies a plugin added from a folder again when the folder changed, so `sync --check` also fails when the copy is behind.
 
 `devpul run` keeps the terminal keys of `flutter run` (`r`, `R`, `q`) and exits with its code. A second `devpul` on the same port hands its app to the tab the first one opened. The UI stays on port 7171 so settings and history persist; `--port` picks another, `--no-open` prints links instead of opening a browser.
 
