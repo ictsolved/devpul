@@ -114,7 +114,11 @@ import 'dart:io';
 import 'lib/value.dart';
 Future<void> main() async {
   for (var i = 0; i < 300; i++) {
-    if (value() == 'two') exit(0);
+    if (value() == 'two') {
+      // Gives devpul time to print the reload result.
+      await Future<void>.delayed(const Duration(seconds: 1));
+      exit(0);
+    }
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
   exit(1);
