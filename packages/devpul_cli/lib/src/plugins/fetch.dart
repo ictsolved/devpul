@@ -14,6 +14,8 @@ import 'registry.dart';
 /// Matches `registry` in site.json, checked by a test.
 const registryUrl = 'https://devpul.saradgajurel.com.np/plugins/registry.json';
 
+const pubUrl = 'https://pub.dev/api/packages/devpul_cli';
+
 /// Where `devpul add` takes a plugin from.
 sealed class Source {}
 
@@ -120,6 +122,11 @@ Source parseSource(String arg, {String? path}) {
   return GitSource(rest, path: path, ref: ref, constraint: constraint);
 }
 
+/// What a lock entry can move to: [upgradable] within its constraint, or
+/// where its ref or source points now, at [commit] for git; [latest]
+/// overall. [upgradable] is null when no version fits the constraint.
+typedef Available = ({Version? upgradable, String? commit, Version latest});
+
 /// A plugin as fetched, before it is vendored.
 final class Fetched {
   Fetched(
@@ -154,11 +161,18 @@ final class Fetcher {
     required this.root,
     required this.cache,
     this.registry = registryUrl,
+    this.pub = pubUrl,
   });
 
   final String root;
   final String cache;
   final String registry;
+
+  /// The pub.dev API URL of devpul_cli.
+  final String pub;
+
+  /// Mirrors fetched by this fetcher, so each repository is fetched once.
+  final _mirrors = <String, Future<_Repo>>{};
 
   /// Prints progress.
   void Function(String line) log = (_) {};
@@ -174,6 +188,81 @@ final class Fetcher {
     UrlSource(:final url) => _url(url),
     LocalSource(:final path) => fetchFolder(root, path),
   };
+
+  /// Fetches what [entry] moves to on update: the newest tag within its
+  /// constraint, or with [latest] the newest overall, keeping the
+  /// constraint when it allows that one. Refs and other sources fetch what
+  /// they point at now.
+  Future<Fetched> refetch(String id, LockEntry entry, {bool latest = false}) {
+    if (isFolder(entry.url)) return fetchFolder(root, entry.url);
+    if (parseSource(entry.url) case UrlSource(:final url)) return _url(url);
+    return _git(
+      entry.url,
+      entry.path,
+      ref: entry.ref,
+      constraint: entry.constraint,
+      latest: latest,
+      id: id,
+    );
+  }
+
+  /// Reads where [entry] can move without fetching its files.
+  Future<Available> available(String id, LockEntry entry) async {
+    if (isFolder(entry.url)) {
+      final file = File(p.join(root, entry.url, 'plugin.json'));
+      if (!file.existsSync()) {
+        throw PluginException('no plugin.json in ${entry.url}');
+      }
+      final version = _manifest(file.readAsStringSync()).version;
+      return (upgradable: version, commit: null, latest: version);
+    }
+    if (parseSource(entry.url) case UrlSource(:final url)) {
+      final version = _manifest(await _get(Uri.parse(url))).version;
+      return (upgradable: version, commit: null, latest: version);
+    }
+    final repo = await _mirror(entry.url);
+    final where = entry.path == null
+        ? entry.url
+        : '${entry.url} (${entry.path})';
+    if (entry.ref case final ref?) {
+      final commit =
+          await repo.resolve(ref) ??
+          (throw PluginException('no ref $ref in ${entry.url}'));
+      final file = entry.path == null
+          ? 'plugin.json'
+          : '${entry.path}/plugin.json';
+      final text =
+          await repo.read(commit, file) ??
+          (throw PluginException('no plugin.json in $where at $ref'));
+      final version = _manifest(text).version;
+      return (upgradable: version, commit: commit, latest: version);
+    }
+    final all = await repo.tags('$id-v');
+    if (all.isEmpty) throw PluginException('no $id-v<version> tags in $where');
+    final allowed = [
+      for (final version in all.keys)
+        if (entry.constraint?.allows(version) ?? true) version,
+    ];
+    final upgradable = allowed.isEmpty ? null : Version.primary(allowed);
+    return (
+      upgradable: upgradable,
+      commit: all[upgradable],
+      latest: Version.primary(all.keys.toList()),
+    );
+  }
+
+  /// The latest devpul_cli on pub.dev.
+  Future<Version> latestCli() async {
+    final text = await _get(Uri.parse(pub));
+    try {
+      if (jsonDecode(text) case {'latest': {'version': final String version}}) {
+        return Version.parse(version);
+      }
+    } on FormatException {
+      // Below.
+    }
+    throw PluginException('$pub: no latest version');
+  }
 
   Future<Fetched> _registry(RegistrySource source) async {
     log('Reading $registry');
@@ -230,6 +319,7 @@ final class Fetcher {
     String? path, {
     String? ref,
     VersionConstraint? constraint,
+    bool latest = false,
     String? id,
   }) async {
     final repo = await _mirror(url);
@@ -247,7 +337,7 @@ final class Fetcher {
       final all = await repo.tags('$id-v');
       final allowed = [
         for (final version in all.keys)
-          if (constraint?.allows(version) ?? true) version,
+          if (latest || (constraint?.allows(version) ?? true)) version,
       ];
       if (allowed.isEmpty) {
         throw PluginException(
@@ -260,7 +350,9 @@ final class Fetcher {
       }
       final version = tagged = Version.primary(allowed);
       commit = all[version]!;
-      constraint ??= VersionConstraint.compatibleWith(version);
+      if (constraint == null || !constraint.allows(version)) {
+        constraint = VersionConstraint.compatibleWith(version);
+      }
     }
 
     final (manifest, files) = await _read('plugin.json', (file) async {
@@ -286,7 +378,9 @@ final class Fetcher {
   }
 
   /// A mirror of [url] in the cache, fetched now.
-  Future<_Repo> _mirror(String url) async {
+  Future<_Repo> _mirror(String url) => _mirrors[url] ??= _fetchMirror(url);
+
+  Future<_Repo> _fetchMirror(String url) async {
     final name = url
         .replaceFirst(RegExp(r'/+$'), '')
         .split(RegExp(r'[/:]'))
@@ -354,14 +448,7 @@ Future<(Manifest, Map<String, String>)> _read(
   Future<String> Function(String path) read,
 ) async {
   final text = await read(manifestPath);
-  final Manifest manifest;
-  try {
-    manifest = Manifest.parse(jsonDecode(text));
-  } on FormatException catch (e) {
-    throw PluginException('plugin.json: ${e.message}');
-  } on ManifestException catch (e) {
-    throw PluginException('$e');
-  }
+  final manifest = _manifest(text);
   final files = {
     manifestPath: text,
     for (final file in manifest.files) file: await read(file),
@@ -373,6 +460,16 @@ Future<(Manifest, Map<String, String>)> _read(
     );
   }
   return (manifest, files);
+}
+
+Manifest _manifest(String text) {
+  try {
+    return Manifest.parse(jsonDecode(text));
+  } on FormatException catch (e) {
+    throw PluginException('plugin.json: ${e.message}');
+  } on ManifestException catch (e) {
+    throw PluginException('$e');
+  }
 }
 
 String _looseId(String? text, String where) {

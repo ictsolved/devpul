@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -13,10 +14,19 @@ import 'render.dart';
 
 /// Where a plugin command writes, and how it asks.
 final class Console {
-  Console({required this.out, required this.err, this.ask, this.pubAdd});
+  Console({
+    required this.out,
+    required this.err,
+    this.ask,
+    this.pubAdd,
+    this.page = false,
+  });
 
   final StringSink out;
   final StringSink err;
+
+  /// Diffs go to the terminal through git's pager, not to [out].
+  final bool page;
 
   /// Asks a yes or no question; null when there is no terminal.
   final Future<bool> Function(String question)? ask;
@@ -147,6 +157,292 @@ Future<void> _requires(
   final code = await console.pubAdd!(executable, args);
   if (code != 0) {
     throw PluginException('$command failed; nothing written');
+  }
+}
+
+/// Prints each plugin's current, upgradable and latest version, then
+/// devpul_cli's. Sources that fail show "can't check". Returns whether
+/// anything is behind.
+Future<bool> outdated(
+  App app,
+  Fetcher fetcher,
+  Console console, {
+  required Version cli,
+}) async {
+  final lock = app.readLock();
+  final checks = [
+    for (final MapEntry(key: id, value: entry) in lock.plugins.entries)
+      _catch(fetcher.available(id, entry)),
+  ];
+  final latestCli = _catch(fetcher.latestCli());
+
+  final rows = [
+    ['Plugin', 'Current', 'Upgradable', 'Latest'],
+  ];
+  var behind = false;
+  var upgradable = false;
+  var latest = false;
+  for (final (i, MapEntry(key: id, value: entry))
+      in lock.plugins.entries.indexed) {
+    String label(Version? version, String? commit) => [
+      version?.toString() ?? '-',
+      if (entry.ref != null && commit != null) commit.substring(0, 7),
+    ].join(' ');
+    final current = label(entry.version, entry.commit);
+    switch (await checks[i]) {
+      case (final available?, _):
+        final up = available.upgradable;
+        final moves =
+            up != null &&
+            (up != entry.version ||
+                (available.commit != null && available.commit != entry.commit));
+        upgradable |= moves;
+        latest |= available.latest > (up ?? entry.version);
+        behind |= moves || available.latest > entry.version;
+        rows.add([
+          id,
+          current,
+          label(up, available.commit),
+          label(available.latest, available.commit),
+        ]);
+      case (_, final error):
+        console.err.writeln('$id: $error');
+        rows.add([id, current, '', "can't check"]);
+    }
+  }
+  final (cliLatest, cliError) = await latestCli;
+  if (cliError != null) console.err.writeln('devpul_cli: $cliError');
+  final cliBehind = cliLatest != null && cliLatest > cli;
+  rows.add(['devpul_cli', '$cli', '', cliLatest?.toString() ?? "can't check"]);
+
+  final widths = [
+    for (var i = 0; i < 3; i++)
+      rows.map((row) => row[i].length).reduce((a, b) => a > b ? a : b),
+  ];
+  for (final row in rows) {
+    console.out.writeln(
+      [
+        for (var i = 0; i < row.length; i++)
+          i < 3 ? row[i].padRight(widths[i]) : row[i],
+      ].join('  ').trimRight(),
+    );
+  }
+  if (upgradable) {
+    console.out.writeln('devpul update takes the upgradable versions.');
+  }
+  if (latest) {
+    console.out.writeln(
+      'devpul update --latest takes the latest, rewriting constraints.',
+    );
+  }
+  if (cliBehind) console.out.writeln('devpul upgrade updates devpul_cli.');
+  return behind || cliBehind;
+}
+
+Future<(T?, String?)> _catch<T>(Future<T> future) async {
+  try {
+    return (await future, null);
+  } on PluginException catch (e) {
+    return (null, e.message);
+  }
+}
+
+/// Moves plugins to the newest version their constraint allows, or with
+/// [latest] the newest overall, refs to their commit now, and URL and
+/// folder plugins to what they serve now. Shows the diff and asks before
+/// writing unless [yes].
+Future<void> update(
+  App app,
+  Fetcher fetcher,
+  Console console, {
+  String? id,
+  bool latest = false,
+  bool yes = false,
+}) async {
+  final lock = app.readLock();
+  if (id != null && !lock.plugins.containsKey(id)) {
+    throw PluginException('$id is not in devpul.lock');
+  }
+  if (lock.plugins.isEmpty) {
+    console.out.writeln('No plugins in devpul.lock.');
+    return;
+  }
+  final ids = id == null ? lock.plugins.keys : [id];
+  final vendored = app.allVendored(lock);
+  final edited = app.edited(lock, vendored).toSet();
+  String dir(String id) => p.relative(app.pluginDir(id).path, from: app.root);
+
+  fetcher.log = console.out.writeln;
+  final changed = <String, Fetched>{};
+  for (final id in ids) {
+    final entry = lock.plugins[id]!;
+    final fetched = await fetcher.refetch(id, entry, latest: latest);
+    if (fetched.manifest.id != id) {
+      throw PluginException(
+        '${describe(entry)} holds ${fetched.manifest.id}, not $id',
+      );
+    }
+    if (jsonEncode(fetched.entry.toJson()) == jsonEncode(entry.toJson()) &&
+        vendored.containsKey(id)) {
+      console.out.writeln('$id ${_version(entry)} is up to date.');
+      continue;
+    }
+    if (edited.contains(id)) {
+      throw PluginException(
+        '${dir(id)} has edits that devpul.lock does not; '
+        '${isFolder(entry.url) ? 'make them in ${entry.url}, or ' : ''}'
+        'run devpul remove $id to drop them',
+      );
+    }
+    changed[id] = fetched;
+  }
+  if (changed.isEmpty) return;
+
+  final packages = app.packages();
+  for (final MapEntry(key: id, value: fetched) in changed.entries) {
+    _supports(packages, fetched.manifest);
+    final from = lock.plugins[id]!;
+    final to = fetched.entry;
+    console.out.writeln(
+      [
+        '$id ${_version(from)} to ${_version(to)}',
+        if ('${from.constraint}' != '${to.constraint}')
+          'constraint ${from.constraint} to ${to.constraint}',
+      ].join(', '),
+    );
+  }
+
+  if (!yes) {
+    await _diff(vendored, changed, console);
+    final command = [
+      'devpul update',
+      ?id,
+      if (latest) '--latest',
+      '--yes',
+    ].join(' ');
+    if (console.ask == null) {
+      throw PluginException('nothing written; run $command to write it');
+    }
+    if (!await console.ask!('Write these changes?')) {
+      console.out.writeln('Nothing written.');
+      return;
+    }
+  }
+  for (final fetched in changed.values) {
+    await _requires(app, packages, fetched, console, yes: yes, retry: 'update');
+  }
+
+  final files = {
+    for (final MapEntry(key: id, value: fetched) in changed.entries)
+      id: fetched.files,
+  };
+  app.write(
+    Lock({
+      ...lock.plugins,
+      for (final MapEntry(key: id, value: fetched) in changed.entries)
+        id: fetched.entry,
+    }),
+    {...vendored, ...files},
+    replace: files,
+  );
+  console.out.writeln(
+    'Wrote ${changed.keys.map(dir).join(', ')}, devpul.lock and '
+    '$generatedFile.',
+  );
+  for (final MapEntry(key: id, value: fetched) in changed.entries) {
+    final usage = fetched.manifest.usage;
+    if (usage.isEmpty || _usage(vendored[id]).join('\n') == usage.join('\n')) {
+      continue;
+    }
+    console.out.writeln('$id wiring:');
+    for (final line in usage) {
+      console.out.writeln('  $line');
+    }
+  }
+}
+
+String _version(LockEntry entry) => [
+  '${entry.version}',
+  if (entry.ref != null && entry.commit != null) entry.commit!.substring(0, 7),
+].join(' ');
+
+/// The `usage` of a vendored plugin.json, empty when it cannot be read.
+List<String> _usage(Map<String, String>? files) {
+  try {
+    if (jsonDecode(files?['plugin.json'] ?? '') case {
+      'usage': final List<Object?> usage,
+    }) {
+      return usage.whereType<String>().toList();
+    }
+  } on FormatException {
+    // Empty.
+  }
+  return const [];
+}
+
+/// Shows `git diff` between the vendored and fetched files, each under
+/// its path in the app.
+Future<void> _diff(
+  Map<String, Map<String, String>> vendored,
+  Map<String, Fetched> changed,
+  Console console,
+) async {
+  final temp = Directory.systemTemp.createTempSync('devpul_update');
+  try {
+    for (final side in ['a', 'b']) {
+      Directory(p.join(temp.path, side)).createSync();
+      for (final id in changed.keys) {
+        final files = side == 'a' ? vendored[id] : changed[id]!.files;
+        for (final MapEntry(key: path, value: content)
+            in (files ?? {}).entries) {
+          File(
+              p.joinAll([
+                temp.path,
+                side,
+                pluginsDir,
+                id,
+                ...p.posix.split(path),
+              ]),
+            )
+            ..createSync(recursive: true)
+            ..writeAsStringSync(content);
+        }
+      }
+    }
+    final args = [
+      if (!console.page) ...['--no-pager', '-c', 'color.ui=never'],
+      'diff',
+      '--no-index',
+      '--no-prefix',
+      '--',
+      'a',
+      'b',
+    ];
+    final int code;
+    try {
+      if (console.page) {
+        final process = await Process.start(
+          'git',
+          args,
+          workingDirectory: temp.path,
+          mode: ProcessStartMode.inheritStdio,
+        );
+        code = await process.exitCode;
+      } else {
+        final result = await Process.run(
+          'git',
+          args,
+          workingDirectory: temp.path,
+        );
+        console.out.write(result.stdout);
+        code = result.exitCode;
+      }
+    } on ProcessException {
+      throw PluginException('the diff needs git on PATH; --yes skips it');
+    }
+    if (code > 1) throw PluginException('git diff failed with exit $code');
+  } finally {
+    temp.deleteSync(recursive: true);
   }
 }
 
