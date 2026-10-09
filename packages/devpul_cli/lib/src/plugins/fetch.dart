@@ -280,29 +280,51 @@ final class Fetcher {
     if (entry == null) {
       throw PluginException('no plugin ${source.id} in $registry');
     }
+    return listed(
+      source.id,
+      entry.url,
+      entry.path,
+      ref: source.ref,
+      constraint: source.constraint,
+    );
+  }
+
+  /// Fetches plugin [id] as registry.json lists it: the newest tag of the
+  /// git repository [url], in [path], or the `plugin.json` URL [url].
+  Future<Fetched> listed(
+    String id,
+    String url,
+    String? path, {
+    String? ref,
+    VersionConstraint? constraint,
+  }) async {
     final Fetched fetched;
-    if (parseSource(entry.url) case UrlSource(:final url)) {
-      if (source.ref != null || source.constraint != null) {
-        throw PluginException(
-          '${source.id} is served from $url, one version only',
-        );
+    if (parseSource(url) case UrlSource(:final url)) {
+      if (ref != null || constraint != null) {
+        throw PluginException('$id is served from $url, one version only');
       }
       fetched = await _url(url);
     } else {
-      fetched = await _git(
-        entry.url,
-        entry.path,
-        ref: source.ref,
-        constraint: source.constraint,
-        id: source.id,
-      );
+      fetched = await _git(url, path, ref: ref, constraint: constraint, id: id);
     }
-    if (fetched.manifest.id != source.id) {
-      throw PluginException(
-        '${entry.url} holds ${fetched.manifest.id}, not ${source.id}',
-      );
+    if (fetched.manifest.id != id) {
+      throw PluginException('$url holds ${fetched.manifest.id}, not $id');
     }
     return fetched;
+  }
+
+  /// The readme of [fetched] from git or a URL, or null when it has none.
+  Future<String?> readme(Fetched fetched) async {
+    final readme = fetched.manifest.readme;
+    if (readme == null) return null;
+    if (fetched.files[readme] case final text?) return text;
+    final LockEntry(:url, :path, :commit) = fetched.entry;
+    if (commit != null) {
+      final file = path == null ? readme : '$path/$readme';
+      return await (await _mirror(url)).read(commit, file) ??
+          (throw PluginException('$readme is missing in $url'));
+    }
+    return _get(Uri.parse(url).resolve(readme));
   }
 
   Future<Fetched> _url(String url) async {

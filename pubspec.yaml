@@ -16,4 +16,5 @@ workspace:
   - plugins/riverpod
 
 dev_dependencies:
+  devpul_cli: any
   lints: ^6.1.0
