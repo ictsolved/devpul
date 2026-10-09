@@ -3,6 +3,8 @@ export interface Approval {
   id: string;
   hash: string;
   version?: string;
+  /** The handshake `origin`, such as a git URL. */
+  origin?: string;
   /** Kept but not loaded. */
   off?: boolean;
 }

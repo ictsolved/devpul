@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { PAGES } from '../pages/render.ts';
 import { connect, expect, test } from './fixtures.ts';
 
@@ -119,6 +121,35 @@ test('offers the app plugin and loads it once allowed', async ({ page, vm }) => 
   await expect.poll(() => vm.callsTo('ext.devpul.backlog').length).toBe(2);
   await page.waitForTimeout(300);
   expect(vm.callsTo('ext.devpul.plugin')).toHaveLength(1);
+});
+
+test('checks plugin updates against the registry only on click', async ({ page, vm }) => {
+  const { registry } = JSON.parse(readFileSync(join(import.meta.dirname, '../../../site.json'), 'utf8')) as {
+    registry: string;
+  };
+  const external: string[] = [];
+  page.on('request', (r) => {
+    if (!['127.0.0.1', 'localhost'].includes(new URL(r.url()).hostname)) external.push(r.url());
+  });
+  await page.route(registry, (route) =>
+    route.fulfill({
+      headers: { 'access-control-allow-origin': '*' },
+      json: { format: 1, plugins: [{ id: 'my_plugin', version: '2.0.0', url: 'https://example.com/my_plugin.git' }] },
+    }),
+  );
+
+  await connect(page, vm);
+  await page.getByRole('alert').getByRole('button', { name: 'Allow' }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Settings' });
+  const row = dialog.getByRole('row', { name: /my_plugin/ });
+  await expect(row).toContainText('https://example.com/my_plugin.git');
+  expect(external).toEqual([]);
+
+  await dialog.getByRole('button', { name: 'Check for updates' }).click();
+  await expect(row.getByRole('cell').nth(3)).toHaveText('2.0.0');
+  await expect(dialog).toContainText('devpul upgrade my_plugin --major-versions');
+  expect(external).toEqual([registry]);
 });
 
 test('runs an action with params', async ({ page, vm }) => {

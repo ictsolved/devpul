@@ -16,6 +16,7 @@ export interface Offer {
   key: string;
   id: string;
   version?: string;
+  origin?: string;
   size: number;
   hash: string;
   app: string;
@@ -86,7 +87,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
       const state = states[run.conn];
       // Asked on resume.
       if (!info || state?.status !== 'open' || isPaused(state, info.isolateId)) continue;
-      for (const { id, version, hash: reported } of parseInfo(info.data).plugins) {
+      for (const { id, version, origin, hash: reported } of parseInfo(info.data).plugins) {
         const once = `${run.run}|${id}`;
         if (asked.current.has(once) || approvedAndCached(approvals, id, reported, (h) => cache.has(h))) continue;
         asked.current.add(once);
@@ -94,7 +95,10 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
           async (source) => {
             const hash = await sha256(source);
             sources.current.set(hash, source);
-            setFetched((f) => ({ ...f, [once]: { id, version, size: source.length, hash, app: appName(run) } }));
+            setFetched((f) => ({
+              ...f,
+              [once]: { id, version, origin, size: source.length, hash, app: appName(run) },
+            }));
           },
           (err: unknown) => fail(id, err),
         );
@@ -146,7 +150,8 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
     offers.push({ key, ...f });
   }
 
-  const allow = (offer: Offer) => onApprove({ id: offer.id, hash: offer.hash, version: offer.version });
+  const allow = (offer: Offer) =>
+    onApprove({ id: offer.id, hash: offer.hash, version: offer.version, origin: offer.origin });
   const dismiss = (offer: Offer) => setDismissed((d) => [...d, offer.key]);
 
   return { offers, errors, allow, dismiss };
