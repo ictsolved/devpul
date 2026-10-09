@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'cache.dart';
@@ -31,7 +32,7 @@ another one on its port hands the app to that one's tab.
 Options:
   --port <n>       UI port, default 7171. Settings and history are kept per port.
   --no-open        print links instead of opening a browser
-  --plugin <file>  serve a plugin module to the UI and reload it on save
+  --plugin <path>  serve a plugin module or folder to the UI, reloaded on save
   -h, --help       show this help
 
 Plugins, run in the app root:
@@ -276,8 +277,9 @@ Future<int> runCli(List<String> args) async {
     return 1;
   }
   for (final path in options.plugins) {
-    if (!File(path).existsSync()) {
-      stderr.writeln('devpul: no plugin file at $path');
+    if (!File(path).existsSync() &&
+        !File(p.join(path, 'plugin.json')).existsSync()) {
+      stderr.writeln('devpul: no plugin file or folder at $path');
       return 1;
     }
   }
@@ -350,7 +352,7 @@ Future<_Ui?> _startUi(Options options, Directory root) async {
         port,
         root: root,
         open: (url) => unawaited(_open(url, options.open)),
-        plugins: [for (final path in options.plugins) File(path)],
+        plugins: options.plugins,
       );
       writeState(server);
       stdout.writeln('DevPul UI at ${server.url}');

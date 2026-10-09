@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:devpul_cli/src/server.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+
+const contract = '../../contract/app/lib/devpul';
 
 void main() {
   late Directory root;
   late File plugin;
+  late String folder;
   late UiServer server;
   late List<String> opened;
   final client = HttpClient();
@@ -20,12 +24,21 @@ void main() {
     File('${root.path}/help/index.html').writeAsStringSync('help');
     File('${root.path}/.hidden.js').writeAsStringSync('');
     plugin = File('${root.path}/plugin.js')..writeAsStringSync('export {}');
+    folder = '${root.path}/cart';
+    for (final file in Directory(
+      '$contract/cart',
+    ).listSync().whereType<File>()) {
+      file.copySync(
+        '${(Directory(folder)..createSync()).path}/${p.basename(file.path)}',
+      );
+    }
     opened = [];
     server = await UiServer.bind(
       0,
       root: root,
       open: opened.add,
-      plugins: [plugin],
+      // Relative, as --plugin . gives it.
+      plugins: [plugin.path, p.join(p.relative(folder), '.')],
     );
     addTearDown(server.close);
   });
@@ -103,7 +116,7 @@ void main() {
     }
 
     expect(await next(), {
-      'plugins': ['cli/plugins/0/plugin.js?v=0'],
+      'plugins': ['cli/plugins/0/plugin.js?v=0', 'cli/plugins/1/cart.js?v=0'],
     });
     server.connect('ws://127.0.0.1:1/a=/ws');
     expect(await next(), {'connect': 'ws://127.0.0.1:1/a=/ws'});
@@ -114,10 +127,34 @@ void main() {
       ..writeAsStringSync('export default 1')
       ..renameSync(plugin.path);
     expect(await next(), {
-      'plugins': ['cli/plugins/0/plugin.js?v=1'],
+      'plugins': ['cli/plugins/0/plugin.js?v=1', 'cli/plugins/1/cart.js?v=0'],
     });
     expect(await get('cli/plugins/0/plugin.js'), (200, 'export default 1'));
     expect((await get('cli/plugins/0/other.js')).$1, 404);
+
+    File('$folder/icon.svg').writeAsStringSync('<svg></svg>');
+    expect(await next(), {
+      'plugins': ['cli/plugins/0/plugin.js?v=1', 'cli/plugins/1/cart.js?v=1'],
+    });
     await messages.cancel();
+  });
+
+  test('serves a plugin folder as an app gets it, or its problems', () async {
+    // contract/app holds the vendored copy, which leaves out the readme.
+    expect(await get('cli/plugins/1/cart.js'), (
+      200,
+      'throw new Error("$folder: README.md: missing");\n',
+    ));
+    File('$folder/icon.svg').renameSync('$folder/icon');
+    expect(await get('cli/plugins/1/cart.js'), (
+      200,
+      'throw new Error("$folder: icon.svg: missing; README.md: missing");\n',
+    ));
+    File('$folder/icon').renameSync('$folder/icon.svg');
+    File('$folder/README.md').writeAsStringSync('# Cart\n');
+    final (status, body) = await get('cli/plugins/1/cart.js');
+    expect(status, 200);
+    expect(body, startsWith(File('$folder/cart.js').readAsStringSync()));
+    expect(body, contains('export const icon = "<svg xmlns='));
   });
 }

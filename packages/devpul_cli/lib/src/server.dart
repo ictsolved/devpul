@@ -4,6 +4,11 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:path/path.dart' as p;
+
+import 'plugins/check.dart';
+import 'plugins/render.dart';
+
 const _types = {
   'html': 'text/html; charset=utf-8',
   'css': 'text/css; charset=utf-8',
@@ -22,8 +27,9 @@ String connectLink(Uri base, String vmUrl) =>
     '$base#connect=${Uri.encodeComponent(vmUrl)}';
 
 /// Serves the UI build in [root] on 127.0.0.1. Open tabs listen on
-/// `/cli/events` for VM service URLs to connect to and for plugin files,
-/// served from `/cli/plugins/`, which reload when the file changes. Other
+/// `/cli/events` for VM service URLs to connect to and for plugin modules,
+/// served from `/cli/plugins/`, which reload when a file changes. A plugin
+/// folder serves its module as an app gets it, with the icon. Other
 /// devpul processes send URLs to `/cli/connect` with [token].
 final class UiServer {
   UiServer._(this._server, this.root, this.token, this._open, this._plugins);
@@ -32,7 +38,7 @@ final class UiServer {
     int port, {
     required Directory root,
     required void Function(String url) open,
-    List<File> plugins = const [],
+    List<String> plugins = const [],
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
     final random = Random.secure();
@@ -40,7 +46,7 @@ final class UiServer {
         .encode(List.generate(24, (_) => random.nextInt(256)))
         .replaceAll('=', '');
     final ui = UiServer._(server, root, token, open, [
-      for (final file in plugins) _Plugin(file.absolute),
+      for (final path in plugins) _Plugin(p.normalize(p.absolute(path))),
     ]);
     server.listen(ui._handle);
     for (final plugin in ui._plugins) {
@@ -138,8 +144,9 @@ final class UiServer {
       if (plugin == null || plugin.name != name) {
         return _status(response, HttpStatus.notFound);
       }
-      response.headers.contentType = ContentType.parse(_types['js']!);
-      await response.addStream(plugin.file.openRead());
+      response
+        ..headers.contentType = ContentType.parse(_types['js']!)
+        ..add(plugin.read());
       return response.close();
     }
     if (request.headers.value(tokenHeader) != token) {
@@ -209,35 +216,67 @@ final class UiServer {
   }
 }
 
+/// A module file, or a plugin folder.
 final class _Plugin {
-  _Plugin(this.file);
+  _Plugin(this.path) : folder = Directory(path).existsSync();
 
-  final File file;
+  final String path;
+  final bool folder;
   int revision = 0;
-  StreamSubscription<FileSystemEvent>? _watch;
+  final _watches = <StreamSubscription<FileSystemEvent>>[];
   Timer? _debounce;
 
-  String get name => file.uri.pathSegments.last;
+  String get name => folder ? '${p.basename(path)}.js' : p.basename(path);
+
+  List<int> read() {
+    if (!folder) return File(path).readAsBytesSync();
+    final (:manifest, :files, :problems) = checkFolder(path);
+    if (problems.isEmpty) {
+      final source = module(manifest!, files);
+      if (source != null) return utf8.encode(source);
+    }
+    final message = problems.isEmpty
+        ? '$path has no source'
+        : '$path: ${problems.join('; ')}';
+    // Shows in Settings as the load error.
+    return utf8.encode('throw new Error(${jsonEncode(message)});\n');
+  }
 
   // Editors often save by writing a new file and renaming it over the old
-  // one, which ends a watch on the file itself.
+  // one, which ends a watch on the file itself. A folder plugin reloads on
+  // any change next to its plugin.json or the files it lists.
   void watch(void Function() changed) {
-    _watch = file.parent.watch().listen((event) {
-      final paths = [
-        event.path,
-        if (event is FileSystemMoveEvent) ?event.destination,
-      ];
-      if (!paths.any((p) => File(p).absolute.path == file.path)) return;
-      _debounce?.cancel();
-      _debounce = Timer(const Duration(milliseconds: 100), () {
-        revision++;
-        changed();
-      });
-    });
+    final manifest = folder ? checkFolder(path).manifest : null;
+    final dirs = folder
+        ? {
+            path,
+            for (final file in manifest?.files ?? const <String>[])
+              p.dirname(p.joinAll([path, ...p.posix.split(file)])),
+          }
+        : {p.dirname(path)};
+    for (final dir in dirs) {
+      if (!Directory(dir).existsSync()) continue;
+      _watches.add(
+        Directory(dir).watch().listen((event) {
+          final paths = [
+            event.path,
+            if (event is FileSystemMoveEvent) ?event.destination,
+          ];
+          if (!folder && !paths.any((e) => p.absolute(e) == path)) return;
+          _debounce?.cancel();
+          _debounce = Timer(const Duration(milliseconds: 100), () {
+            revision++;
+            changed();
+          });
+        }),
+      );
+    }
   }
 
   Future<void> cancel() async {
     _debounce?.cancel();
-    await _watch?.cancel();
+    for (final watch in _watches) {
+      await watch.cancel();
+    }
   }
 }
