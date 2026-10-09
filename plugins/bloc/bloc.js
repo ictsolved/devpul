@@ -1,7 +1,4 @@
 // The Bloc tab: every bloc and cubit with its current state and recent events.
-const blocPlugin = r'''
-const ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>';
 
 // What an event does to the bloc it names.
 function step(item, e) {
@@ -24,7 +21,6 @@ export default {
   api: 1,
   id: 'bloc',
   label: 'Bloc',
-  icon: ICON,
   kinds: (kind) => kind.startsWith('bloc.'),
   renderTab(el, context) {
     const items = new Map();
@@ -49,7 +45,13 @@ export default {
     const list = document.createElement('ul');
     const detail = document.createElement('div');
     style(el, { display: 'flex', gap: '16px', alignItems: 'flex-start' });
-    style(list, { listStyle: 'none', margin: '0', padding: '0 12px 0 0', minWidth: '200px', borderRight: '1px solid var(--border)' });
+    style(list, {
+      listStyle: 'none',
+      margin: '0',
+      padding: '0 12px 0 0',
+      minWidth: '200px',
+      borderRight: '1px solid var(--border)',
+    });
     style(detail, { flex: '1', minWidth: '0' });
     el.append(list, detail);
 
@@ -93,7 +95,11 @@ export default {
       }
       const title = document.createElement('h3');
       title.textContent = item.alive ? item.name : `${item.name} (closed)`;
-      detail.append(title, context.ui.copy(() => JSON.stringify(item.value, null, 2), 'Copy state'), context.ui.json(item.value));
+      detail.append(
+        title,
+        context.ui.copy(() => JSON.stringify(item.value, null, 2), 'Copy state'),
+        context.ui.json(item.value),
+      );
       if (item.history.length) {
         const recent = document.createElement('h3');
         recent.textContent = 'Recent';
@@ -111,7 +117,7 @@ export default {
     draw();
     // The app's current values win over what events rebuilt; the next event
     // joins whatever run it belongs to.
-    context.call('ext.devpul_bloc.state').then(
+    context.call('ext.devpul.bloc.state').then(
       (result) => {
         for (const p of result.blocs) {
           const item = items.get(p.id);
@@ -129,4 +135,3 @@ export default {
     });
   },
 };
-''';

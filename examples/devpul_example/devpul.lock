@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "plugins": {
+    "bloc": {
+      "url": "../../plugins/bloc",
+      "version": "0.1.0",
+      "hash": "dc2715ef0e82f39492723ea9a2948c5d50afd645bb4c4991ae90c51e1fdffe1e"
+    },
+    "riverpod": {
+      "url": "../../plugins/riverpod",
+      "version": "0.1.0",
+      "hash": "b1204a7ddd6c05d25b7ab0a85d8efea1d089a8724cf3a3e780fefb1548e33c23"
+    }
+  }
+}

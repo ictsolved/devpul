@@ -1,0 +1,12 @@
+name: devpul_plugin_bloc
+description: Analyzes the bloc plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+dependencies:
+  bloc: ^9.1.0
+  devpul: ^0.2.0

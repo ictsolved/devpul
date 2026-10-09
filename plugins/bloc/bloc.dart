@@ -4,22 +4,24 @@ import 'dart:developer' as developer;
 import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
 
-import 'plugin.dart';
+const _debug =
+    !bool.fromEnvironment('dart.vm.product') &&
+    !bool.fromEnvironment('dart.vm.profile');
 
-/// Sends bloc and cubit changes to DevPul and offers the UI a Bloc tab.
-///
-/// ```dart
-/// Bloc.observer = DevpulBlocObserver();
-/// ```
-class DevpulBlocObserver extends BlocObserver {
-  DevpulBlocObserver() {
-    if (_ready || !Devpul.enabled) return;
-    _ready = true;
-    Devpul.plugin('devpul_bloc', () => blocPlugin);
+/// Sends bloc and cubit changes to DevPul for the Bloc tab.
+abstract final class DevpulBloc {
+  /// Sets [Bloc.observer] to one that sends every change to DevPul and then
+  /// calls the observer set before. Does nothing in release and profile
+  /// builds.
+  static void install() {
+    if (!_debug || Bloc.observer is _Observer) return;
+    Bloc.observer = _Observer(Bloc.observer);
+    if (!Devpul.enabled) return;
     try {
-      developer.registerExtension('ext.devpul_bloc.state', (_, _) async {
+      developer.registerExtension('ext.devpul.bloc.state', (_, _) async {
         final blocs = [
-          for (final bloc in _live) {..._key(bloc), 'value': bloc.state},
+          for (final bloc in _Observer._live)
+            {..._Observer._key(bloc), 'value': bloc.state},
         ];
         return developer.ServiceExtensionResponse.result(
           jsonEncode({'blocs': toJsonSafe(blocs)}),
@@ -29,8 +31,13 @@ class DevpulBlocObserver extends BlocObserver {
       // Already registered in this isolate.
     }
   }
+}
 
-  static bool _ready = false;
+final class _Observer extends BlocObserver {
+  _Observer(this._next);
+
+  final BlocObserver _next;
+
   static final _live = <BlocBase<Object?>>{};
 
   @override
@@ -38,12 +45,14 @@ class DevpulBlocObserver extends BlocObserver {
     super.onCreate(bloc);
     _live.add(bloc);
     Devpul.emit('bloc.create', {..._key(bloc), 'state': bloc.state});
+    _next.onCreate(bloc);
   }
 
   @override
   void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {
     super.onEvent(bloc, event);
     Devpul.emit('bloc.event', {..._key(bloc), 'event': event});
+    _next.onEvent(bloc, event);
   }
 
   @override
@@ -54,6 +63,16 @@ class DevpulBlocObserver extends BlocObserver {
       'previous': change.currentState,
       'next': change.nextState,
     });
+    _next.onChange(bloc, change);
+  }
+
+  @override
+  void onTransition(
+    Bloc<dynamic, dynamic> bloc,
+    Transition<dynamic, dynamic> transition,
+  ) {
+    super.onTransition(bloc, transition);
+    _next.onTransition(bloc, transition);
   }
 
   @override
@@ -65,6 +84,18 @@ class DevpulBlocObserver extends BlocObserver {
       context: '${bloc.runtimeType}',
     );
     super.onError(bloc, error, stackTrace);
+    _next.onError(bloc, error, stackTrace);
+  }
+
+  @override
+  void onDone(
+    Bloc<dynamic, dynamic> bloc,
+    Object? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {
+    super.onDone(bloc, event, error, stackTrace);
+    _next.onDone(bloc, event, error, stackTrace);
   }
 
   @override
@@ -72,6 +103,7 @@ class DevpulBlocObserver extends BlocObserver {
     super.onClose(bloc);
     _live.remove(bloc);
     Devpul.emit('bloc.close', _key(bloc));
+    _next.onClose(bloc);
   }
 
   // Two blocs of one type need an id to tell them apart.

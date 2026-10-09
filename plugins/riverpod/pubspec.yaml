@@ -1,7 +1,6 @@
-name: devpul_riverpod
-description: Riverpod provider state in DevPul. An example of a Dart package that ships a DevPul plugin.
+name: devpul_plugin_riverpod
+description: Analyzes the riverpod plugin in place. Not part of the plugin and not copied into apps.
 publish_to: none
-version: 0.2.0
 
 environment:
   sdk: ^3.8.0

@@ -115,7 +115,7 @@ For plain buttons and small forms with no custom UI, [`Devpul.action`](%ROOT%doc
 ## Examples
 
 - Routes, in `devpul_flutter`: [`DevpulNavigatorObserver`](%ROOT%docs/flutter/#routes) offers a tab with the navigation stack after each route event. It uses `render`.
-- [Riverpod](%REPO_URL%/tree/main/examples/plugins/devpul_riverpod) and [Bloc](%REPO_URL%/tree/main/examples/plugins/devpul_bloc), in the repository: an observer sends every change and offers a tab with each provider's or bloc's current value and recent changes. They use `renderTab`, `onEvents`, a service extension for the current state, and `context.ui`.
+- [Riverpod](%REPO_URL%/tree/main/plugins/riverpod) and [Bloc](%REPO_URL%/tree/main/plugins/bloc), in the repository: an observer sends every change to a tab with each provider's or bloc's current value and recent changes. They use `renderTab`, `onEvents`, a service extension for the current state, and `context.ui`.
 
 ## Developing a plugin
 

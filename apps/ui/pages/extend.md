@@ -128,7 +128,7 @@ Dotted kinds group into families: `kind:ws` in the filter, or the kind chips, na
 
 ## A tab for state
 
-A package that sends events can also offer a tab for them with [`Devpul.plugin`](%ROOT%docs/plugins/#shipping-a-plugin). The [Riverpod](%REPO_URL%/tree/main/examples/plugins/devpul_riverpod) and [Bloc](%REPO_URL%/tree/main/examples/plugins/devpul_bloc) examples in the repository are the observers above plus a tab with each provider's or bloc's current value and recent changes. Copy one into your project as a starting point.
+A package that sends events can also offer a tab for them with [`Devpul.plugin`](%ROOT%docs/plugins/#shipping-a-plugin). The [Riverpod](%REPO_URL%/tree/main/plugins/riverpod) and [Bloc](%REPO_URL%/tree/main/plugins/bloc) plugins in the repository are the observers above plus a tab with each provider's or bloc's current value and recent changes. `devpul add` copies one into your app.
 
 ## Acting on the app
 

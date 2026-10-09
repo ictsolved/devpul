@@ -3,21 +3,45 @@ import 'dart:developer' as developer;
 
 import 'package:devpul/devpul.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 
-import 'plugin.dart';
+const _debug =
+    !bool.fromEnvironment('dart.vm.product') &&
+    !bool.fromEnvironment('dart.vm.profile');
 
-/// Sends provider changes to DevPul and offers the UI a Riverpod tab.
+/// Observers that send provider changes to DevPul for the Riverpod tab, or
+/// none in release and profile builds.
+///
+/// Providers left out by [include], [exclude] or [filter] send nothing.
+/// [include] and [exclude] take providers and families.
 ///
 /// ```dart
-/// runApp(ProviderScope(observers: [DevpulProviderObserver()], child: app));
+/// ProviderScope(observers: devpulRiverpodObservers(), child: app)
 /// ```
-final class DevpulProviderObserver extends ProviderObserver {
-  DevpulProviderObserver() {
+List<ProviderObserver> devpulRiverpodObservers({
+  List<ProviderOrFamily>? include,
+  List<ProviderOrFamily> exclude = const [],
+  bool Function(ProviderBase<Object?> provider)? filter,
+}) {
+  if (!_debug) return const [];
+  bool matches(List<ProviderOrFamily> list, ProviderBase<Object?> provider) =>
+      list.contains(provider) || list.contains(provider.from);
+  return [
+    _Observer(
+      (provider) =>
+          (include == null || matches(include, provider)) &&
+          !matches(exclude, provider) &&
+          (filter?.call(provider) ?? true),
+    ),
+  ];
+}
+
+final class _Observer extends ProviderObserver {
+  _Observer(this._shows) {
     if (_ready || !Devpul.enabled) return;
     _ready = true;
-    Devpul.plugin('devpul_riverpod', () => riverpodPlugin);
     try {
-      developer.registerExtension('ext.devpul_riverpod.state', (_, _) async {
+      developer.registerExtension('ext.devpul.riverpod.state', (_, _) async {
         return developer.ServiceExtensionResponse.result(
           jsonEncode({'providers': toJsonSafe(_live.values.toList())}),
         );
@@ -27,6 +51,8 @@ final class DevpulProviderObserver extends ProviderObserver {
     }
   }
 
+  final bool Function(ProviderBase<Object?> provider) _shows;
+
   static bool _ready = false;
 
   // Live providers by id: their event fields and current value.
@@ -35,6 +61,7 @@ final class DevpulProviderObserver extends ProviderObserver {
 
   @override
   void didAddProvider(ProviderObserverContext context, Object? value) {
+    if (!_shows(context.provider)) return;
     final key = _key(context);
     _live[key['id']!] = {...key, 'value': value};
     Devpul.emit('riverpod.add', {...key, 'value': value});
@@ -46,6 +73,7 @@ final class DevpulProviderObserver extends ProviderObserver {
     Object? previousValue,
     Object? newValue,
   ) {
+    if (!_shows(context.provider)) return;
     final key = _key(context);
     _live[key['id']!] = {...key, 'value': newValue};
     Devpul.emit('riverpod.update', {
@@ -57,6 +85,7 @@ final class DevpulProviderObserver extends ProviderObserver {
 
   @override
   void didDisposeProvider(ProviderObserverContext context) {
+    if (!_shows(context.provider)) return;
     final key = _key(context);
     _live.remove(key['id']);
     Devpul.emit('riverpod.dispose', key);
@@ -68,12 +97,12 @@ final class DevpulProviderObserver extends ProviderObserver {
     Object error,
     StackTrace stackTrace,
   ) {
-    final key = _key(context);
+    if (!_shows(context.provider)) return;
     Devpul.error(
       error,
       stackTrace,
       source: 'riverpod',
-      context: key['provider'],
+      context: _key(context)['provider'],
     );
   }
 

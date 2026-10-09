@@ -1,0 +1,15 @@
+{
+  "id": "bloc",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": ">=0.2.0 <2.0.0",
+  "description": "Blocs and cubits in a Bloc tab: each one's current state and recent events.",
+  "tags": ["state", "bloc"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulBloc.install();"],
+  "requires": { "bloc": "^9.1.0" },
+  "source": "bloc.js",
+  "dart": "bloc.dart",
+  "files": ["bloc.dart", "bloc.js", "icon.svg"]
+}

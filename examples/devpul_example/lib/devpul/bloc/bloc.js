@@ -1,17 +1,16 @@
-// The Riverpod tab: every provider with its current value and recent changes.
-const riverpodPlugin = r'''
-const ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z"/><path d="M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z"/></svg>';
+// The Bloc tab: every bloc and cubit with its current state and recent events.
 
-// What an event does to the provider it names.
+// What an event does to the bloc it names.
 function step(item, e) {
-  if (e.kind === 'riverpod.add') {
-    item.value = e.data.value;
+  if (e.kind === 'bloc.create') {
+    item.value = e.data.state;
     item.alive = true;
-  } else if (e.kind === 'riverpod.update') {
+  } else if (e.kind === 'bloc.change') {
     item.value = e.data.next;
     item.history.push(e);
-  } else if (e.kind === 'riverpod.dispose') {
+  } else if (e.kind === 'bloc.event') {
+    item.history.push(e);
+  } else if (e.kind === 'bloc.close') {
     item.alive = false;
   }
 }
@@ -20,10 +19,9 @@ const style = (el, css) => Object.assign(el.style, css);
 
 export default {
   api: 1,
-  id: 'riverpod',
-  label: 'Riverpod',
-  icon: ICON,
-  kinds: (kind) => kind.startsWith('riverpod.'),
+  id: 'bloc',
+  label: 'Bloc',
+  kinds: (kind) => kind.startsWith('bloc.'),
   renderTab(el, context) {
     const items = new Map();
     let run = null;
@@ -36,7 +34,7 @@ export default {
       run = e.run;
       let item = items.get(e.data.id);
       if (!item) {
-        item = { id: e.data.id, name: e.data.provider, value: null, alive: true, history: [], version: 0 };
+        item = { id: e.data.id, name: e.data.bloc, value: null, alive: true, history: [], version: 0 };
         items.set(item.id, item);
       }
       step(item, e);
@@ -47,7 +45,13 @@ export default {
     const list = document.createElement('ul');
     const detail = document.createElement('div');
     style(el, { display: 'flex', gap: '16px', alignItems: 'flex-start' });
-    style(list, { listStyle: 'none', margin: '0', padding: '0 12px 0 0', minWidth: '200px', borderRight: '1px solid var(--border)' });
+    style(list, {
+      listStyle: 'none',
+      margin: '0',
+      padding: '0 12px 0 0',
+      minWidth: '200px',
+      borderRight: '1px solid var(--border)',
+    });
     style(detail, { flex: '1', minWidth: '0' });
     el.append(list, detail);
 
@@ -86,12 +90,16 @@ export default {
       shown = key;
       detail.replaceChildren();
       if (!item) {
-        detail.textContent = items.size ? 'Select a provider.' : 'No providers yet.';
+        detail.textContent = items.size ? 'Select a bloc.' : 'No blocs yet.';
         return;
       }
       const title = document.createElement('h3');
-      title.textContent = item.alive ? item.name : `${item.name} (disposed)`;
-      detail.append(title, context.ui.copy(() => JSON.stringify(item.value, null, 2), 'Copy value'), context.ui.json(item.value));
+      title.textContent = item.alive ? item.name : `${item.name} (closed)`;
+      detail.append(
+        title,
+        context.ui.copy(() => JSON.stringify(item.value, null, 2), 'Copy state'),
+        context.ui.json(item.value),
+      );
       if (item.history.length) {
         const recent = document.createElement('h3');
         recent.textContent = 'Recent';
@@ -99,8 +107,8 @@ export default {
         for (const e of item.history.toReversed()) {
           const at = document.createElement('div');
           at.className = 'muted';
-          at.textContent = `${new Date(e.ts).toLocaleTimeString()} ${e.kind.slice(9)}`;
-          detail.append(at, context.ui.json(e.data.next));
+          at.textContent = `${new Date(e.ts).toLocaleTimeString()} ${e.kind.slice(5)}`;
+          detail.append(at, context.ui.json(e.kind === 'bloc.event' ? e.data.event : e.data.next));
         }
       }
     };
@@ -109,12 +117,12 @@ export default {
     draw();
     // The app's current values win over what events rebuilt; the next event
     // joins whatever run it belongs to.
-    context.call('ext.devpul_riverpod.state').then(
+    context.call('ext.devpul.bloc.state').then(
       (result) => {
-        for (const p of result.providers) {
+        for (const p of result.blocs) {
           const item = items.get(p.id);
           if (item) Object.assign(item, { value: p.value, alive: true, version: item.version + 1 });
-          else items.set(p.id, { id: p.id, name: p.provider, value: p.value, alive: true, history: [], version: 0 });
+          else items.set(p.id, { id: p.id, name: p.bloc, value: p.value, alive: true, history: [], version: 0 });
         }
         run = null;
         draw();
@@ -127,4 +135,3 @@ export default {
     });
   },
 };
-''';

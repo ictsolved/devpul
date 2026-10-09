@@ -1,0 +1,15 @@
+{
+  "id": "riverpod",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": ">=0.2.0 <2.0.0",
+  "description": "Riverpod providers in a Riverpod tab: each provider's current value and recent changes.",
+  "tags": ["state", "riverpod"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["ProviderScope(observers: devpulRiverpodObservers(), child: app)"],
+  "requires": { "flutter_riverpod": "^3.0.0" },
+  "source": "riverpod.js",
+  "dart": "riverpod.dart",
+  "files": ["icon.svg", "riverpod.dart", "riverpod.js"]
+}

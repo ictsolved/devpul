@@ -12,8 +12,8 @@ workspace:
   - packages/devpul_cli
   - contract/app
   - examples/devpul_example
-  - examples/plugins/devpul_bloc
-  - examples/plugins/devpul_riverpod
+  - plugins/bloc
+  - plugins/riverpod
 
 dev_dependencies:
   lints: ^6.1.0

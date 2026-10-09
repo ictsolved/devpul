@@ -4,15 +4,15 @@ import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
-import 'package:devpul_bloc/devpul_bloc.dart';
 import 'package:devpul_dio/devpul_dio.dart';
 import 'package:devpul_flutter/devpul_flutter.dart';
 import 'package:devpul_http/devpul_http.dart';
-import 'package:devpul_riverpod/devpul_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'devpul/plugins.dart';
 
 const baseUrl = 'https://httpbin.org';
 
@@ -20,6 +20,7 @@ void main() {
   Devpul.configure(const DevpulConfig(redactHeaders: _maskAuthorization));
   DevpulFlutter.install();
   DevpulFlutter.captureDebugPrint();
+  DevpulPlugins.install();
   Devpul.session(
     {
       'name': 'DevPul example',
@@ -46,13 +47,13 @@ void main() {
       DevpulParam.choice('code', ['200', '404', '500']),
     ],
   );
-  Bloc.observer = DevpulBlocObserver();
+  DevpulBloc.install();
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
 }
 
-final container = ProviderContainer(observers: [DevpulProviderObserver()]);
+final container = ProviderContainer(observers: devpulRiverpodObservers());
 
 final cartProvider = NotifierProvider<Cart, List<String>>(
   Cart.new,
