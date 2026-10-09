@@ -41,6 +41,7 @@
     {
       "id": "my_plugin",
       "version": "1.0.0",
+      "origin": "https://example.com/my_plugin.git",
       "hash": "9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec"
     }
   ],

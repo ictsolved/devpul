@@ -40,10 +40,11 @@ typedef _Action = ({
 });
 
 final class _Plugin {
-  _Plugin(this.source, this.version);
+  _Plugin(this.source, this.version, this.origin);
 
   final String Function() source;
   final String? version;
+  final String? origin;
 
   late final String hash = sha256Hex(source());
 }
@@ -166,12 +167,19 @@ abstract final class Devpul {
   }
 
   /// Offers a browser plugin to the UI, which runs it after the user
-  /// approves it. [id] is the Dart package that ships it. [source] is an ES
-  /// module; its SHA-256 goes in the handshake so the UI can load an approved
-  /// copy it keeps without asking for the source.
-  static void plugin(String id, String Function() source, {String? version}) {
+  /// approves it. [id] is the plugin id; approvals are kept per id and
+  /// source. [source] is an ES module; its SHA-256 goes in the handshake so
+  /// the UI can load an approved copy it keeps without asking for the source.
+  /// [origin] says where the plugin comes from, such as a git URL or a
+  /// package name, and shows in the UI's settings.
+  static void plugin(
+    String id,
+    String Function() source, {
+    String? version,
+    String? origin,
+  }) {
     if (!enabled) return;
-    _plugins[id] = _Plugin(source, version);
+    _plugins[id] = _Plugin(source, version, origin);
     _infoChanged();
   }
 
@@ -217,7 +225,12 @@ abstract final class Devpul {
     ],
     'plugins': [
       for (final MapEntry(:key, :value) in _plugins.entries)
-        {'id': key, 'version': ?value.version, 'hash': value.hash},
+        {
+          'id': key,
+          'version': ?value.version,
+          'origin': ?value.origin,
+          'hash': value.hash,
+        },
     ],
     'limits': _limits.all,
     'dropped': Map.of(_limits.dropped),

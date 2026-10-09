@@ -28,7 +28,12 @@ void main() {
         DevpulParam.choice('env', ['dev', 'prod']),
       ],
     );
-    Devpul.plugin('my_plugin', () => 'export default {}', version: '1.0.0');
+    Devpul.plugin(
+      'my_plugin',
+      () => 'export default {}',
+      version: '1.0.0',
+      origin: 'https://example.com/my_plugin.git',
+    );
     Devpul.limit('frame', 0);
     await pumpEventQueue();
 

@@ -54,7 +54,12 @@ describe('contract', () => {
     expect(info).toMatchObject({ protocol: 1, limits: { frame: 0 }, dropped: { frame: 1 } });
     expect(info.actions[1]?.params.map((p) => p.type)).toEqual(['text', 'number', 'flag', 'choice']);
     expect(info.plugins).toEqual([
-      { id: 'my_plugin', version: '1.0.0', hash: '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec' },
+      {
+        id: 'my_plugin',
+        version: '1.0.0',
+        origin: 'https://example.com/my_plugin.git',
+        hash: '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec',
+      },
     ]);
   });
 

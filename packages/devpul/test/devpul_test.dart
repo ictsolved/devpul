@@ -91,7 +91,12 @@ void main() {
 
   test('info reports protocol, version, actions, plugins and limits', () async {
     Devpul.action('Clear cache', (_) => 3);
-    Devpul.plugin('my_plugin', () => 'export default {}', version: '1.2.0');
+    Devpul.plugin(
+      'my_plugin',
+      () => 'export default {}',
+      version: '1.2.0',
+      origin: 'https://example.com/my_plugin.git',
+    );
     Devpul.limit('frame', 0);
     await pumpEventQueue();
     expect(events.map((e) => e.$1), ['app.info']);
@@ -110,6 +115,7 @@ void main() {
         equals({
           'id': 'my_plugin',
           'version': '1.2.0',
+          'origin': 'https://example.com/my_plugin.git',
           'hash':
               '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec',
         }),

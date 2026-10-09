@@ -34,7 +34,7 @@ export const fixtureEvents = (): VmEvent[] => [
   ...(contract('flutter.json') as VmEvent[]),
 ];
 
-/** Offered as `my_plugin`, the package `info.json` lists. */
+/** Offered as `my_plugin`, the plugin `info.json` lists, with its icon embedded as devpul does. */
 export const PLUGIN = `export default {
   api: 1,
   id: 'cart',
@@ -45,6 +45,7 @@ export const PLUGIN = `export default {
     el.append(context.ui.keyValues({ items: e.data.items, total: e.data.total }));
   },
 };
+export const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>';
 `;
 
 const item = (i: number) => ({ id: i, name: `item ${i}`, tags: ['a', 'b'], price: i * 1.5, active: i % 2 === 0 });

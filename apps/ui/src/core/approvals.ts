@@ -44,7 +44,7 @@ export const approvedAndCached = (
   has: (hash: string) => boolean,
 ): boolean => hash !== undefined && has(hash) && approvals.some((a) => a.id === id && a.hash === hash);
 
-/** One approval per package; a new hash replaces the old one. */
+/** One approval per plugin id; a new hash replaces the old one. */
 export const approve = (approvals: readonly Approval[], next: Approval): Approval[] => [
   ...approvals.filter((a) => a.id !== next.id),
   next,

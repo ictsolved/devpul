@@ -67,7 +67,7 @@ export interface DevpulApi {
 
 export interface Loaded {
   plugin: DevpulPlugin;
-  /** Dart package or URL the plugin came from. */
+  /** Plugin id the app offered, or the URL the plugin came from. */
   origin: string;
 }
 
@@ -127,19 +127,24 @@ export const registry = new Registry();
 
 /**
  * Runs [source] as an ES module. Its default export is a plugin or a
- * function that receives the API and registers plugins. Registrations
- * after [wanted] turns false are ignored.
+ * function that receives the API and registers plugins; an `icon` export is
+ * the tab icon for those that set none. Registrations after [wanted] turns
+ * false are ignored.
  */
 export async function loadPlugin(source: string, origin: string, wanted = () => true): Promise<void> {
   const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
-  let mod: { default?: unknown };
+  let mod: { default?: unknown; icon?: unknown };
   try {
-    mod = (await import(/* @vite-ignore */ url)) as { default?: unknown };
+    mod = (await import(/* @vite-ignore */ url)) as typeof mod;
   } finally {
     URL.revokeObjectURL(url);
   }
+  // devpul embeds a plugin's icon file as this export.
+  const icon = typeof mod.icon === 'string' ? mod.icon : undefined;
   const register = (p: DevpulPlugin) => {
-    if (wanted()) registry.register(p, origin);
+    if (!wanted()) return;
+    if (icon !== undefined && typeof p === 'object' && p !== null) p.icon ??= icon;
+    registry.register(p, origin);
   };
   const value = mod.default;
   if (typeof value === 'function') (value as (api: DevpulApi) => void)({ api: API, register });

@@ -55,7 +55,7 @@ export interface Settings {
   /** Keys of app.session info shown in the header. Empty means the first few. */
   headerFields: string[];
   pluginUrls: string[];
-  /** Plugins the user allowed, one per package. */
+  /** Plugins the user allowed, one per plugin id. */
   plugins: Approval[];
 }
 

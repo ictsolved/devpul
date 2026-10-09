@@ -101,6 +101,7 @@ test('offers the app plugin and loads it once allowed', async ({ page, vm }) => 
   await offer.getByRole('button', { name: 'Allow' }).click();
 
   await expect(offer).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: /^Cart/ }).locator('svg circle')).toHaveCount(1);
   await page.getByRole('tab', { name: /^Cart/ }).click();
   await page
     .getByRole('grid', { name: 'Cart' })

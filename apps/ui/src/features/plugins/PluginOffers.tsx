@@ -36,7 +36,7 @@ interface Options {
 
 /**
  * Loads the approved plugins that runs list, from the cache, and offers the
- * sources live apps send that no approval covers. Approval is per package and
+ * sources live apps send that no approval covers. Approval is per plugin id and
  * source hash, so a changed plugin asks again.
  */
 export function usePlugins({ runs, states, approvals, urls, call, appName, onApprove }: Options) {
@@ -46,7 +46,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
   const [errors, setErrors] = useState<Record<string, string>>({});
   const asked = useRef(new Set<string>());
   const sources = useRef(new Map<string, string>());
-  // Package to the hash it runs.
+  // Plugin id to the hash it runs.
   const current = useRef(new Map<string, string>());
   const loadedUrls = useRef(new Set<string>());
   const wantedUrls = useRef(new Set<string>());

@@ -154,7 +154,7 @@ export function SettingsDialog(props: Props) {
           {settings.plugins.length > 0 && (
             <>
               <p>
-                Allowed from apps, one source hash per package; a changed plugin asks again. Off keeps the approval
+                Allowed from apps, one source hash per plugin id; a changed plugin asks again. Off keeps the approval
                 without loading the plugin.
               </p>
               <table className="w-full max-w-[560px] border-collapse text-left [&_td]:border-b [&_td]:py-1 [&_td]:pr-3">

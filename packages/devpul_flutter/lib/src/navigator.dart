@@ -13,7 +13,7 @@ class DevpulNavigatorObserver extends NavigatorObserver {
   DevpulNavigatorObserver() {
     if (_offered) return;
     _offered = true;
-    Devpul.plugin('devpul_flutter', () => routesPlugin);
+    Devpul.plugin('routes', () => routesPlugin, origin: 'devpul_flutter');
   }
 
   static bool _offered = false;

@@ -19,6 +19,8 @@ const HASH = /^[0-9a-f]{64}$/;
 export interface PluginInfo {
   id: string;
   version?: string;
+  /** Where the plugin comes from, such as a git URL or a package name. */
+  origin?: string;
   /** SHA-256 of the source, as the app reports it; only picks an approved, cached source. */
   hash?: string;
 }
@@ -71,6 +73,7 @@ export function parseInfo(data: JsonObject): AppInfo {
             {
               id: p.id,
               version: str(p.version),
+              origin: str(p.origin),
               hash: typeof p.hash === 'string' && HASH.test(p.hash) ? p.hash : undefined,
             },
           ]

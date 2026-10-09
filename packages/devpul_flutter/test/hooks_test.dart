@@ -107,8 +107,12 @@ void main() {
 
     final info = events.lastWhere((e) => e.$1 == 'app.info').$2;
     expect(info['plugins'], [
-      {'id': 'devpul_flutter', 'hash': matches(RegExp(r'^[0-9a-f]{64}$'))},
+      {
+        'id': 'routes',
+        'origin': 'devpul_flutter',
+        'hash': matches(RegExp(r'^[0-9a-f]{64}$')),
+      },
     ]);
-    expect(debugPluginSource('devpul_flutter'), contains("id: 'routes'"));
+    expect(debugPluginSource('routes'), contains("id: 'routes'"));
   });
 }
