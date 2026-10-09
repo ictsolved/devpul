@@ -128,7 +128,7 @@ devpul --plugin . run example/main.dart
 
 `create` writes a [plugin folder](%ROOT%docs/plugins/format/) with a module, Dart for the app and an example app that sends events. `--js` or `--dart` writes one half; run again on the folder, it adds a half or writes missing files back. `devpul.d.ts` holds the plugin API types, which editors check the module against through its `// @ts-check` line. For TypeScript, compile to one file and point `source` at it.
 
-`--plugin` takes the folder, or a single module file. DevPul loads the module from the same origin and loads it again each time you save. Load errors, and in a folder the problems `devpul check` reports, show in Settings.
+`--plugin` takes the folder, or a single module file. DevPul loads the module from the same origin and loads it again each time you save, and the example app hot reloads when you save the Dart. Load errors, and in a folder the problems `devpul check` reports, show in Settings.
 
 `devpul check` validates the folder the way `devpul add` and the registry do. To try the Dart half in an app, run `devpul add ../my_plugin` there; `devpul sync` copies it again after edits.
 

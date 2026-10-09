@@ -14,7 +14,7 @@ dart pub global activate devpul_cli
 devpul run -d macos
 ```
 
-`devpul run` runs `flutter run` with the arguments you give it, or `dart run` outside a Flutter project, and opens DevPul on `http://127.0.0.1:7171` connected to the app once it is up. The terminal keys of `flutter run` keep working, and DevPul gets **Reload** and **Restart** buttons.
+`devpul run` runs `flutter run` with the arguments you give it, or `dart run` outside a Flutter project, and opens DevPul on `http://127.0.0.1:7171` connected to the app once it is up. The terminal keys of `flutter run` keep working, and DevPul gets **Reload** and **Restart** buttons. A `dart run` app hot reloads each time you save a `.dart` file in the folder.
 
 A second `devpul run`, or `devpul <vm-service-url>`, hands its app to the tab that is already open. The port stays the same so settings and history persist; `--port` picks another and `--no-open` prints links instead of opening a browser. `devpul` alone serves the UI.
 

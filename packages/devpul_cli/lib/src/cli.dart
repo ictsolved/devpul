@@ -26,8 +26,9 @@ Usage: devpul [options] [vm-service-url]
 
 Serves the DevPul UI on 127.0.0.1 and opens it, connected to the app when a
 VM service URL is given. run starts flutter run, or dart run outside a
-Flutter project, and connects the UI once the app is up. A devpul that finds
-another one on its port hands the app to that one's tab.
+Flutter project, and connects the UI once the app is up; a dart run app hot
+reloads when a .dart file is saved. A devpul that finds another one on its
+port hands the app to that one's tab.
 
 Options:
   --port <n>       UI port, default 7171. Settings and history are kept per port.

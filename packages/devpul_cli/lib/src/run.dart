@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'reload.dart';
+
 /// Runs `flutter run`, or `dart run` outside a Flutter project, with [args]
 /// and the terminal, and passes [connect] each VM service URL the tool
-/// writes. [ui] is the page the app links to. Returns the tool's exit code.
+/// writes. [ui] is the page the app links to. A `dart run` app hot reloads
+/// when a `.dart` file is saved; flutter run has its own. Returns the tool's
+/// exit code.
 Future<int> runApp(
   List<String> args, {
   required Uri ui,
@@ -13,7 +17,8 @@ Future<int> runApp(
   final dir = await Directory.systemTemp.createTemp('devpul');
   final info = File('${dir.path}${Platform.pathSeparator}vm');
   final define = 'DEVPUL_UI=$ui';
-  final (executable, arguments) = _isFlutter(Directory.current)
+  final flutter = _isFlutter(Directory.current);
+  final (executable, arguments) = flutter
       ? (
           'flutter',
           [
@@ -52,15 +57,24 @@ Future<int> runApp(
     if (!Platform.isWindows)
       ProcessSignal.sigterm.watch().listen((_) => process.kill()),
   ];
+  final reload = flutter
+      ? null
+      : HotReload(Directory.current.path, log: stdout.writeln);
   String? last;
   final poll = Timer.periodic(const Duration(milliseconds: 250), (_) {
     final url = readServiceInfo(info);
     if (url == null || url == last) return;
+    if (reload != null && last == null) {
+      reload.start();
+      stdout.writeln('Hot reload on save.');
+    }
     last = url;
+    reload?.vmUrl = url;
     unawaited(connect(url));
   });
   final code = await process.exitCode;
   poll.cancel();
+  await reload?.stop();
   for (final signal in signals) {
     await signal.cancel();
   }

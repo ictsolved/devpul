@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:devpul_cli/src/cli.dart';
+import 'package:devpul_cli/src/reload.dart';
 import 'package:devpul_cli/src/run.dart';
 import 'package:test/test.dart';
 
@@ -96,4 +97,55 @@ Future<void> main() async {
     );
     expect(result.exitCode, 3);
   }, timeout: const Timeout(Duration(minutes: 1)));
+
+  test('run hot reloads a dart run app when a .dart file is saved', () async {
+    final dir = await Directory.systemTemp.createTemp('devpul_reload');
+    addTearDown(() => dir.delete(recursive: true));
+    final build = Directory('../devpul/extension/devtools/build');
+    if (!build.existsSync()) {
+      File('${build.path}/index.html').createSync(recursive: true);
+      addTearDown(() => build.delete(recursive: true));
+    }
+    Directory('${dir.path}/lib').createSync();
+    final lib = File('${dir.path}/lib/value.dart')
+      ..writeAsStringSync("String value() => 'one';\n");
+    File('${dir.path}/app.dart').writeAsStringSync('''
+import 'dart:io';
+import 'lib/value.dart';
+Future<void> main() async {
+  for (var i = 0; i < 300; i++) {
+    if (value() == 'two') exit(0);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+  exit(1);
+}
+''');
+    final process = await Process.start(Platform.resolvedExecutable, [
+      File('bin/devpul.dart').absolute.path,
+      '--port=0',
+      '--no-open',
+      'run',
+      'app.dart',
+    ], workingDirectory: dir.path);
+    final out = StringBuffer();
+    process.stderr.transform(utf8.decoder).listen(out.write);
+    await for (final line
+        in process.stdout
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+      out.writeln(line);
+      // The connect link follows the VM URL that reloads go to.
+      if (line.contains('#connect=')) {
+        lib.writeAsStringSync("String value() => 'two';\n");
+      }
+    }
+    expect(await process.exitCode, 0, reason: '$out');
+    expect('$out', contains('Hot reload on save.'));
+    expect('$out', contains('Hot reloaded.'));
+  }, timeout: const Timeout(Duration(minutes: 1)));
+
+  test('webSocketUrl', () {
+    expect(webSocketUrl('http://127.0.0.1:1/a=/'), 'ws://127.0.0.1:1/a=/ws');
+    expect(webSocketUrl('ws://127.0.0.1:1/a=/ws'), 'ws://127.0.0.1:1/a=/ws');
+  });
 }
