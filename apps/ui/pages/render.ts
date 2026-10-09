@@ -61,10 +61,10 @@ function parse(file: string): Parsed {
   return { title: meta.title, description: meta.description, body: text.slice(m[0].length) };
 }
 
-const escape = (s: string) =>
+export const escape = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const slug = (s: string) =>
+export const slug = (s: string) =>
   s
     .toLowerCase()
     .replace(/<[^>]+>|`/g, '')
@@ -113,6 +113,9 @@ const themeButton = themeIcons
 const chevronLeft = renderToStaticMarkup(createElement(ChevronLeft, { size: 14 }));
 const chevronRight = renderToStaticMarkup(createElement(ChevronRight, { size: 14 }));
 
+export const codeBlock = (text: string, lang?: string) =>
+  `<pre><code>${lang && hljs.getLanguage(lang) ? hljs.highlight(text, { language: lang }).value : escape(text)}</code></pre>\n`;
+
 const markdown = new Marked({
   gfm: true,
   renderer: {
@@ -122,10 +125,7 @@ const markdown = new Marked({
       if (depth === 1) return `<h1>${inner}</h1>\n`;
       return `<h${depth} id="${id}"><a class="anchor" href="#${id}">${inner}</a></h${depth}>\n`;
     },
-    code({ text, lang }) {
-      const html = lang && hljs.getLanguage(lang) ? hljs.highlight(text, { language: lang }).value : escape(text);
-      return `<pre><code>${html}</code></pre>\n`;
-    },
+    code: ({ text, lang }) => codeBlock(text, lang),
   },
 });
 
@@ -136,10 +136,8 @@ export function renderPage(path: string, site: Site, csp: string): string | null
   const entry = PAGES[index];
   if (!entry) return null;
   const page = parse(entry.file);
-  const depth = path.split('/').filter(Boolean).length;
-  const root = depth ? '../'.repeat(depth) : './';
   const body = page.body
-    .replaceAll('%ROOT%', root)
+    .replaceAll('%ROOT%', rootOf(path))
     .replaceAll('%SITE_URL%', site.url)
     .replaceAll('%REPO_URL%', site.repo);
   const tokens = markdown.lexer(body);
@@ -158,24 +156,66 @@ export function renderPage(path: string, site: Site, csp: string): string | null
     : '';
 
   const groups = [...new Set(PAGES.map((p) => p.group))];
-  const side = groups
-    .map((g) => {
-      const links = PAGES.filter((p) => p.group === g)
-        .map((p) => {
-          const current = p.path === path ? ' aria-current="page"' : '';
-          return `<li><a href="${root}${p.path}"${current}>${escape(parse(p.file).title)}</a></li>`;
-        })
-        .join('');
-      return `<h2>${g}</h2><ul>${links}</ul>`;
-    })
-    .join('');
+  const side = groups.map((g) =>
+    sideGroup(
+      g,
+      PAGES.filter((p) => p.group === g).map((p) => ({ href: p.path, label: parse(p.file).title })),
+      path,
+    ),
+  );
+  const root = rootOf(path);
   const prev = PAGES[index - 1];
   const next = PAGES[index + 1];
   const pager = [
     prev ? `<a href="${root}${prev.path}">${chevronLeft}${escape(parse(prev.file).title)}</a>` : '<span></span>',
     next ? `<a href="${root}${next.path}">${escape(parse(next.file).title)}${chevronRight}</a>` : '<span></span>',
   ].join('');
-  const top = path.startsWith('help/') ? 'help' : path.startsWith('docs/plugins/') ? 'plugins' : 'docs';
+
+  return shell({
+    path,
+    site,
+    csp,
+    title: page.title,
+    description: page.description,
+    head: ld,
+    side: side.join(''),
+    main: `${html}\n        <nav class="pager" aria-label="Pages">${pager}</nav>`,
+  });
+}
+
+/** `./` or `../` repeated up to the site root from [path]. */
+export const rootOf = (path: string) => {
+  const depth = path.split('/').filter(Boolean).length;
+  return depth ? '../'.repeat(depth) : './';
+};
+
+/** A sidebar section; hrefs are paths from the site root. */
+export function sideGroup(title: string, links: { href: string; label: string }[], path: string): string {
+  const root = rootOf(path);
+  const items = links
+    .map(({ href, label }) => {
+      const current = href === path ? ' aria-current="page"' : '';
+      return `<li><a href="${root}${href}"${current}>${escape(label)}</a></li>`;
+    })
+    .join('');
+  return `<h2>${escape(title)}</h2><ul>${items}</ul>`;
+}
+
+export interface Shell {
+  path: string;
+  site: Site;
+  csp: string;
+  title: string;
+  description: string;
+  head?: string;
+  side: string;
+  main: string;
+}
+
+/** A static page around [main], with the site header, sidebar and footer. */
+export function shell({ path, site, csp, title, description, head = '', side, main }: Shell): string {
+  const root = rootOf(path);
+  const top = path.startsWith('help/') ? 'help' : path.startsWith('plugins/') ? 'plugins' : 'docs';
   const navLink = (id: string, href: string, label: string) =>
     `<a href="${root}${href}"${top === id ? ' aria-current="page"' : ''}>${label}</a>`;
 
@@ -185,28 +225,28 @@ export function renderPage(path: string, site: Site, csp: string): string | null
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="${csp}" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escape(page.title)} - DevPul</title>
-    <meta name="description" content="${escape(page.description)}" />
+    <title>${escape(title)} - DevPul</title>
+    <meta name="description" content="${escape(description)}" />
     <link rel="canonical" href="${site.url}${path}" />
     <meta name="theme-color" content="#0f766e" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="${root}favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="DevPul" />
-    <meta property="og:title" content="${escape(page.title)} - DevPul" />
-    <meta property="og:description" content="${escape(page.description)}" />
+    <meta property="og:title" content="${escape(title)} - DevPul" />
+    <meta property="og:description" content="${escape(description)}" />
     <meta property="og:url" content="${site.url}${path}" />
     <meta property="og:image" content="${site.url}og.png" />
     <script src="${root}theme.js"></script>
     <style>${read('../src/tokens.css')}${read('page.css')}</style>
-    ${ld}
+    ${head}
   </head>
   <body>
     <header class="top">
       <a class="brand" href="${root}"><img src="${root}favicon.svg" alt="" width="20" height="20" />DevPul</a>
       <nav>
         ${navLink('docs', 'docs/', 'Docs')}
-        ${navLink('plugins', 'docs/plugins/', 'Plugins')}
+        ${navLink('plugins', 'plugins/', 'Plugins')}
         ${navLink('help', 'help/', 'Help')}
         <a href="${site.repo}">GitHub</a>
       </nav>
@@ -214,10 +254,9 @@ export function renderPage(path: string, site: Site, csp: string): string | null
       <a class="open" href="${root}">Open DevPul</a>
     </header>
     <div class="layout">
-      <aside class="side"><nav aria-label="Docs">${side}</nav></aside>
+      <aside class="side"><nav aria-label="${top === 'plugins' ? 'Plugins' : 'Docs'}">${side}</nav></aside>
       <main class="doc">
-        ${html}
-        <nav class="pager" aria-label="Pages">${pager}</nav>
+        ${main}
       </main>
     </div>
     <footer class="foot">

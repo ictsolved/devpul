@@ -306,6 +306,78 @@ pre {
   color: var(--muted-foreground);
 }
 
+.plugins {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.plugins li {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.plugins li > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--foreground);
+}
+
+.plugins li p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.plugin-icon {
+  display: inline-block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+svg.plugin-icon {
+  background: none;
+}
+
+.plugin-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plugin-title .plugin-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.version {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.tags span {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--secondary);
+  border-radius: 4px;
+  padding: 0 6px;
+  margin-right: 4px;
+}
+
+.doc .facts {
+  margin: 16px 0 8px;
+}
+
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 1px;

@@ -182,7 +182,9 @@ The file is written whole from `devpul.lock` and the copied files, so it is neve
 
 ## registry.json
 
-One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it.
+Served at `%SITE_URL%plugins/registry.json`, next to the [plugins page](%ROOT%plugins/). One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it.
+
+The registry is built from the `<id>-v<version>` tags of the plugins in the DevPul repository and the entries in its `registry/third-party.json`, each fetched as `devpul add <id>` would fetch it and checked as `devpul check` checks a folder. A third-party entry is an `id` and an https `url`: a git repository with `<id>-v<version>` tags, plus `path` for the plugin folder in it, or a `plugin.json` URL. The README is shown on the plugin's page as markdown without HTML; images show as links.
 
 ```json
 {

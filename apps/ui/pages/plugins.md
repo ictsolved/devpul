@@ -33,7 +33,7 @@ Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 
 ## Shipping a plugin
 
-A plugin folder with a `plugin.json` is copied into the app and registered by a generated file; [Plugin format](%ROOT%docs/plugins/format/) has the layout.
+A plugin folder with a `plugin.json` is copied into the app and registered by a generated file; [Plugin format](%ROOT%docs/plugins/format/) has the layout. `devpul add <id>` takes one listed on the [plugins page](%ROOT%plugins/).
 
 A Dart package can also offer its plugin itself with `Devpul.plugin`, usually from the code that also sends its events:
 

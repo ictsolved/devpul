@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { pluginPages, readRegistry } from './pages/plugins.ts';
 import { PAGES, renderPage } from './pages/render.ts';
 import site from '../../site.json' with { type: 'json' };
 
@@ -30,8 +31,13 @@ const fill = (text: string) =>
     .replaceAll('%REPO_URL%', site.repo)
     .replaceAll('%DATE%', new Date().toISOString().slice(0, 10));
 
-const sitemap = () => {
-  const urls = ['', ...PAGES.map((p) => p.path)]
+// The output of tool/build_registry.dart, for the marketplace at plugins/.
+// Builds without it have no marketplace.
+const registryDir = process.env.DEVPUL_REGISTRY;
+const plugins = () => (registryDir ? readRegistry(registryDir) : null);
+
+const sitemap = (extra: string[]) => {
+  const urls = ['', ...PAGES.map((p) => p.path), ...extra]
     .map((path) => `  <url>\n    <loc>${site.url}${path}</loc>\n    <lastmod>%DATE%</lastmod>\n  </url>`)
     .join('\n');
   return fill(
@@ -48,7 +54,17 @@ function sitePlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? '').split('?')[0]?.replace(/^\//, '') ?? '';
-        const html = renderPage(path.endsWith('/') ? path : `${path}/`, site, CSP);
+        const registry = plugins();
+        if (registry && path === 'plugins/registry.json') {
+          res.setHeader('content-type', 'application/json');
+          res.end(registry.json);
+          return;
+        }
+        const page = path.endsWith('/') ? path : `${path}/`;
+        const html =
+          renderPage(page, site, CSP) ??
+          (registry && pluginPages(registry, site, CSP).find((p) => p.path === page)?.html) ??
+          null;
         if (!html || !path) return next();
         if (!path.endsWith('/')) {
           res.writeHead(301, { location: `/${path}/` }).end();
@@ -63,7 +79,13 @@ function sitePlugin(): Plugin {
       for (const file of readdirSync(dir)) {
         this.emitFile({ type: 'asset', fileName: file, source: fill(readFileSync(join(dir, file), 'utf8')) });
       }
-      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap() });
+      const registry = plugins();
+      const marketplace = registry ? pluginPages(registry, site, CSP) : [];
+      if (registry) this.emitFile({ type: 'asset', fileName: 'plugins/registry.json', source: registry.json });
+      for (const page of marketplace) {
+        this.emitFile({ type: 'asset', fileName: `${page.path}index.html`, source: page.html });
+      }
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap(marketplace.map((p) => p.path)) });
       for (const page of PAGES) {
         this.emitFile({
           type: 'asset',

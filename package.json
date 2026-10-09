@@ -11,7 +11,7 @@
     "check:dart": "tool/check_dart.sh",
     "check:web": "prettier --check . && npm run check -w apps/ui",
     "format": "prettier --write .",
-    "deploy": "npm run deploy -w apps/ui",
+    "deploy": "npm run build:registry && npm run deploy -w apps/ui",
     "build:registry": "dart run tool/build_registry.dart build/registry",
     "build:extension": "node tool/build_extension.mjs"
   },

@@ -26,7 +26,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Update checks need the registry as deployed, never a cached copy.
+  if (url.pathname.endsWith('/plugins/registry.json')) return;
   event.respondWith(
     fetch(request)
       .then((response) => {
