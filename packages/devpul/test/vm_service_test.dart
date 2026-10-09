@@ -13,7 +13,9 @@ void main() {
   late Process app;
   late VmService service;
   late String isolateId;
+  late Uri serviceUri;
   final events = <String, Map<String, Object?>>{};
+  final output = <String>[];
 
   setUpAll(() async {
     final dir = await Directory.systemTemp.createTemp('devpul_e2e');
@@ -26,15 +28,19 @@ void main() {
       'test/vm/app.dart',
     ]);
     addTearDown(app.kill);
+    app.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(output.add);
 
     while (!info.existsSync() || info.lengthSync() == 0) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
-    final uri = Uri.parse(
+    serviceUri = Uri.parse(
       (jsonDecode(info.readAsStringSync()) as Map)['uri'] as String,
     );
     service = await vmServiceConnectUri(
-      uri.replace(scheme: 'ws', path: '${uri.path}ws').toString(),
+      serviceUri.replace(scheme: 'ws', path: '${serviceUri.path}ws').toString(),
     );
     addTearDown(service.dispose);
 
@@ -78,6 +84,16 @@ void main() {
     expect(data('devpul.http.request'), containsPair('method', 'GET'));
     expect(data('devpul.http.response'), containsPair('status', 200));
     expect(data('devpul.error'), containsPair('message', 'Bad state: boom'));
+  });
+
+  test('prints the connect link once', () async {
+    final link =
+        'https://ui.example.com/#connect='
+        '${Uri.encodeComponent(serviceUri.toString())}';
+    while (!output.contains('DevPul $link')) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    expect(output.where((l) => l.startsWith('DevPul ')), ['DevPul $link']);
   });
 
   test('serves the backlog', () async {

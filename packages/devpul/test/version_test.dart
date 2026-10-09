@@ -1,6 +1,7 @@
 @TestOn('vm')
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:devpul/src/version.dart';
@@ -12,5 +13,10 @@ void main() {
       File('pubspec.yaml').readAsStringSync(),
       contains('\nversion: $packageVersion\n'),
     );
+  });
+
+  test('siteUrl matches site.json', () {
+    final site = jsonDecode(File('../../site.json').readAsStringSync()) as Map;
+    expect(siteUrl, site['url']);
   });
 }

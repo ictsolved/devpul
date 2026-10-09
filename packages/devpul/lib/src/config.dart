@@ -1,4 +1,9 @@
+import 'version.dart';
+
 enum ConsoleMode { off, summary, verbose }
+
+// `devpul run` passes its own server.
+const _uiUrl = String.fromEnvironment('DEVPUL_UI', defaultValue: siteUrl);
 
 typedef HeaderRedactor =
     Map<String, Object?> Function(Uri url, Map<String, Object?> headers);
@@ -10,6 +15,7 @@ final class DevpulConfig {
     this.enabled = true,
     this.console = ConsoleMode.summary,
     this.ansiColors = true,
+    this.uiUrl = _uiUrl,
     this.maxValueLength = 1024 * 1024,
     this.backlogSize = 16 * 1024 * 1024,
     this.ignoreUrls = const [],
@@ -24,6 +30,10 @@ final class DevpulConfig {
 
   final ConsoleMode console;
   final bool ansiColors;
+
+  /// The app prints `<uiUrl>#connect=<VM service URL>` at startup and when
+  /// the URL changes, unless [console] is off. Null prints nothing.
+  final String? uiUrl;
 
   /// Characters of encoded JSON per top-level event field. Longer values are
   /// replaced by a truncation marker carrying a preview of this length.

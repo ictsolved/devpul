@@ -40,9 +40,12 @@ void main(List<String> args) {
     version,
     (json) => (json['packages'] as Map)['apps/ui'] as Map<String, Object?>,
   );
-  File('packages/devpul/lib/src/version.dart').writeAsStringSync(
-    "// Written by tool/release.dart.\nconst packageVersion = '$version';\n",
-  );
+  final site = jsonDecode(File('site.json').readAsStringSync()) as Map;
+  File('packages/devpul/lib/src/version.dart').writeAsStringSync('''
+// Written by tool/release.dart.
+const packageVersion = '$version';
+const siteUrl = '${site['url']}';
+''');
 
   final missing = [
     for (final MapEntry(:key, :value) in packages.entries)

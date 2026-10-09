@@ -15,6 +15,7 @@ import 'version.dart';
 const _off =
     bool.fromEnvironment('dart.vm.product') ||
     bool.fromEnvironment('dart.vm.profile');
+const _web = bool.fromEnvironment('dart.library.js_interop');
 
 /// Envelope `v` and handshake `protocol`.
 const protocolVersion = 1;
@@ -62,6 +63,7 @@ abstract final class Devpul {
   static Map<String, Object?>? _sessionInfo;
   static bool _listening = false;
   static bool _infoQueued = false;
+  static String? _link;
   static final _backlog = _Backlog();
   static final _limits = Limits();
   static final _actions = <String, _Action>{};
@@ -230,11 +232,29 @@ abstract final class Devpul {
     });
   }
 
+  // A later `flutter attach` moves serverUri to its DDS and subscribes to
+  // the Extension stream, so the link is checked again then.
+  static Future<void> _printLink() async {
+    final base = _config.uiUrl;
+    if (_web || base == null || _config.console == ConsoleMode.off) return;
+    try {
+      final uri = (await developer.Service.getInfo()).serverUri;
+      if (uri == null) return;
+      final link = '$base#connect=${Uri.encodeComponent(uri.toString())}';
+      if (link == _link) return;
+      _link = link;
+      DevpulConsole.write('DevPul', link);
+    } catch (_) {
+      // No VM service.
+    }
+  }
+
   static void _emit(String kind, Map<String, Object?> data, int now) {
-    _backlog.register();
+    if (_backlog.register()) unawaited(_printLink());
     // A listener that shows up late (flutter attach) still learns which app
     // this is.
     final listening = developer.extensionStreamHasListener;
+    if (listening && !_listening) unawaited(_printLink());
     final info = _sessionInfo;
     if (listening && !_listening && info != null && kind != 'app.session') {
       _listening = true;
@@ -299,9 +319,10 @@ final class _Backlog {
     for (final (kind, event, _) in _events) {'kind': kind, 'data': event},
   ];
 
-  // The UI waits for ext.devpul.info, so it goes last.
-  void register() {
-    if (_registered) return;
+  /// True on the first call. The UI waits for ext.devpul.info, so it goes
+  /// last.
+  bool register() {
+    if (_registered) return false;
     _registered = true;
     _extension('backlog', (_) => {'events': events});
     _extension('action', (params) async {
@@ -328,6 +349,7 @@ final class _Backlog {
       return Devpul._info();
     });
     _extension('info', (_) => Devpul._info());
+    return true;
   }
 
   static void _extension(

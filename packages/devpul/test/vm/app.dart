@@ -5,7 +5,9 @@ import 'package:devpul/devpul.dart';
 
 // Run by vm_service_test.dart under a VM service, paused on start.
 void main() {
-  Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
+  Devpul.configure(
+    const DevpulConfig(ansiColors: false, uiUrl: 'https://ui.example.com/'),
+  );
   Devpul.session({'name': 'e2e'}, tags: {'flavor': 'test'});
   Devpul.action(
     'echo',

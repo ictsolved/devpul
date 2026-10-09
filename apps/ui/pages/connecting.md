@@ -7,6 +7,16 @@ description: Connect DevPul to flutter run, dart run, flutter attach, Flutter we
 
 DevPul connects to the Dart Development Service (DDS) of a debug run. It needs the VM service URL, which changes on every run unless you fix it.
 
+## The printed link
+
+At startup the app prints a link that opens DevPul connected to it:
+
+```text
+DevPul %SITE_URL%#connect=http%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2F
+```
+
+Click it in the terminal or the IDE's debug console. It works for any run, IDE runs included, and prints again when the URL changes, as after a `flutter attach`. Set [`uiUrl`](%ROOT%docs/api/#configuration) to link to another copy of DevPul, or `null` to turn it off. Flutter web prints no link.
+
 ## Paste the URL
 
 Any of these work:
