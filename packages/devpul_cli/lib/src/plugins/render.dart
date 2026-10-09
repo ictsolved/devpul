@@ -30,9 +30,8 @@ String render(Lock lock, Map<String, Map<String, String>> vendored) {
 
 // dart format off
 // ignore_for_file: type=lint
-
-import 'package:devpul/devpul.dart';
 ''');
+  if (plugins.isNotEmpty) out.write("\nimport 'package:devpul/devpul.dart';\n");
   final exports = [
     for (final (:id, entry: _, :manifest) in plugins)
       if (manifest.dart case final dart?) "export '$id/$dart';",
