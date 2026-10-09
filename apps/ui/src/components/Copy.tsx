@@ -1,8 +1,14 @@
 import { Check, Copy } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { devtools, postHost } from '../lib/devtools';
 
 export async function copyText(text: string): Promise<boolean> {
+  // IDE webviews block the clipboard API; DevTools copies for its extensions.
+  if (devtools) {
+    postHost('copyToClipboard', { content: text, successMessage: 'Copied' });
+    return true;
+  }
   try {
     await navigator.clipboard.writeText(text);
     return true;

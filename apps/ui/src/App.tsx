@@ -28,6 +28,7 @@ import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOf
 import { type AppCall, PluginTab } from './features/plugins/PluginTab';
 import { matches, registry } from './features/plugins/plugins';
 import { SettingsDialog } from './features/settings/SettingsDialog';
+import { devtools, hostUri, listenHost } from './lib/devtools';
 import { pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
 
@@ -45,6 +46,8 @@ const nextN = () => ++counter;
 const localOrigin = isLoopback(location.hostname);
 const pageTitle = document.title;
 const LABEL = 'max-[560px]:hidden';
+// DevTools passes the connection; it is not stored, since its token dies with the run.
+const hostConnections = (url: string | null): ConnEntry[] => (url ? [{ id: crypto.randomUUID(), url }] : []);
 // Registered by `flutter run`, which reloads every device it runs.
 const HOT = {
   reloadSources: { label: 'Reload', done: 'Reloaded', tip: 'Hot reload (r)' },
@@ -56,7 +59,9 @@ const hotTargets = (service: Hot, connections: ConnEntry[], states: Record<strin
 
 export function App() {
   const [settings, setSettingsState] = useState<Settings>(() => load('settings', defaultSettings));
-  const [connections, setConnections] = useState<ConnEntry[]>(() => load('connections', []));
+  const [connections, setConnections] = useState<ConnEntry[]>(() =>
+    devtools ? hostConnections(hostUri()) : load('connections', []),
+  );
   const [states, setStates] = useState<Record<string, ConnState>>({});
   const [ready, setReady] = useState(false);
   const [tab, setTabState] = useState(() => load('tab', 'http'));
@@ -186,30 +191,39 @@ export function App() {
     };
   }, []);
 
+  const storeConnections = (next: ConnEntry[]) => {
+    setConnections(next);
+    if (!devtools) save('connections', next);
+  };
+
   /**
    * A token URL that is not open belongs to a run that ended, so a new URL
    * replaces it. Open ones are other apps still running; the fixed URL stays.
+   * Under DevTools the new URL replaces every other.
    */
   const addConnection = useCallback(
-    (url: string) => {
+    (url: string | null) => {
       const now = latest.current;
-      if (now.connections.some((c) => c.url === url)) return;
+      if (url && now.connections.some((c) => c.url === url)) return;
       const stale = new Set(
         now.connections.filter((c) => hasToken(c.url) && now.states[c.id]?.status !== 'open').map((c) => c.id),
       );
       if (stale.size && now.settings.clearOnRestart) drop((e) => stale.has(e.conn));
-      const next = [...now.connections.filter((c) => !stale.has(c.id)), { id: crypto.randomUUID(), url }];
-      setConnections(next);
-      save('connections', next);
+      const kept = devtools ? [] : now.connections.filter((c) => !stale.has(c.id));
+      storeConnections([...kept, ...hostConnections(url)]);
     },
     [drop],
   );
 
-  const removeConnection = (id: string) => {
-    const next = connections.filter((c) => c.id !== id);
-    setConnections(next);
-    save('connections', next);
-  };
+  const removeConnection = (id: string) => storeConnections(connections.filter((c) => c.id !== id));
+
+  useEffect(() => {
+    if (!devtools) return;
+    return listenHost({
+      connect: addConnection,
+      theme: (theme) => (document.documentElement.dataset.theme = theme),
+    });
+  }, [addConnection]);
 
   const importFile = useCallback(
     async (file: File) => {
@@ -453,7 +467,7 @@ export function App() {
   const tools = (
     <>
       {showMain ? settingsButton : <Tip content="Settings">{settingsButton}</Tip>}
-      <ThemeToggle />
+      {!devtools && <ThemeToggle />}
     </>
   );
 
@@ -463,6 +477,7 @@ export function App() {
       states={states}
       names={names}
       localOrigin={localOrigin}
+      managed={devtools}
       hero={hero}
       onAdd={addConnection}
       onRemove={removeConnection}
@@ -476,7 +491,7 @@ export function App() {
           icon={ICON}
           connect={connectionBar(true)}
           tools={tools}
-          waiting={connections.some((c) => states[c.id]?.status === 'open')}
+          waiting={devtools || connections.some((c) => states[c.id]?.status === 'open')}
           onOpenFile={() => fileRef.current?.click()}
         />
       ) : (
@@ -484,7 +499,8 @@ export function App() {
           <header className="flex items-start gap-3 border-b bg-card px-3 py-2 max-[860px]:flex-wrap">
             <a
               className="flex items-center gap-1.5 pt-1 text-[15px] font-bold whitespace-nowrap max-[860px]:flex-1"
-              href="./"
+              // DevTools passes the connection in the query.
+              href={devtools ? `./${location.search}` : './'}
               aria-label="DevPul home"
             >
               <img src={ICON} alt="" width={20} height={20} />

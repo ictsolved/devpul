@@ -174,6 +174,39 @@ test.describe('under flutter run', () => {
   });
 });
 
+test('runs as a DevTools extension', async ({ page, vm }) => {
+  // DevTools serves extensions from its own origin and frames them.
+  await page.goto('./help/');
+  await page.evaluate(
+    (uri) => {
+      const frame = document.createElement('iframe');
+      frame.src = `../index.html?uri=${encodeURIComponent(uri)}&theme=dark&dtdUri=ws%3A%2F%2F127.0.0.1%3A1%2Fx`;
+      frame.style.cssText = 'width: 1200px; height: 700px';
+      document.body.append(frame);
+      window.addEventListener('message', (e) => document.body.append(`|${JSON.stringify(e.data)}`));
+    },
+    vm.url.replace('http://', 'ws://') + 'ws',
+  );
+  const ext = page.frameLocator('iframe');
+  await expect(ext.getByRole('list', { name: 'Connections' })).toContainText('Shop');
+  await expect(ext.getByRole('textbox', { name: 'VM service URL' })).toHaveCount(0);
+  await expect(ext.getByRole('button', { name: /^Theme/ })).toHaveCount(0);
+  await expect(ext.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  await page.evaluate(() => {
+    const target = document.querySelector('iframe')?.contentWindow;
+    target?.postMessage({ type: 'themeUpdate', data: { theme: 'light' } }, location.origin);
+    target?.postMessage({ type: 'ping' }, location.origin);
+  });
+  await expect(ext.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('body')).toContainText('|{"type":"pong"}');
+
+  await ext.getByRole('row', { name: /example\.com\/items/ }).click();
+  await ext.getByRole('button', { name: 'curl' }).click();
+  await expect(page.locator('body')).toContainText('|{"type":"copyToClipboard","data":{"content":"curl ');
+  await expect(ext.getByRole('button', { name: 'Copied' })).toBeVisible();
+});
+
 test('static pages load under the CSP', async ({ page }) => {
   for (const { path } of PAGES) {
     await page.goto(`./${path}`);

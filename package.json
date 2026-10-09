@@ -12,7 +12,8 @@
     "check:dart": "tool/check_dart.sh",
     "check:web": "prettier --check . && npm run check -w apps/ui",
     "format": "prettier --write .",
-    "deploy": "npm run deploy -w apps/ui"
+    "deploy": "npm run deploy -w apps/ui",
+    "build:extension": "node tool/build_extension.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.9"

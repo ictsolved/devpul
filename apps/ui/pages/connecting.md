@@ -17,6 +17,12 @@ DevPul %SITE_URL%#connect=http%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2F
 
 Click it in the terminal or the IDE's debug console. It works for any run, IDE runs included, and prints again when the URL changes, as after a `flutter attach`. Set [`uiUrl`](%ROOT%docs/api/#configuration) to link to another copy of DevPul, or `null` to turn it off. Flutter web prints no link.
 
+## In DevTools and the IDE
+
+The `devpul` package ships DevPul as a DevTools extension. Open DevTools for a debug run, from the browser link `flutter run` prints or from the IDE, and enable DevPul once per project when asked; DevTools writes the choice to `devtools_options.yaml`. DevPul then sits in the DevTools tabs, or in the overflow menu, already connected to the app DevTools is connected to.
+
+In VS Code, the Flutter sidebar lists it under "DevTools Extensions". Settings, history and plugin approvals are kept per DevTools server: the IDE keeps one per session, while DevTools opened from a `flutter run` link gets a new one every run.
+
 ## Paste the URL
 
 Any of these work:

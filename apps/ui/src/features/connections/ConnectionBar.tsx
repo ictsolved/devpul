@@ -25,13 +25,15 @@ interface Props {
   states: Record<string, ConnState>;
   names: Record<string, string>;
   localOrigin: boolean;
+  /** The host passes the connection: no URL field, no remove buttons. */
+  managed?: boolean;
   hero?: boolean;
   onAdd: (wsUrl: string) => void;
   onRemove: (id: string) => void;
 }
 
 export function ConnectionBar(props: Props) {
-  const { connections, states, names, localOrigin, hero, onAdd, onRemove } = props;
+  const { connections, states, names, localOrigin, managed, hero, onAdd, onRemove } = props;
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -59,31 +61,38 @@ export function ConnectionBar(props: Props) {
         hero ? 'w-full flex-none items-center' : 'max-[860px]:order-3 max-[860px]:basis-full',
       )}
     >
-      <form
-        className={cn('flex gap-1.5', hero && 'w-full flex-wrap justify-center')}
-        onSubmit={(e) => {
-          e.preventDefault();
-          add(text);
-        }}
-      >
-        <Input
-          type="text"
-          className={cn('flex-1 font-mono text-xs', hero && 'h-auto flex-[1_1_320px] rounded-lg px-3 py-[9px] text-sm')}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={
-            hero ? 'http://127.0.0.1:41234/AbCdEf12=/' : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'
-          }
-          autoFocus={hero}
-          aria-label="VM service URL"
-          spellCheck={false}
-          autoComplete="off"
-        />
-        <Button type="submit" size="sm" className={cn(hero && 'h-auto rounded-lg px-3.5 py-2 has-[>svg]:px-3.5')}>
-          <Plug />
-          Connect
-        </Button>
-      </form>
+      {!managed && (
+        <form
+          className={cn('flex gap-1.5', hero && 'w-full flex-wrap justify-center')}
+          onSubmit={(e) => {
+            e.preventDefault();
+            add(text);
+          }}
+        >
+          <Input
+            type="text"
+            className={cn(
+              'flex-1 font-mono text-xs',
+              hero && 'h-auto flex-[1_1_320px] rounded-lg px-3 py-[9px] text-sm',
+            )}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={
+              hero
+                ? 'http://127.0.0.1:41234/AbCdEf12=/'
+                : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'
+            }
+            autoFocus={hero}
+            aria-label="VM service URL"
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <Button type="submit" size="sm" className={cn(hero && 'h-auto rounded-lg px-3.5 py-2 has-[>svg]:px-3.5')}>
+            <Plug />
+            Connect
+          </Button>
+        </form>
+      )}
       {connections.length > 0 && (
         <ul className={cn('flex flex-wrap gap-1.5', hero && 'justify-center')} aria-label="Connections">
           {connections.map((c) => {
@@ -95,14 +104,16 @@ export function ConnectionBar(props: Props) {
                   <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
                   <span>{names[c.id] ?? connectionLabel(c.url)}</span>
                   {s?.paused.length ? <span className="text-warning">paused</span> : null}
-                  <button
-                    type="button"
-                    className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
-                    onClick={() => onRemove(c.id)}
-                    aria-label={`Remove ${c.url}`}
-                  >
-                    <X size={12} />
-                  </button>
+                  {!managed && (
+                    <button
+                      type="button"
+                      className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
+                      onClick={() => onRemove(c.id)}
+                      aria-label={`Remove ${c.url}`}
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
                 </li>
               </Tip>
             );
@@ -122,7 +133,7 @@ export function ConnectionBar(props: Props) {
           </div>
         );
       })}
-      {stuck.length > 0 && (
+      {stuck.length > 0 && !managed && (
         <div className={HINT}>
           Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the URL changes on every run;
           pasting the new one replaces the old.

@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { TooltipProvider } from './components/ui/tooltip';
 import './index.css';
+import { devtools, hostTheme } from './lib/devtools';
+
+const theme = devtools && hostTheme();
+if (theme) document.documentElement.dataset.theme = theme;
 
 if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {

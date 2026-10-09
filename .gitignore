@@ -1,5 +1,7 @@
 .dart_tool/
 build/
+# Ignored in its own .gitignore, which its .pubignore replaces, so pub ships it.
+!/packages/devpul/extension/devtools/build/
 pubspec_overrides.yaml
 node_modules/
 dist/

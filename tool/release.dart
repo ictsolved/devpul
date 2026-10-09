@@ -40,6 +40,13 @@ void main(List<String> args) {
     version,
     (json) => (json['packages'] as Map)['apps/ui'] as Map<String, Object?>,
   );
+  final config = File('packages/devpul/extension/devtools/config.yaml');
+  config.writeAsStringSync(
+    config.readAsStringSync().replaceFirst(
+      RegExp(r'^version: .*$', multiLine: true),
+      'version: $version',
+    ),
+  );
   final site = jsonDecode(File('site.json').readAsStringSync()) as Map;
   File('packages/devpul/lib/src/version.dart').writeAsStringSync('''
 // Written by tool/release.dart.
@@ -62,11 +69,24 @@ const siteUrl = '${site['url']}';
     exit(1);
   }
 
+  // The UI shows its version, so it is built after the bump.
+  final build = Process.runSync('npm', [
+    'run',
+    'build:extension',
+  ], runInShell: true);
+  if (build.exitCode != 0) {
+    stderr
+      ..write(build.stdout)
+      ..write(build.stderr);
+    exit(1);
+  }
+
   stdout.writeln('''
-Versions set to $version. Next:
+Versions set to $version and the UI built into packages/devpul. Next:
 
   npm run check
   git commit -am "Release $version"
+  node tool/build_extension.mjs --check
 ${[for (final name in _publishOrder(packages)) '  (cd ${packages[name]} && ${name == 'devpul_flutter' ? 'flutter' : 'dart'} pub publish)'].join('\n')}
   git tag v$version
   git push origin main v$version''');
