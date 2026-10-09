@@ -104,7 +104,6 @@ void main() {
           'extra: unknown field',
           'id: a lowercase letter, then up to 31 lowercase letters, digits or _',
           'version: "1" does not parse',
-          'api: this devpul supports plugin API 1, not 2',
           'devpul: "^x" does not parse',
           'description: one line of 1 to 160 characters',
           'tags: "State": up to 20 lowercase letters, digits or -',
@@ -114,6 +113,7 @@ void main() {
           'files: "../x" is not a plain path',
           'files: plugin.json is implied',
           'source: needs a .js file',
+          'api: this devpul supports plugin API 1, not 2',
           'icon: icon.svg is not in files',
         ],
       );
@@ -123,12 +123,34 @@ void main() {
       expect(problems({'id': 1}), [
         'id: needs a string',
         'version: needs a string',
-        'api: needs an integer',
         'devpul: needs a string',
         'description: needs a string',
         'files: needs a list of strings',
-        'source: needs a path',
+        'source: needs source, dart or both',
       ]);
+      expect(problems(manifest({'api': null})), ['api: needs an integer']);
+      expect(problems(manifest({'devpul': '>2.0.0 <1.0.0'})), [
+        'devpul: allows no version',
+      ]);
+    });
+
+    test('takes Dart with no source, without api and icon', () {
+      final dart = {
+        'source': null,
+        'dart': 'cart.dart',
+        'files': ['cart.dart'],
+      };
+      expect(Manifest.parse(manifest(dart)..remove('api')).source, isNull);
+      expect(
+        problems(
+          manifest({
+            ...dart,
+            'icon': 'icon.svg',
+            'files': ['cart.dart', 'icon.svg'],
+          }),
+        ),
+        ['api: only with a source', 'icon: only with a source'],
+      );
     });
   });
 

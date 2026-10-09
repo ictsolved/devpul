@@ -31,7 +31,9 @@ String render(Lock lock, Map<String, Map<String, String>> vendored) {
 // dart format off
 // ignore_for_file: type=lint
 ''');
-  if (plugins.isNotEmpty) out.write("\nimport 'package:devpul/devpul.dart';\n");
+  if (plugins.any((p) => p.manifest.source != null)) {
+    out.write("\nimport 'package:devpul/devpul.dart';\n");
+  }
   final exports = [
     for (final (:id, entry: _, :manifest) in plugins)
       if (manifest.dart case final dart?) "export '$id/$dart';",
@@ -50,13 +52,8 @@ abstract final class DevpulPlugins {
     if (!_debug) return;
 ''');
   for (final (:id, :entry, :manifest) in plugins) {
-    final files = vendored[id]!;
-    var source = normalizeNewlines(files[manifest.source]!);
-    if (manifest.icon case final icon?) {
-      if (!source.endsWith('\n')) source += '\n';
-      final svg = normalizeNewlines(files[icon]!).trim();
-      source += 'export const icon = ${jsonEncode(svg)};\n';
-    }
+    final source = module(manifest, vendored[id]!);
+    if (source == null) continue;
     out.write('''
     Devpul.plugin(
       ${_string(id)},
@@ -68,6 +65,20 @@ abstract final class DevpulPlugins {
   }
   out.write('  }\n}\n');
   return out.toString();
+}
+
+/// The module the UI runs: the source with the icon appended as an `icon`
+/// export. Null for a plugin with no source.
+String? module(Manifest manifest, Map<String, String> files) {
+  final path = manifest.source;
+  if (path == null) return null;
+  var source = normalizeNewlines(files[path]!);
+  if (manifest.icon case final icon?) {
+    if (!source.endsWith('\n')) source += '\n';
+    final svg = normalizeNewlines(files[icon]!).trim();
+    source += 'export const icon = ${jsonEncode(svg)};\n';
+  }
+  return source;
 }
 
 Manifest _manifest(String id, LockEntry entry, Map<String, String>? files) {

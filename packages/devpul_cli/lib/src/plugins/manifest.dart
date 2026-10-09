@@ -14,7 +14,8 @@ bool isPluginId(String id) => _id.hasMatch(id);
 /// Relative, `/` separated, with no empty, `.`, `..` or hidden segments.
 bool isPluginPath(String path) => path.split('/').every(_segment.hasMatch);
 
-const _fields = {
+/// plugin.json fields in the order the spec lists them.
+const manifestFields = [
   'id',
   'version',
   'api',
@@ -28,7 +29,7 @@ const _fields = {
   'source',
   'dart',
   'files',
-};
+];
 
 /// A plugin's `plugin.json`.
 final class Manifest {
@@ -56,7 +57,7 @@ final class Manifest {
     void problem(String key, String message) => problems.add('$key: $message');
 
     for (final key in json.keys) {
-      if (!_fields.contains(key)) problem(key, 'unknown field');
+      if (!manifestFields.contains(key)) problem(key, 'unknown field');
     }
 
     T? read<T>(String key, String type, {bool required = true}) {
@@ -99,12 +100,10 @@ final class Manifest {
 
     final version = parse('version', Version.parse);
 
-    final api = read<int>('api', 'an integer');
-    if (api != null && api != pluginApi) {
-      problem('api', 'this devpul supports plugin API $pluginApi, not $api');
-    }
-
     final devpul = parse('devpul', VersionConstraint.parse);
+    if (devpul != null && devpul.isEmpty) {
+      problem('devpul', 'allows no version');
+    }
 
     final description = read<String>('description', 'a string');
     if (description != null &&
@@ -154,7 +153,7 @@ final class Manifest {
 
     final files = strings('files') ?? const [];
     if (json.containsKey('files') && files.isEmpty) {
-      problem('files', 'at least the source');
+      problem('files', 'at least the source or the Dart');
     }
     for (final file in files) {
       if (!isPluginPath(file)) problem('files', '"$file" is not a plain path');
@@ -170,8 +169,22 @@ final class Manifest {
       return path;
     }
 
-    final source = listed('source', '.js', required: true);
+    final source = listed('source', '.js');
     final dart = listed('dart', '.dart');
+    if (json['source'] == null && json['dart'] == null) {
+      problem('source', 'needs source, dart or both');
+    }
+
+    // The plugin API and the icon are the module's.
+    if (json['source'] != null) {
+      final api = read<int>('api', 'an integer');
+      if (api != null && api != pluginApi) {
+        problem('api', 'this devpul supports plugin API $pluginApi, not $api');
+      }
+    } else {
+      if (json['api'] != null) problem('api', 'only with a source');
+      if (json['icon'] != null) problem('icon', 'only with a source');
+    }
     final icon = listed('icon', '.svg');
 
     final readme = read<String>('readme', 'a path', required: false);
@@ -190,7 +203,7 @@ final class Manifest {
       readme: readme,
       usage: usage,
       requires: requires,
-      source: source!,
+      source: source,
       dart: dart,
       files: files,
     );
@@ -214,8 +227,9 @@ final class Manifest {
   /// Packages the plugin's Dart imports, besides `devpul`.
   final Map<String, VersionConstraint> requires;
 
-  /// The ES module the UI runs.
-  final String source;
+  /// The ES module the UI runs. Null for a plugin that sends events to the
+  /// built-in tabs only.
+  final String? source;
 
   /// The library the generated file exports.
   final String? dart;

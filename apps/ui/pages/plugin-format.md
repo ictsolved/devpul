@@ -5,7 +5,7 @@ description: The DevPul plugin folder and plugin.json, the vendored copy and dev
 
 # Plugin format
 
-A plugin is a folder with a `plugin.json`, an ES module for the UI and optional Dart for the app. An app copies the folder into `lib/devpul/<id>/`, records it in `devpul.lock` and calls `DevpulPlugins.install()` from the generated `lib/devpul/plugins.dart`, which offers every plugin to the UI with [`Devpul.plugin`](%ROOT%docs/plugins/#shipping-a-plugin) in debug builds.
+A plugin is a folder with a `plugin.json` and an ES module for a tab in the UI, Dart for the app, or both. An app copies the folder into `lib/devpul/<id>/`, records it in `devpul.lock` and calls `DevpulPlugins.install()` from the generated `lib/devpul/plugins.dart`, which offers every plugin to the UI with [`Devpul.plugin`](%ROOT%docs/plugins/#shipping-a-plugin) in debug builds.
 
 ## Plugin folder
 
@@ -13,7 +13,7 @@ A plugin is a folder with a `plugin.json`, an ES module for the UI and optional 
 cart/
   plugin.json
   cart.js       ES module the UI runs
-  cart.dart     Dart the app calls, optional
+  cart.dart     Dart the app calls
   icon.svg      tab icon, optional
   README.md
   example/      optional, never copied
@@ -39,21 +39,21 @@ cart/
 }
 ```
 
-| Field         | Required | Value                                                                                                                       |
-| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | yes      | A lowercase letter, then up to 31 lowercase letters, digits or `_`.                                                         |
-| `version`     | yes      | A semantic version, such as `1.2.0` or `2.0.0-dev.1`.                                                                       |
-| `api`         | yes      | `1`, the [plugin API](%ROOT%docs/plugins/#api) the module is written for.                                                   |
-| `devpul`      | yes      | A pub version constraint on the `devpul` package the app uses.                                                              |
-| `description` | yes      | One line, up to 160 characters.                                                                                             |
-| `tags`        |          | Up to 5, each up to 20 lowercase letters, digits or `-`.                                                                    |
-| `icon`        |          | An SVG file in `files`, shown as the tab icon.                                                                              |
-| `readme`      |          | A file in the folder, shown in the registry. Not copied unless it is in `files`.                                            |
-| `usage`       |          | 1 to 3 lines of wiring the app adds by hand, up to 100 characters each.                                                     |
-| `requires`    |          | Packages the Dart imports besides `devpul`, with pub version constraints. The app depends on them itself.                   |
-| `source`      | yes      | The ES module, a `.js` file in `files`, up to 512 KB.                                                                       |
-| `dart`        |          | A `.dart` library in `files`, exported by the generated file.                                                               |
-| `files`       | yes      | Every file copied into the app besides `plugin.json`: relative paths with `/`, no `.` or `..` segments and no hidden files. |
+| Field         | Required      | Value                                                                                                                       |
+| ------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | yes           | A lowercase letter, then up to 31 lowercase letters, digits or `_`.                                                         |
+| `version`     | yes           | A semantic version, such as `1.2.0` or `2.0.0-dev.1`.                                                                       |
+| `api`         | with `source` | `1`, the [plugin API](%ROOT%docs/plugins/#api) the module is written for.                                                   |
+| `devpul`      | yes           | A pub version constraint on the `devpul` package the app uses.                                                              |
+| `description` | yes           | One line, up to 160 characters.                                                                                             |
+| `tags`        |               | Up to 5, each up to 20 lowercase letters, digits or `-`.                                                                    |
+| `icon`        |               | An SVG file in `files`, shown as the tab icon. Only with `source`.                                                          |
+| `readme`      |               | A file in the folder, shown in the registry. Not copied unless it is in `files`.                                            |
+| `usage`       |               | 1 to 3 lines of wiring the app adds by hand, up to 100 characters each.                                                     |
+| `requires`    |               | Packages the Dart imports besides `devpul`, with pub version constraints. The app depends on them itself.                   |
+| `source`      |               | The ES module, a `.js` file in `files`, up to 512 KB with the icon. A plugin has `source`, `dart` or both.                  |
+| `dart`        |               | A `.dart` library in `files`, exported by the generated file.                                                               |
+| `files`       | yes           | Every file copied into the app besides `plugin.json`: relative paths with `/`, no `.` or `..` segments and no hidden files. |
 
 Other fields are rejected.
 
@@ -66,6 +66,8 @@ The module follows the [plugin API](%ROOT%docs/plugins/#api). It does not export
 ### Dart
 
 The generated file exports every plugin's `dart` library into one namespace, so public names start with `Devpul<Id>` or `devpul<Id>`, such as `DevpulCart`. The Dart imports `package:devpul`, the packages in `requires` and its own files.
+
+A plugin with only Dart adds no tab. It sends events to the built-in tabs, as an adapter for another HTTP client would for Network, and its events show in Events.
 
 Code the app calls in every build, such as an observer in `main`, does nothing in release builds behind a constant such as `kDebugMode`, so the compiler drops the plugin there.
 
@@ -170,7 +172,7 @@ export const icon = "<svg ...>";
 }
 ```
 
-The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. The handshake lists `origin`, the lock's `url`.
+The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. A plugin with no `source` is exported and not offered. The handshake lists `origin`, the lock's `url`.
 
 - Not named `.g.dart`, so ignore rules for build_runner output leave it committed.
 - `// dart format off` keeps it the same under any formatter settings.
