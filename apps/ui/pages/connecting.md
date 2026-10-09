@@ -1,11 +1,22 @@
 ---
 title: Connecting
-description: Connect DevPul to flutter run, dart run, flutter attach, Flutter web and IDE debug sessions, with a pasted URL, a link or a fixed port.
+description: Connect DevPul to flutter run, dart run, flutter attach, Flutter web and IDE debug sessions, with devpul run, the printed link, DevTools, a pasted URL or a fixed port.
 ---
 
 # Connecting
 
 DevPul connects to the Dart Development Service (DDS) of a debug run. It needs the VM service URL, which changes on every run unless you fix it.
+
+## Command line
+
+```sh
+dart pub global activate devpul_cli
+devpul run -d macos
+```
+
+`devpul run` runs `flutter run` with the arguments you give it, or `dart run` outside a Flutter project, and opens DevPul on `http://127.0.0.1:7171` connected to the app once it is up. The terminal keys of `flutter run` keep working, and DevPul gets **Reload** and **Restart** buttons.
+
+A second `devpul run`, or `devpul <vm-service-url>`, hands its app to the tab that is already open. The port stays the same so settings and history persist; `--port` picks another and `--no-open` prints links instead of opening a browser. `devpul` alone serves the UI.
 
 ## The printed link
 
@@ -58,11 +69,7 @@ Add the URL after `#connect=`:
 
 Any site can link here, so a link connects only to this machine: `localhost`, `127.0.0.0/8` or `[::1]`. DevPul ignores a link to any other host and says so. Pasting a URL works for any host.
 
-The local server takes the URL as an argument and opens that link for you:
-
-```sh
-npx devpul http://127.0.0.1:41234/AbCdEf12=/
-```
+`devpul <vm-service-url>` opens that link for you.
 
 ## Paused in the debugger
 
@@ -117,6 +124,6 @@ Android Studio: add the same flags under Run > Edit Configurations > Additional 
 | Where        | How                 | Notes                                                                                                                                            |
 | ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Hosted       | the site you are on | Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. Installable as an app. |
-| Local server | `npx devpul`        | Any browser, Safari included. Serves these docs too.                                                                                             |
+| Local server | `devpul`            | Any browser, Safari included. Serves these docs too.                                                                                             |
 
 Both run entirely in the browser. The hosted site only serves the page; your app's data goes from the app to the tab.

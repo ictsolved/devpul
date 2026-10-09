@@ -49,6 +49,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
   // Package to the hash it runs.
   const current = useRef(new Map<string, string>());
   const loadedUrls = useRef(new Set<string>());
+  const wantedUrls = useRef(new Set<string>());
 
   useEffect(() => {
     void SourceCache.open().then(setCache);
@@ -58,16 +59,22 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
     setErrors((e) => ({ ...e, [origin]: err instanceof Error ? err.message : String(err) }));
   }, []);
 
+  // devpul serves a changed plugin file under a new URL.
   useEffect(() => {
+    const wanted = new Set(urls);
+    wantedUrls.current = wanted;
+    const gone = [...loadedUrls.current].filter((url) => !wanted.has(url));
+    for (const url of gone) {
+      loadedUrls.current.delete(url);
+      registry.unregister(url);
+    }
+    if (gone.length) setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !gone.includes(k))));
     for (const url of urls) {
       if (loadedUrls.current.has(url)) continue;
+      loadedUrls.current.add(url);
       fetch(url)
         .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((source) => {
-          if (loadedUrls.current.has(url)) return;
-          loadedUrls.current.add(url);
-          return loadPlugin(source, url);
-        })
+        .then((source) => loadPlugin(source, url, () => wantedUrls.current.has(url)))
         .catch((err: unknown) => fail(url, err));
     }
   }, [urls, fail]);

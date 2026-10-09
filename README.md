@@ -42,7 +42,14 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
    }
    ```
 
-3. Run the app with `flutter run`, open [DevPul](https://devpul.saradgajurel.com.np) and paste the VM service URL the run prints, for example `http://127.0.0.1:41234/AbCdEf12=/`.
+3. Run the app with the command line in place of `flutter run`; it opens DevPul connected to the app:
+
+   ```sh
+   dart pub global activate devpul_cli
+   devpul run
+   ```
+
+   Any other run prints a link that opens DevPul connected to it, and IDEs show DevPul as a DevTools extension.
 
 The [example app](examples/devpul_example) uses every package.
 
@@ -54,6 +61,7 @@ The [example app](examples/devpul_example) uses every package.
 | [devpul_dio](packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                |
 | [devpul_http](packages/devpul_http)       | `DevpulClient` for package:http.                                                                                               |
 | [devpul_flutter](packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`.                                              |
+| [devpul_cli](packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1.                                                   |
 | [devpul (npm)](launcher)                  | `npx devpul` serves the UI on 127.0.0.1.                                                                                       |
 
 ## In the browser

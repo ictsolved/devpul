@@ -1,0 +1,24 @@
+name: devpul_cli
+description: Command line for DevPul. Serves the DevPul UI on 127.0.0.1 and runs flutter run or dart run with the UI connected.
+version: 1.0.0-dev.1
+homepage: https://devpul.saradgajurel.com.np
+documentation: https://devpul.saradgajurel.com.np/docs/connecting/
+repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_cli
+issue_tracker: https://github.com/ictsolved/devpul/issues
+topics: [debugging, network, cli, devtools]
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+executables:
+  devpul: devpul
+
+dependencies:
+  # Holds the UI build.
+  devpul: ^0.2.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.25.0

@@ -9,6 +9,7 @@ workspace:
   - packages/devpul_dio
   - packages/devpul_http
   - packages/devpul_flutter
+  - packages/devpul_cli
   - examples/devpul_example
   - examples/plugins/devpul_bloc
   - examples/plugins/devpul_riverpod

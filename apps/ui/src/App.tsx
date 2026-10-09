@@ -15,7 +15,7 @@ import { formatTime } from './core/json';
 import { Persist } from './core/persist';
 import { type ConnState, Connection, isPaused } from './core/rpc';
 import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
-import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl } from './core/url';
+import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl, toWsUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
 import { ErrorsTab } from './features/errors/ErrorsTab';
@@ -28,6 +28,7 @@ import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOf
 import { type AppCall, PluginTab } from './features/plugins/PluginTab';
 import { matches, registry } from './features/plugins/plugins';
 import { SettingsDialog } from './features/settings/SettingsDialog';
+import { cli, listenCli } from './lib/cli';
 import { devtools, hostUri, listenHost } from './lib/devtools';
 import { pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings } from './lib/storage';
@@ -70,6 +71,7 @@ export function App() {
   const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [seenData, setSeenData] = useState(false);
+  const [cliPlugins, setCliPlugins] = useState<string[]>([]);
   // Re-renders on every store change; children read from the store directly.
   useSyncExternalStore(store.subscribe, store.getVersion);
   const plugins = useSyncExternalStore(registry.subscribe, registry.getPlugins);
@@ -218,6 +220,17 @@ export function App() {
   const removeConnection = (id: string) => storeConnections(connections.filter((c) => c.id !== id));
 
   useEffect(() => {
+    if (!cli) return;
+    return listenCli({
+      connect: (vmUrl) => {
+        const url = toWsUrl(vmUrl);
+        if (url) addConnection(url);
+      },
+      plugins: setCliPlugins,
+    });
+  }, [addConnection]);
+
+  useEffect(() => {
     if (!devtools) return;
     return listenHost({
       connect: addConnection,
@@ -356,11 +369,12 @@ export function App() {
     [connections],
   );
 
+  const pluginUrls = useMemo(() => [...settings.pluginUrls, ...cliPlugins], [settings.pluginUrls, cliPlugins]);
   const pluginOffers = usePlugins({
     runs,
     states,
     approvals: settings.plugins,
-    urls: settings.pluginUrls,
+    urls: pluginUrls,
     call: callApp,
     appName: runName,
     onApprove: (a) => setSettings({ ...settings, plugins: approve(settings.plugins, a) }),

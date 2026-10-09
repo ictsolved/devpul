@@ -105,7 +105,7 @@ export function Home({ icon, connect, tools, waiting, onOpenFile }: Props) {
           <FolderOpen size={13} /> Open a session file
         </button>
         <span>
-          or run <code>npx devpul</code>
+          or run <code>devpul run</code> in place of <code>flutter run</code>
         </span>
       </footer>
     </div>

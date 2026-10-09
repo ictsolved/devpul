@@ -43,15 +43,16 @@ With `package:http`, use `DevpulClient()` wherever you pass a `Client`. See [pac
 
 ## 3. Run and connect
 
-Run the app in debug mode:
+Install the command line once, then run the app with it in place of `flutter run`:
 
 ```sh
-flutter run
-# or, for plain Dart
-dart run --enable-vm-service bin/main.dart
+dart pub global activate devpul_cli
+devpul run            # takes the flutter run arguments; dart run outside a Flutter project
 ```
 
-The run prints a line like `A Dart VM Service on Pixel 7 is available at: http://127.0.0.1:41234/AbCdEf12=/`. Open [DevPul](%ROOT%) and paste that URL into the field, or anywhere on the page. [Connecting](%ROOT%docs/connecting/) covers fixed ports, IDEs, `flutter attach` and the web.
+It opens DevPul on `http://127.0.0.1:7171`, connected to the app.
+
+Any other run works too: the app prints a `DevPul ...#connect=...` link at startup that opens DevPul connected to it, and IDEs show DevPul as a DevTools extension. [Connecting](%ROOT%docs/connecting/) covers IDEs, pasted URLs, `flutter attach` and the web.
 
 ## What you get
 

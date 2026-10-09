@@ -116,14 +116,15 @@ For plain buttons and small forms with no custom UI, [`Devpul.action`](%ROOT%doc
 
 ## Developing a plugin
 
-Serve the folder with any static server that sets CORS headers, then add the file's URL in Settings > Plugins:
+Let the command line serve the file:
 
 ```sh
-npx http-server --cors -p 8090
-# Settings > Plugins: http://127.0.0.1:8090/cart.js
+devpul --plugin cart.js run
 ```
 
-Plugins load once per page; reload DevPul after editing. Load errors show in Settings. A URL you add yourself runs without the approval prompt.
+DevPul loads it from the same origin and loads it again each time you save. Load errors show in Settings.
+
+A plugin on any static server that sets CORS headers works too: add its URL in Settings > Plugins and reload DevPul after editing. A file or URL you add yourself runs without the approval prompt.
 
 ## Security
 
