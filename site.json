@@ -1,4 +1,5 @@
 {
   "url": "https://devpul.saradgajurel.com.np/",
-  "repo": "https://github.com/ictsolved/devpul"
+  "repo": "https://github.com/ictsolved/devpul",
+  "registry": "https://devpul.saradgajurel.com.np/plugins/registry.json"
 }

@@ -1,0 +1,481 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
+
+import 'app.dart';
+import 'lock.dart';
+import 'manifest.dart';
+import 'registry.dart';
+
+/// Matches `registry` in site.json, checked by a test.
+const registryUrl = 'https://devpul.saradgajurel.com.np/plugins/registry.json';
+
+/// Where `devpul add` takes a plugin from.
+sealed class Source {}
+
+/// A plugin listed in registry.json.
+final class RegistrySource extends Source {
+  RegistrySource(this.id, {this.ref, this.constraint});
+
+  final String id;
+  final String? ref;
+  final VersionConstraint? constraint;
+}
+
+final class GitSource extends Source {
+  GitSource(this.url, {this.path, this.ref, this.constraint});
+
+  final String url;
+
+  /// The plugin folder in the repository.
+  final String? path;
+  final String? ref;
+  final VersionConstraint? constraint;
+}
+
+/// A `plugin.json` URL; the files sit next to it.
+final class UrlSource extends Source {
+  UrlSource(this.url);
+
+  final String url;
+}
+
+/// A plugin folder on disk.
+final class LocalSource extends Source {
+  LocalSource(this.path);
+
+  final String path;
+}
+
+final _scp = RegExp(r'^[\w.-]+@[\w.-]+:');
+
+/// Reads `<name | git-url | plugin.json-url | folder>[#ref|@version]`.
+/// [path] is the plugin folder in a git repository. Throws a
+/// [FormatException] for a usage error.
+Source parseSource(String arg, {String? path}) {
+  final url = arg.contains('://') || _scp.hasMatch(arg);
+  final local =
+      !url &&
+      (arg.startsWith('.') ||
+          arg.contains('/') ||
+          arg.contains(r'\') ||
+          p.isAbsolute(arg));
+  if (local) {
+    if (path != null) throw const FormatException('--path is for git URLs');
+    return LocalSource(arg);
+  }
+
+  var rest = arg;
+  String? ref;
+  VersionConstraint? constraint;
+  final hash = rest.lastIndexOf('#');
+  if (hash != -1) {
+    ref = rest.substring(hash + 1);
+    rest = rest.substring(0, hash);
+    if (ref.isEmpty) throw FormatException('$arg: empty #ref');
+  }
+  final at = rest.lastIndexOf('@');
+  if (at > rest.lastIndexOf('/') && at > rest.lastIndexOf(':')) {
+    final text = rest.substring(at + 1);
+    rest = rest.substring(0, at);
+    try {
+      constraint = VersionConstraint.parse(text);
+    } on FormatException {
+      throw FormatException('$arg: "$text" is not a version constraint');
+    }
+  }
+  if (ref != null && constraint != null) {
+    throw FormatException('$arg: pass #ref or @version, not both');
+  }
+
+  if (!url) {
+    if (!isPluginId(rest)) {
+      throw FormatException('$arg is not a plugin name, URL or folder');
+    }
+    if (path != null) throw const FormatException('--path is for git URLs');
+    return RegistrySource(rest, ref: ref, constraint: constraint);
+  }
+  final uri = Uri.tryParse(rest);
+  if (uri != null &&
+      (uri.scheme == 'https' || uri.scheme == 'http') &&
+      uri.path.endsWith('/plugin.json')) {
+    if (ref != null || constraint != null || path != null) {
+      throw FormatException(
+        '$arg: a plugin.json URL serves one version; #ref, @version and '
+        '--path are for git URLs',
+      );
+    }
+    return UrlSource(rest);
+  }
+  if (path != null && !isPluginPath(path)) {
+    throw FormatException('--path $path is not a relative / separated path');
+  }
+  return GitSource(rest, path: path, ref: ref, constraint: constraint);
+}
+
+/// A plugin as fetched, before it is vendored.
+final class Fetched {
+  Fetched(
+    this.manifest,
+    this.files, {
+    required String url,
+    String? path,
+    String? ref,
+    VersionConstraint? constraint,
+    String? commit,
+  }) : entry = LockEntry(
+         url: url,
+         path: path,
+         ref: ref,
+         constraint: constraint,
+         commit: commit,
+         version: manifest.version,
+         hash: filesHash(files),
+       );
+
+  final Manifest manifest;
+
+  /// `plugin.json` and every file it lists.
+  final Map<String, String> files;
+  final LockEntry entry;
+}
+
+/// Fetches plugins over the network, from git mirrors in [cache], or from
+/// disk relative to [root].
+final class Fetcher {
+  Fetcher({
+    required this.root,
+    required this.cache,
+    this.registry = registryUrl,
+  });
+
+  final String root;
+  final String cache;
+  final String registry;
+
+  /// Prints progress.
+  void Function(String line) log = (_) {};
+
+  Future<Fetched> fetch(Source source) => switch (source) {
+    RegistrySource() => _registry(source),
+    GitSource(:final url, :final path, :final ref, :final constraint) => _git(
+      url,
+      path,
+      ref: ref,
+      constraint: constraint,
+    ),
+    UrlSource(:final url) => _url(url),
+    LocalSource(:final path) => _local(path),
+  };
+
+  Future<Fetched> _registry(RegistrySource source) async {
+    log('Reading $registry');
+    final Map<String, RegistryEntry> entries;
+    try {
+      entries = parseRegistry(await _get(Uri.parse(registry)));
+    } on FormatException catch (e) {
+      throw PluginException(e.message);
+    }
+    final entry = entries[source.id];
+    if (entry == null) {
+      throw PluginException('no plugin ${source.id} in $registry');
+    }
+    final Fetched fetched;
+    if (parseSource(entry.url) case UrlSource(:final url)) {
+      if (source.ref != null || source.constraint != null) {
+        throw PluginException(
+          '${source.id} is served from $url, one version only',
+        );
+      }
+      fetched = await _url(url);
+    } else {
+      fetched = await _git(
+        entry.url,
+        entry.path,
+        ref: source.ref,
+        constraint: source.constraint,
+        id: source.id,
+      );
+    }
+    if (fetched.manifest.id != source.id) {
+      throw PluginException(
+        '${entry.url} holds ${fetched.manifest.id}, not ${source.id}',
+      );
+    }
+    return fetched;
+  }
+
+  Future<Fetched> _url(String url) async {
+    final base = Uri.parse(url);
+    if (base.scheme != 'https' && !_loopback(base.host)) {
+      throw PluginException('$url: plugins download over https only');
+    }
+    log('Fetching $url');
+    final (manifest, files) = await _read(
+      'plugin.json',
+      (path) => _get(base.resolve(path)),
+    );
+    return Fetched(manifest, files, url: url);
+  }
+
+  Future<Fetched> _local(String path) async {
+    final dir = p.normalize(p.absolute(root, path));
+    if (!File(p.join(dir, 'plugin.json')).existsSync()) {
+      throw PluginException('no plugin.json in $dir');
+    }
+    final (manifest, files) = await _read('plugin.json', (file) async {
+      final f = File(p.joinAll([dir, ...p.posix.split(file)]));
+      try {
+        return utf8.decode(f.readAsBytesSync());
+      } on FileSystemException {
+        throw PluginException('$file is missing in $dir');
+      } on FormatException {
+        throw PluginException('${f.path} is not UTF-8 text');
+      }
+    });
+    return Fetched(
+      manifest,
+      files,
+      url: p.posix.joinAll(p.split(p.relative(dir, from: root))),
+    );
+  }
+
+  Future<Fetched> _git(
+    String url,
+    String? path, {
+    String? ref,
+    VersionConstraint? constraint,
+    String? id,
+  }) async {
+    final repo = await _mirror(url);
+    String at(String file) => path == null ? file : '$path/$file';
+    final where = path == null ? url : '$url ($path)';
+
+    final String commit;
+    Version? tagged;
+    if (ref != null) {
+      commit =
+          await repo.resolve(ref) ??
+          (throw PluginException('no ref $ref in $url'));
+    } else {
+      id ??= _looseId(await repo.read('HEAD', at('plugin.json')), where);
+      final all = await repo.tags('$id-v');
+      final allowed = [
+        for (final version in all.keys)
+          if (constraint?.allows(version) ?? true) version,
+      ];
+      if (allowed.isEmpty) {
+        throw PluginException(
+          all.isEmpty
+              ? 'no $id-v<version> tags in $url; pin a branch or commit '
+                    'with #<ref>'
+              : 'no $id-v tag in $url matches $constraint; the latest is '
+                    '${Version.primary(all.keys.toList())}',
+        );
+      }
+      final version = tagged = Version.primary(allowed);
+      commit = all[version]!;
+      constraint ??= VersionConstraint.compatibleWith(version);
+    }
+
+    final (manifest, files) = await _read('plugin.json', (file) async {
+      return await repo.read(commit, at(file)) ??
+          (throw PluginException(
+            '$file is missing in $where at ${commit.substring(0, 7)}',
+          ));
+    });
+    if (tagged != null && (manifest.id != id || manifest.version != tagged)) {
+      throw PluginException(
+        'tag $id-v$tagged in $where holds ${manifest.id} ${manifest.version}',
+      );
+    }
+    return Fetched(
+      manifest,
+      files,
+      url: url,
+      path: path,
+      ref: ref,
+      constraint: constraint,
+      commit: commit,
+    );
+  }
+
+  /// A mirror of [url] in the cache, fetched now.
+  Future<_Repo> _mirror(String url) async {
+    final name = url
+        .replaceFirst(RegExp(r'/+$'), '')
+        .split(RegExp(r'[/:]'))
+        .last
+        .replaceFirst(RegExp(r'\.git$'), '')
+        .replaceAll(RegExp(r'[^\w.-]'), '_');
+    final key = sha256.convert(utf8.encode(url)).toString().substring(0, 12);
+    final dir = p.join(cache, 'git', '$name-$key');
+    final repo = _Repo(dir);
+    if (Directory(dir).existsSync()) {
+      log('Fetching $url');
+      await repo.git(['fetch', '--quiet', '--prune', 'origin']);
+      return repo;
+    }
+    log('Cloning $url');
+    final temp = '$dir.$pid';
+    Directory(p.dirname(dir)).createSync(recursive: true);
+    try {
+      await _Repo(p.dirname(dir)).git([
+        'clone',
+        '--quiet',
+        '--mirror',
+        '--filter=blob:none',
+        '--',
+        url,
+        temp,
+      ]);
+      Directory(temp).renameSync(dir);
+    } finally {
+      if (Directory(temp).existsSync()) {
+        Directory(temp).deleteSync(recursive: true);
+      }
+    }
+    return repo;
+  }
+}
+
+/// Reads [manifestPath] with [read], then every file it lists.
+Future<(Manifest, Map<String, String>)> _read(
+  String manifestPath,
+  Future<String> Function(String path) read,
+) async {
+  final text = await read(manifestPath);
+  final Manifest manifest;
+  try {
+    manifest = Manifest.parse(jsonDecode(text));
+  } on FormatException catch (e) {
+    throw PluginException('plugin.json: ${e.message}');
+  } on ManifestException catch (e) {
+    throw PluginException('$e');
+  }
+  return (
+    manifest,
+    {
+      manifestPath: text,
+      for (final file in manifest.files) file: await read(file),
+    },
+  );
+}
+
+String _looseId(String? text, String where) {
+  try {
+    if (jsonDecode(text ?? '') case {
+      'id': final String id,
+    } when isPluginId(id)) {
+      return id;
+    }
+  } on FormatException {
+    // Below.
+  }
+  throw PluginException('no plugin.json with an id in $where');
+}
+
+bool _loopback(String host) =>
+    host == 'localhost' ||
+    (InternetAddress.tryParse(host)?.isLoopback ?? false);
+
+Future<String> _get(Uri uri) async {
+  final client = HttpClient();
+  try {
+    final response = await (await client.getUrl(uri)).close();
+    final bytes = await response.fold(<int>[], (a, b) => a..addAll(b));
+    if (response.statusCode != HttpStatus.ok) {
+      throw PluginException('$uri: HTTP ${response.statusCode}');
+    }
+    return utf8.decode(bytes);
+  } on IOException catch (e) {
+    throw PluginException('$uri: $e');
+  } on FormatException {
+    throw PluginException('$uri is not UTF-8 text');
+  } finally {
+    client.close();
+  }
+}
+
+final class _Repo {
+  _Repo(this.dir);
+
+  final String dir;
+
+  Future<({int code, List<int> out, String err})> _run(
+    List<String> args,
+  ) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['-C', dir, ...args],
+        environment: {'GIT_TERMINAL_PROMPT': '0'},
+        stdoutEncoding: null,
+      );
+      return (
+        code: result.exitCode,
+        out: result.stdout as List<int>,
+        err: (result.stderr as String).trim(),
+      );
+    } on ProcessException {
+      throw PluginException('git plugins need git on PATH');
+    }
+  }
+
+  Future<List<int>> git(List<String> args) async {
+    final result = await _run(args);
+    if (result.code != 0) {
+      throw PluginException('git ${args.first} failed: ${result.err}');
+    }
+    return result.out;
+  }
+
+  Future<String?> resolve(String ref) async {
+    final result = await _run([
+      'rev-parse',
+      '--verify',
+      '--quiet',
+      '--end-of-options',
+      '$ref^{commit}',
+    ]);
+    return result.code == 0 ? utf8.decode(result.out).trim() : null;
+  }
+
+  /// Commits by version, from tags `<prefix><version>`.
+  Future<Map<Version, String>> tags(String prefix) async {
+    final out = await git([
+      'for-each-ref',
+      '--format=%(refname:strip=2) %(objectname) %(*objectname)',
+      'refs/tags/$prefix*',
+    ]);
+    return {
+      for (final line in const LineSplitter().convert(utf8.decode(out)))
+        if (line.split(' ') case [final tag, final object, final peeled])
+          ?_version(tag.substring(prefix.length)): peeled.isEmpty
+              ? object
+              : peeled,
+    };
+  }
+
+  /// The file at [path] in [commit], or null when it is missing.
+  Future<String?> read(String commit, String path) async {
+    final result = await _run(['cat-file', 'blob', '$commit:$path']);
+    if (result.code != 0) return null;
+    try {
+      return utf8.decode(result.out);
+    } on FormatException {
+      throw PluginException('$path is not UTF-8 text');
+    }
+  }
+}
+
+Version? _version(String text) {
+  try {
+    return Version.parse(text);
+  } on FormatException {
+    return null;
+  }
+}

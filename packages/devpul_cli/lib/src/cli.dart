@@ -2,13 +2,22 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'cache.dart';
 import 'instance.dart';
+import 'plugins/app.dart';
+import 'plugins/commands.dart' as plugins;
+import 'plugins/fetch.dart';
 import 'run.dart';
 import 'server.dart';
 
 const usage = '''
 Usage: devpul [options] [vm-service-url]
        devpul [options] run [flutter run or dart run arguments]
+       devpul add <plugin>[@version|#ref] [--path <dir>] [--yes]
+       devpul remove <id>
+       devpul list
+       devpul sync [--check]
+       devpul cache clean
 
 Serves the DevPul UI on 127.0.0.1 and opens it, connected to the app when a
 VM service URL is given. run starts flutter run, or dart run outside a
@@ -20,6 +29,19 @@ Options:
   --no-open        print links instead of opening a browser
   --plugin <file>  serve a plugin module to the UI and reload it on save
   -h, --help       show this help
+
+Plugins, run in the app root:
+  add          copy a plugin into lib/devpul/<id>/, record it in devpul.lock
+               and write lib/devpul/plugins.dart. <plugin> is a registry
+               name, a git URL, a plugin.json URL or a folder. @version takes
+               a pub version constraint, #ref a git branch, tag or commit.
+    --path     the plugin folder in a git repository
+    --yes      run the pub add a plugin needs without asking
+  remove       delete a plugin's folder and lock entry
+  list         plugins in devpul.lock
+  sync         write lib/devpul/plugins.dart from devpul.lock, offline
+    --check    exit 1 when it is stale instead
+  cache clean  delete the git mirrors devpul keeps
 ''';
 
 const defaultPort = 7171;
@@ -79,7 +101,124 @@ Options parseArgs(List<String> args) {
   return options;
 }
 
+const _pluginCommands = {'add', 'remove', 'list', 'sync', 'cache'};
+
+/// The parsed arguments of a plugin command.
+typedef PluginArgs = ({
+  String command,
+  List<String> rest,
+  Set<String> flags,
+  Map<String, String> options,
+});
+
+/// Throws a [FormatException] for a usage error.
+PluginArgs parsePluginArgs(List<String> args) {
+  final [command, ...tail] = args;
+  final (flags, options, count) = switch (command) {
+    'add' => ({'--yes'}, {'--path'}, 1),
+    'sync' => ({'--check'}, <String>{}, 0),
+    'remove' => (<String>{}, <String>{}, 1),
+    'cache' => (<String>{}, <String>{}, 1),
+    _ => (<String>{}, <String>{}, 0),
+  };
+  final rest = <String>[];
+  final setFlags = <String>{};
+  final setOptions = <String, String>{};
+  for (var i = 0; i < tail.length; i++) {
+    final [name, ...inline] = tail[i].split('=');
+    if (flags.contains(name) && inline.isEmpty) {
+      setFlags.add(name);
+    } else if (options.contains(name)) {
+      if (inline.isEmpty && i + 1 >= tail.length) {
+        throw FormatException('$name needs a value');
+      }
+      setOptions[name] = inline.isNotEmpty ? inline.join('=') : tail[++i];
+    } else if (tail[i].startsWith('-')) {
+      throw FormatException('unknown option ${tail[i]} for $command');
+    } else {
+      rest.add(tail[i]);
+    }
+  }
+  if (rest.length != count) {
+    throw FormatException(switch (count) {
+      0 => '$command takes no arguments',
+      _ when rest.isEmpty => '$command needs an argument',
+      _ => 'unexpected argument ${rest[1]}',
+    });
+  }
+  if (command == 'cache' && rest.single != 'clean') {
+    throw FormatException('unknown cache command ${rest.single}');
+  }
+  return (command: command, rest: rest, flags: setFlags, options: setOptions);
+}
+
+Future<int> _plugins(List<String> args) async {
+  final PluginArgs parsed;
+  final Source? source;
+  try {
+    parsed = parsePluginArgs(args);
+    source = parsed.command == 'add'
+        ? parseSource(parsed.rest.single, path: parsed.options['--path'])
+        : null;
+  } on FormatException catch (e) {
+    stderr.writeln('devpul: ${e.message}\n\n$usage');
+    return 64;
+  }
+  final terminal = stdin.hasTerminal && stdout.hasTerminal;
+  final console = plugins.Console(
+    out: stdout,
+    err: stderr,
+    ask: terminal ? _ask : null,
+    pubAdd: (executable, args) async {
+      final process = await Process.start(
+        executable,
+        args,
+        mode: ProcessStartMode.inheritStdio,
+        runInShell: Platform.isWindows,
+      );
+      return process.exitCode;
+    },
+  );
+  try {
+    if (parsed.command == 'cache') {
+      plugins.cacheClean(cacheDir(), console);
+      return 0;
+    }
+    final app = App.open(Directory.current.path);
+    switch (parsed.command) {
+      case 'add':
+        await plugins.add(
+          app,
+          Fetcher(root: app.root, cache: cacheDir()),
+          source!,
+          console,
+          yes: parsed.flags.contains('--yes'),
+        );
+      case 'remove':
+        plugins.remove(app, parsed.rest.single, console);
+      case 'list':
+        plugins.list(app, console);
+      case 'sync':
+        final check = parsed.flags.contains('--check');
+        if (!plugins.sync(app, console, check: check)) return 1;
+    }
+    return 0;
+  } on PluginException catch (e) {
+    stderr.writeln('devpul: ${e.message}');
+    return 1;
+  }
+}
+
+Future<bool> _ask(String question) async {
+  stdout.write('$question [y/N] ');
+  final answer = stdin.readLineSync()?.trim().toLowerCase();
+  return answer == 'y' || answer == 'yes';
+}
+
 Future<int> runCli(List<String> args) async {
+  if (args.isNotEmpty && _pluginCommands.contains(args.first)) {
+    return _plugins(args);
+  }
   final Options options;
   try {
     options = parseArgs(args);
