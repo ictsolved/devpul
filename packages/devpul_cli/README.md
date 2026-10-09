@@ -17,7 +17,7 @@ devpul run -d macos          # flutter run with these arguments, UI connected
 devpul run bin/server.dart   # dart run outside a Flutter project, hot reload on save
 devpul                       # just the UI, at http://127.0.0.1:7171
 devpul http://127.0.0.1:41234/AbCdEf12=/   # the UI connected to a running app
-devpul --plugin plugin.js run   # serve a plugin to the UI, reloaded on save
+devpul --plugin ./my_plugin run   # serve a plugin folder or file to the UI, reloaded on save
 ```
 
 Plugins, in the app root:
@@ -33,6 +33,14 @@ devpul list
 devpul sync                               # rewrite lib/devpul/plugins.dart, offline
 devpul sync --check                       # in CI: exit 1 when it is stale
 devpul cache clean
+```
+
+Writing a plugin:
+
+```sh
+devpul create my_plugin       # a plugin folder: JS tab, Dart, example app
+devpul create --dart my_plugin   # run again to add a half (--js, --dart) or restore files
+devpul check my_plugin        # the checks add and the registry run
 ```
 
 `add` copies the plugin into `lib/devpul/<id>/`, records it in `devpul.lock` and writes `lib/devpul/plugins.dart`; commit all three and call `DevpulPlugins.install()` in `main`. Git versions come from `<id>-v<version>` tags; `@` takes a pub version constraint, `#` a branch, tag or commit. A plugin that needs a package the app lacks stops `add` with the `pub add` command; `--yes` runs it. `add` will not overwrite a vendored copy with local edits. `sync` copies a plugin added from a folder again when the folder changed, so `sync --check` also fails when the copy is behind.
