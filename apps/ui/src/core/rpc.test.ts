@@ -150,6 +150,7 @@ describe('Connection pause state', () => {
       'Extension',
       'Isolate',
       'Debug',
+      'Service',
     ]);
     expect(ws.methods()).toContain('ext.devpul.backlog');
     expect(conn.state.paused).toEqual([]);
@@ -220,5 +221,30 @@ describe('Connection pause state', () => {
     expect(conn.state.paused).toEqual([ISO]);
     ws.close();
     expect(conn.state.paused).toEqual([]);
+  });
+});
+
+const registered = (service: string, method: string) => ({ kind: 'ServiceRegistered', service, method });
+
+describe('Connection services', () => {
+  it('tracks registered services and calls them on the first isolate', async () => {
+    const ws = await connect((req) => (req.method === 's1.reloadSources' ? { type: 'Success' } : vm('Resume')(req)));
+    ws.notify('Service', registered('reloadSources', 's1.reloadSources'));
+    ws.notify('Service', registered('hotRestart', 's1.hotRestart'));
+    expect(conn.state.services).toEqual({ reloadSources: 's1.reloadSources', hotRestart: 's1.hotRestart' });
+
+    await expect(conn.callService('reloadSources')).resolves.toEqual({ type: 'Success' });
+    expect(ws.sent.at(-1)).toMatchObject({ method: 's1.reloadSources', params: { isolateId: ISO } });
+
+    ws.notify('Service', { kind: 'ServiceUnregistered', service: 'hotRestart', method: 's1.hotRestart' });
+    expect(conn.state.services).toEqual({ reloadSources: 's1.reloadSources' });
+    await expect(conn.callService('hotRestart')).rejects.toThrow('hotRestart is not available.');
+  });
+
+  it('forgets services on close', async () => {
+    const ws = await connect(vm('Resume'));
+    ws.notify('Service', registered('reloadSources', 's1.reloadSources'));
+    ws.close();
+    expect(conn.state.services).toEqual({});
   });
 });

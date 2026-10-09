@@ -17,6 +17,8 @@ export interface ConnState {
   incompatible?: 'app' | 'ui';
   /** Isolates stopped in the debugger. */
   paused: string[];
+  /** Methods other clients registered, such as `reloadSources` from `flutter run`, by service name. */
+  services: Record<string, string>;
 }
 
 interface Pending {
@@ -34,7 +36,7 @@ export const isPaused = (state: ConnState | undefined, isolateId: string | undef
   isolateId !== undefined && state?.paused.includes(isolateId) === true;
 
 export class Connection {
-  state: ConnState = { status: 'closed', everOpened: false, paused: [] };
+  state: ConnState = { status: 'closed', everOpened: false, paused: [], services: {} };
 
   private ws: WebSocket | null = null;
   private nextId = 1;
@@ -93,6 +95,15 @@ export class Connection {
     });
   }
 
+  /** Calls a method another client registered, on the first isolate. */
+  async callService(service: string): Promise<unknown> {
+    const method = this.state.services[service];
+    if (!method) throw new Error(`${service} is not available.`);
+    const vm = await this.call('getVM');
+    const iso = isObject(vm) && Array.isArray(vm.isolates) ? vm.isolates.find(isObject) : undefined;
+    return this.call(method, { isolateId: iso?.id });
+  }
+
   private setStatus(status: ConnStatus): void {
     this.state = { ...this.state, status, everOpened: this.state.everOpened || status === 'open' };
     this.onState();
@@ -109,6 +120,17 @@ export class Connection {
     if (paused) this.paused.add(isolateId);
     else this.paused.delete(isolateId);
     this.state = { ...this.state, paused: [...this.paused] };
+    this.onState();
+  }
+
+  private service(event: JsonObject): void {
+    const { kind, service, method } = event;
+    if (typeof service !== 'string') return;
+    const services = { ...this.state.services };
+    if (kind === 'ServiceRegistered' && typeof method === 'string') services[service] = method;
+    else if (kind === 'ServiceUnregistered') delete services[service];
+    else return;
+    this.state = { ...this.state, services };
     this.onState();
   }
 
@@ -153,7 +175,7 @@ export class Connection {
       this.pending.clear();
       this.paused.clear();
       this.reattach.clear();
-      this.state = { ...this.state, paused: [] };
+      this.state = { ...this.state, paused: [], services: {} };
       this.setStatus('closed');
       this.scheduleRetry();
     };
@@ -169,7 +191,8 @@ export class Connection {
   }
 
   private async subscribe(): Promise<void> {
-    for (const streamId of ['Extension', 'Isolate', 'Debug']) {
+    // Subscribing to Service replays the registered services.
+    for (const streamId of ['Extension', 'Isolate', 'Debug', 'Service']) {
       try {
         await this.call('streamListen', { streamId });
       } catch {
@@ -288,6 +311,10 @@ export class Connection {
       const events: DevEvent[] = [];
       this.accept(event as VmExtensionEvent, events);
       if (events.length) this.onEvents(events);
+      return;
+    }
+    if (streamId === 'Service') {
+      this.service(event);
       return;
     }
     if (!isObject(event.isolate) || typeof event.isolate.id !== 'string') return;

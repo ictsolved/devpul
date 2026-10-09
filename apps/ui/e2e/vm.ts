@@ -22,6 +22,8 @@ export interface VmOptions {
   info?: JsonObject;
   /** Plugin sources by package id, served by `ext.devpul.plugin`. */
   plugins?: Record<string, string>;
+  /** Registers `reloadSources` and `hotRestart` as `flutter run` does. */
+  flutterRun?: boolean;
 }
 
 const contract = (file: string): unknown =>
@@ -111,6 +113,7 @@ export class FakeVm {
   readonly events: VmEvent[];
   private info: JsonObject;
   private readonly plugins: Record<string, string>;
+  private readonly flutterRun: boolean;
   private readonly server: WebSocketServer;
   private readonly streams = new Map<WebSocket, Set<string>>();
   private paused = false;
@@ -121,6 +124,7 @@ export class FakeVm {
     this.server = server;
     this.url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/e2eToken=/`;
     this.plugins = options.plugins ?? { my_plugin: PLUGIN };
+    this.flutterRun = options.flutterRun ?? false;
     this.info = this.hashed(options.info ?? (contract('info.json') as JsonObject));
     this.events = (options.events ?? fixtureEvents()).map((e) =>
       e.kind === 'devpul.app.info' ? { ...e, data: { ...e.data, data: this.hashed(e.data.data) } } : e,
@@ -225,8 +229,30 @@ export class FakeVm {
         const streams = this.streams.get(ws)!;
         if (streams.has(String(params.streamId))) throw new RpcError(103, 'Stream already subscribed');
         streams.add(String(params.streamId));
+        if (params.streamId === 'Service' && this.flutterRun) {
+          for (const service of ['reloadSources', 'hotRestart']) {
+            const event = {
+              type: 'Event',
+              kind: 'ServiceRegistered',
+              service,
+              method: `s1.${service}`,
+              alias: 'Flutter Tools',
+            };
+            queueMicrotask(() =>
+              ws.send(
+                JSON.stringify({ jsonrpc: '2.0', method: 'streamNotify', params: { streamId: 'Service', event } }),
+              ),
+            );
+          }
+        }
         return { type: 'Success' };
       }
+      case 's1.reloadSources':
+      case 's1.hotRestart':
+        if (!this.flutterRun) throw new RpcError(-32601, `Unknown method "${method}".`);
+        if (params.isolateId !== ISOLATE.id)
+          throw new RpcError(-32602, `Invalid 'isolateId': ${String(params.isolateId)}`);
+        return { type: 'Success' };
       case 'getVM':
         return { type: 'VM', name: 'vm', isolates: [ISOLATE], isolateGroups: [GROUP] };
       case 'getIsolate':

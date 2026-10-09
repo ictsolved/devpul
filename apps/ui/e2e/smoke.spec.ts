@@ -154,6 +154,26 @@ test('disables actions while the app is paused', async ({ page, vm }) => {
   expect(vm.callsTo('ext.devpul.action')).toEqual([{ isolateId: 'isolates/1', name: 'Clear cache' }]);
 });
 
+test('hides hot reload and restart without flutter run', async ({ page, vm }) => {
+  await connect(page, vm);
+  await expect(page.getByRole('button', { name: 'Actions' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reload' })).toHaveCount(0);
+});
+
+test.describe('under flutter run', () => {
+  test.use({ vmOptions: { flutterRun: true } });
+
+  test('hot reloads and restarts from the buttons and keys', async ({ page, vm }) => {
+    await connect(page, vm);
+    await page.getByRole('button', { name: 'Reload' }).click();
+    await expect(page.getByRole('status')).toHaveText('Reloaded');
+    await page.keyboard.press('Shift+R');
+    await expect(page.getByRole('status')).toHaveText('Restarted');
+    expect(vm.callsTo('s1.reloadSources')).toEqual([{ isolateId: 'isolates/1' }]);
+    expect(vm.callsTo('s1.hotRestart')).toEqual([{ isolateId: 'isolates/1' }]);
+  });
+});
+
 test('static pages load under the CSP', async ({ page }) => {
   for (const { path } of PAGES) {
     await page.goto(`./${path}`);

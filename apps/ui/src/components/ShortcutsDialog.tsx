@@ -50,6 +50,15 @@ export function ShortcutsDialog({ open, onClose }: Props) {
               >
                 Switch tabs
               </Row>
+              <Row
+                keys={
+                  <>
+                    <Key>r</Key> <Key>R</Key>
+                  </>
+                }
+              >
+                Hot reload, hot restart (apps started with flutter run)
+              </Row>
               <Row keys={<Key>?</Key>}>This list</Row>
             </tbody>
           </table>

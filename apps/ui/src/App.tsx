@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { CircleHelp, Settings as SettingsIcon, Trash2 } from 'lucide-react';
+import { CircleHelp, RefreshCw, RotateCcw, Settings as SettingsIcon, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { appName, SessionHeader, sessionFields } from './components/SessionHeader';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
@@ -45,6 +45,14 @@ const nextN = () => ++counter;
 const localOrigin = isLoopback(location.hostname);
 const pageTitle = document.title;
 const LABEL = 'max-[560px]:hidden';
+// Registered by `flutter run`, which reloads every device it runs.
+const HOT = {
+  reloadSources: { label: 'Reload', done: 'Reloaded', tip: 'Hot reload (r)' },
+  hotRestart: { label: 'Restart', done: 'Restarted', tip: 'Hot restart (R)' },
+} as const;
+type Hot = keyof typeof HOT;
+const hotTargets = (service: Hot, connections: ConnEntry[], states: Record<string, ConnState>) =>
+  connections.filter((c) => states[c.id]?.status === 'open' && states[c.id]?.services[service]);
 
 export function App() {
   const [settings, setSettingsState] = useState<Settings>(() => load('settings', defaultSettings));
@@ -284,6 +292,19 @@ export function App() {
     );
   };
 
+  const runHot = useCallback(
+    (service: Hot) => {
+      const { connections: all, states: now } = latest.current;
+      const targets = hotTargets(service, all, now);
+      if (!targets.length) return;
+      Promise.all(targets.map((c) => live.current.get(c.id)?.callService(service))).then(
+        () => flash(HOT[service].done),
+        (err: unknown) => flash(`${HOT[service].label} failed: ${rpcMessage(err)}`),
+      );
+    },
+    [flash],
+  );
+
   const runs = store.runs;
   // Runs change with every event; the labels rarely do. A stable runLabel lets list rows skip re-rendering.
   const labels = useMemo(
@@ -379,6 +400,9 @@ export function App() {
       } else if (e.key === '/') {
         e.preventDefault();
         filterRef.current?.focus();
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        runHot(e.key === 'r' ? 'reloadSources' : 'hotRestart');
       } else if (/^[1-9]$/.test(e.key)) {
         const id = tabIds.split('|')[Number(e.key) - 1];
         if (id) setTab(id);
@@ -386,7 +410,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [tabIds]);
+  }, [tabIds, runHot]);
 
   const hasData = store.size > 0;
   useEffect(() => {
@@ -511,6 +535,17 @@ export function App() {
                 <span className="max-w-80 truncate text-xs text-primary max-[860px]:hidden" role="status">
                   {notice}
                 </span>
+              )}
+              {(Object.keys(HOT) as Hot[]).map(
+                (service) =>
+                  hotTargets(service, connections, states).length > 0 && (
+                    <Tip key={service} content={HOT[service].tip}>
+                      <Button type="button" variant="outline" size="xs" onClick={() => runHot(service)}>
+                        {service === 'reloadSources' ? <RefreshCw /> : <RotateCcw />}
+                        {HOT[service].label}
+                      </Button>
+                    </Tip>
+                  ),
               )}
               <ActionsMenu apps={actions} onRun={runAction} />
               <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
