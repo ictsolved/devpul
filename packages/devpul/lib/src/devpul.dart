@@ -16,6 +16,7 @@ const _off =
     bool.fromEnvironment('dart.vm.product') ||
     bool.fromEnvironment('dart.vm.profile');
 const _web = bool.fromEnvironment('dart.library.js_interop');
+const _flutter = bool.fromEnvironment('dart.library.ui');
 
 /// Envelope `v` and handshake `protocol`.
 const protocolVersion = 1;
@@ -232,11 +233,33 @@ abstract final class Devpul {
     });
   }
 
-  // A later `flutter attach` moves serverUri to its DDS and subscribes to
-  // the Extension stream, so the link is checked again then.
+  static bool get _linking =>
+      !_web && _config.uiUrl != null && _config.console != ConsoleMode.off;
+
+  // A Flutter app starts before `flutter run` or `flutter attach` puts DDS in
+  // front of the VM service, and the VM's own URL then redirects, which
+  // browsers do not follow for websockets. The tool subscribes to the
+  // Extension stream through DDS, so the link waits for that.
+  static Future<void> _startLink() async {
+    if (!_linking) return;
+    if (!_flutter) return _printLink();
+    try {
+      if ((await developer.Service.getInfo()).serverUri == null) return;
+    } catch (_) {
+      return;
+    }
+    var listening = false;
+    // Outside any test zone; a Flutter app outlives it.
+    Zone.root.createPeriodicTimer(const Duration(seconds: 1), (_) {
+      final now = developer.extensionStreamHasListener;
+      if (now && !listening) unawaited(_printLink());
+      listening = now;
+    });
+  }
+
   static Future<void> _printLink() async {
     final base = _config.uiUrl;
-    if (_web || base == null || _config.console == ConsoleMode.off) return;
+    if (!_linking || base == null) return;
     try {
       final uri = (await developer.Service.getInfo()).serverUri;
       if (uri == null) return;
@@ -250,11 +273,11 @@ abstract final class Devpul {
   }
 
   static void _emit(String kind, Map<String, Object?> data, int now) {
-    if (_backlog.register()) unawaited(_printLink());
+    if (_backlog.register()) unawaited(_startLink());
     // A listener that shows up late (flutter attach) still learns which app
-    // this is.
+    // this is, and the link may have changed.
     final listening = developer.extensionStreamHasListener;
-    if (listening && !_listening) unawaited(_printLink());
+    if (listening && !_listening && !_flutter) unawaited(_printLink());
     final info = _sessionInfo;
     if (listening && !_listening && info != null && kind != 'app.session') {
       _listening = true;
