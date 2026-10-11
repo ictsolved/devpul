@@ -15,6 +15,8 @@ void main() {
     params: const [DevpulParam.text('text', initial: 'pong')],
   );
   Devpul.plugin('e2e', () => 'export default {}');
+  final cart = <String, Object?>{};
+  Devpul.handle('cart.set', (args) => cart..addAll(args), writes: true);
   Devpul.log('hello', level: 'warn');
   DevpulHttp.request(
     method: 'get',

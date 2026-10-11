@@ -28,6 +28,13 @@ void Function(String kind, Map<String, Object?> event)? debugOnPost;
 Future<Object?> debugRunAction(String name, [Map<String, Object?>? args]) =>
     Devpul._runAction(name, args);
 
+/// Runs a handler the way `ext.devpul.call` does. Tests only.
+Future<Object?> debugRunCall(
+  String name, [
+  Map<String, Object?>? args,
+  bool writes = false,
+]) => Devpul._runCall(name, args, writes: writes);
+
 /// What `ext.devpul.info` returns. Tests only.
 Map<String, Object?> debugInfo() => Devpul._info();
 
@@ -36,6 +43,11 @@ String debugPluginSource(String id) => Devpul._pluginSource(id);
 
 typedef _Action = ({
   List<DevpulParam> params,
+  FutureOr<Object?> Function(Map<String, Object?> args) run,
+});
+
+typedef _Handler = ({
+  bool writes,
   FutureOr<Object?> Function(Map<String, Object?> args) run,
 });
 
@@ -70,6 +82,7 @@ abstract final class Devpul {
   static final _backlog = _Backlog();
   static final _limits = Limits();
   static final _actions = <String, _Action>{};
+  static final _handlers = <String, _Handler>{};
   static final _plugins = <String, _Plugin>{};
 
   static void emit(String kind, Map<String, Object?> data) {
@@ -167,6 +180,19 @@ abstract final class Devpul {
     _infoChanged();
   }
 
+  /// Answers `context.request(name, args)` from a plugin with what [run]
+  /// returns, as JSON. Name it `<plugin id>.<method>`. A [writes] handler
+  /// runs only while Allow writes is on in the UI. Registering a name again
+  /// replaces it.
+  static void handle(
+    String name,
+    FutureOr<Object?> Function(Map<String, Object?> args) run, {
+    bool writes = false,
+  }) {
+    if (!enabled) return;
+    _handlers[name] = (writes: writes, run: run);
+  }
+
   /// Offers a browser plugin to the UI, which runs it after the user
   /// approves it. [id] is the plugin id; approvals are kept per id and
   /// source. [source] is an ES module; its SHA-256 goes in the handshake so
@@ -207,6 +233,21 @@ abstract final class Devpul {
       for (final p in action.params) p.name: p.read(args?[p.name]),
     };
     return toJsonSafe(await action.run(values));
+  }
+
+  static Future<Object?> _runCall(
+    String name,
+    Map<String, Object?>? args, {
+    required bool writes,
+  }) async {
+    final handler = _handlers[name];
+    if (handler == null) throw _CallError('No handler named $name.');
+    if (handler.writes && !writes) {
+      throw _CallError(
+        '$name changes the app; turn on Allow writes in the Plugins tab.',
+      );
+    }
+    return toJsonSafe(await handler.run(args ?? {}));
   }
 
   static String _pluginSource(String id) {
@@ -374,6 +415,16 @@ final class _Backlog {
         ),
       };
     });
+    _extension('call', (params) async {
+      final args = params['args'];
+      return {
+        'result': await Devpul._runCall(
+          params['name'] ?? '',
+          args == null ? null : (jsonDecode(args) as Map).cast(),
+          writes: params['writes'] == 'true',
+        ),
+      };
+    });
     _extension(
       'plugin',
       (params) => {'source': Devpul._pluginSource(params['id'] ?? '')},
@@ -413,4 +464,13 @@ final class _Backlog {
       // Already registered in this isolate.
     }
   }
+}
+
+final class _CallError implements Exception {
+  _CallError(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

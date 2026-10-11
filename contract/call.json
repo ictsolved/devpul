@@ -1,0 +1,20 @@
+{
+  "request": {
+    "name": "cart.set",
+    "args": "{\"sku\":\"abc-1\",\"qty\":2}",
+    "writes": "true"
+  },
+  "result": {
+    "result": {
+      "sku": "abc-1",
+      "qty": 2
+    }
+  },
+  "refused": {
+    "code": -32000,
+    "message": "Server error",
+    "data": {
+      "details": "cart.set changes the app; turn on Allow writes in the Plugins tab."
+    }
+  }
+}

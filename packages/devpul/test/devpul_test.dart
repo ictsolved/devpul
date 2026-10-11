@@ -1,6 +1,11 @@
 import 'package:devpul/devpul.dart';
 import 'package:devpul/src/devpul.dart'
-    show debugInfo, debugOnPost, debugPluginSource, debugRunAction;
+    show
+        debugInfo,
+        debugOnPost,
+        debugPluginSource,
+        debugRunAction,
+        debugRunCall;
 import 'package:devpul/src/version.dart';
 import 'package:test/test.dart';
 
@@ -171,6 +176,40 @@ void main() {
     expect(() => debugRunAction('nope'), throwsArgumentError);
   });
 
+  test('handlers take JSON args and replace on register', () async {
+    Devpul.handle(
+      'cart.get',
+      (args) => {'sku': args['sku'], 'at': DateTime.utc(2026)},
+    );
+    expect(await debugRunCall('cart.get', {'sku': 'a'}), {
+      'sku': 'a',
+      'at': '2026-01-01T00:00:00.000Z',
+    });
+    expect(await debugRunCall('cart.get'), {
+      'sku': null,
+      'at': '2026-01-01T00:00:00.000Z',
+    });
+    Devpul.handle('cart.get', (_) async => 2);
+    expect(await debugRunCall('cart.get'), 2);
+    expect(
+      () => debugRunCall('cart.nope'),
+      throwsA(message('No handler named cart.nope.')),
+    );
+  });
+
+  test('writes handlers refuse with writes off', () async {
+    var runs = 0;
+    Devpul.handle('cart.clear', (_) => ++runs, writes: true);
+    expect(
+      () => debugRunCall('cart.clear'),
+      throwsA(message(contains('turn on Allow writes'))),
+    );
+    expect(runs, 0);
+    expect(await debugRunCall('cart.clear', null, true), 1);
+    Devpul.handle('cart.get', (_) => runs);
+    expect(await debugRunCall('cart.get', null, true), 1);
+  });
+
   test('limits mute a kind and its children, never app kinds', () async {
     Devpul.limit('cart', 0);
     Devpul.limit('app', 0);
@@ -194,6 +233,11 @@ void main() {
     Devpul.error('x', null);
     Devpul.log('x');
     Devpul.action('x', (_) => null);
+    Devpul.handle('x.y', (_) => null);
     expect(events, isEmpty);
+    expect(() => debugRunCall('x.y'), throwsA(isA<Exception>()));
   });
 }
+
+Matcher message(Object matcher) =>
+    isA<Exception>().having((e) => '$e', 'message', matcher);

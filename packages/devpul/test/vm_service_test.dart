@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
 
+import 'golden.dart';
+
 void main() {
   late Process app;
   late VmService service;
@@ -143,6 +145,34 @@ void main() {
     });
     expect(result['result'], 'hi');
     expect(call('action', {'name': 'missing'}), throwsA(isA<RPCError>()));
+  });
+
+  test('calls handlers, matching contract/call.json', () async {
+    final request = {
+      'name': 'cart.set',
+      'args': jsonEncode({'sku': 'abc-1', 'qty': 2}),
+      'writes': 'true',
+    };
+    final result = await call('call', request);
+    expect(result['result'], {'sku': 'abc-1', 'qty': 2});
+    late RPCError refused;
+    try {
+      await call('call', Map.of(request)..remove('writes'));
+      fail('ran with writes off');
+    } on RPCError catch (e) {
+      refused = e;
+    }
+    expect(call('call', {'name': 'cart.nope'}), throwsA(isA<RPCError>()));
+    expectGolden('call.json', {
+      'request': request,
+      'result': result,
+      'refused': {
+        'code': refused.code,
+        'message': refused.message,
+        // The VM echoes the request, with ids that change per run.
+        'data': {'details': refused.data!['details']},
+      },
+    });
   });
 
   test('serves plugin sources', () async {
