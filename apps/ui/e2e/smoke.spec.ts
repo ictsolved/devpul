@@ -160,7 +160,7 @@ test.describe('with a plugin that writes', () => {
     const button = (label, run) => {
       const b = document.createElement('button');
       b.textContent = label;
-      b.onclick = () => run().then((r) => (out.textContent = JSON.stringify(r)), (e) => (out.textContent = e.message ?? e.data.details));
+      b.onclick = () => run().then((r) => (out.textContent = JSON.stringify(r)), (e) => (out.textContent = e.data?.details ?? e.message));
       el.append(b);
     };
     button('Request', () => context.request('cart.set', { sku: 'abc-1', qty: 2 }));
