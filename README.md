@@ -11,7 +11,7 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
 
-**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).** Sources in [apps/docs](apps/docs).
+**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [IDE setup](https://devpul.saradgajurel.com.np/docs/ide/), [command line](https://devpul.saradgajurel.com.np/docs/cli/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/), [security](https://devpul.saradgajurel.com.np/docs/security/), [limits](https://devpul.saradgajurel.com.np/docs/limits/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).** Sources in [apps/docs](apps/docs).
 
 ## How it works
 
@@ -25,10 +25,10 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
 
    ```yaml
    dependencies:
-     devpul: ^0.2.0
-     devpul_dio: ^0.2.0 # Dio
-     devpul_http: ^0.2.0 # package:http
-     devpul_flutter: ^0.2.0 # Flutter errors, debugPrint and routes
+     devpul: ^1.0.0-dev.1
+     devpul_dio: ^1.0.0-dev.1 # Dio
+     devpul_http: ^1.0.0-dev.1 # package:http
+     devpul_flutter: ^1.0.0-dev.1 # Flutter errors, debugPrint and routes
    ```
 
 2. Hook them up:
@@ -38,8 +38,12 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
      DevpulFlutter.install();
      Devpul.session({'name': 'My app', 'version': '1.0.0', 'flavor': 'dev'});
      dio.interceptors.add(DevpulDioInterceptor());
-     runApp(MaterialApp(navigatorObservers: [DevpulNavigatorObserver()], home: const Home()));
-   }
+     runApp(
+       MaterialApp(
+         navigatorObservers: [DevpulNavigatorObserver()],
+         home: const Home(),
+       ),
+     );
    ```
 
 3. Run the app with the command line in place of `flutter run`; it opens DevPul connected to the app:
@@ -49,19 +53,19 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
    devpul run
    ```
 
-   Any other run prints a link that opens DevPul connected to it, and IDEs show DevPul as a DevTools extension.
+   Any other debug run prints a link that opens DevPul connected to it, and IDEs show DevPul as a DevTools extension.
 
 The [example app](examples/devpul_example) uses every package.
 
 ## Packages
 
-| Package                                   | What it does                                                                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| [devpul](packages/devpul)                 | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible. |
-| [devpul_dio](packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                |
-| [devpul_http](packages/devpul_http)       | `DevpulClient` for package:http.                                                                                               |
-| [devpul_flutter](packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`.                                              |
-| [devpul_cli](packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1.                                                   |
+| Package                                                   | What it does                                                                                                                   |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [devpul](https://pub.dev/packages/devpul)                 | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible. |
+| [devpul_dio](https://pub.dev/packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                |
+| [devpul_http](https://pub.dev/packages/devpul_http)       | `DevpulClient` for package:http.                                                                                               |
+| [devpul_flutter](https://pub.dev/packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`.                                              |
+| [devpul_cli](https://pub.dev/packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1.                                                   |
 
 ## In the browser
 
@@ -76,6 +80,8 @@ The [example app](examples/devpul_example) uses every package.
 - Events cross the VM service as JSON. Very large or very frequent events cost app memory and time; `maxValueLength`, `backlogSize` and `ignoreUrls` keep that bounded.
 - Configuration does not cross isolates.
 - No request replay or mocking.
+
+The [limits](https://devpul.saradgajurel.com.np/docs/limits/) page has the rest, and [DevPul, DevTools and talker](https://devpul.saradgajurel.com.np/docs/compare/) when another tool fits better.
 
 ## Development
 

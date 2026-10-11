@@ -6,7 +6,7 @@ Core of [DevPul](https://devpul.saradgajurel.com.np): streams HTTP calls, errors
 
 ```yaml
 dependencies:
-  devpul: ^0.2.0
+  devpul: ^1.0.0-dev.1
 ```
 
 Add [devpul_dio](https://pub.dev/packages/devpul_dio) for Dio, [devpul_http](https://pub.dev/packages/devpul_http) for package:http and [devpul_flutter](https://pub.dev/packages/devpul_flutter) for Flutter errors, `debugPrint` and routes.
@@ -29,11 +29,11 @@ void main() {
 }
 ```
 
-Run the app in debug mode and paste the VM service URL it prints into [DevPul](https://devpul.saradgajurel.com.np). For plain Dart use `dart run --enable-vm-service`.
-
-Actions show in the UI's Actions menu and run in the app when clicked. `DevpulConfig` sets console output, size limits, ignore rules and opt-in redaction. `DevpulHttp` is the building block for HTTP client adapters. See the [core API](https://devpul.saradgajurel.com.np/docs/api/), [adapter guide](https://devpul.saradgajurel.com.np/docs/adapters/) and [event contract](https://devpul.saradgajurel.com.np/docs/events/).
+Run the app with `devpul run` from [devpul_cli](https://pub.dev/packages/devpul_cli), or click the `DevPul` link it prints in any debug run. The [core API](https://devpul.saradgajurel.com.np/docs/api/) page covers configuration, redaction, limits and handlers; [getting started](https://devpul.saradgajurel.com.np/docs/) the whole setup.
 
 ## Limits
 
 - Debug builds, and profile builds built with `--dart-define=DEVPUL_PROFILE=true`. Release builds never emit.
 - Configuration is per isolate.
+
+See [limits](https://devpul.saradgajurel.com.np/docs/limits/).

@@ -6,26 +6,29 @@ Flutter hooks for [DevPul](https://devpul.saradgajurel.com.np). Sends `FlutterEr
 
 ```yaml
 dependencies:
-  devpul: ^0.2.0
-  devpul_flutter: ^0.2.0
+  devpul: ^1.0.0-dev.1
+  devpul_flutter: ^1.0.0-dev.1
 ```
 
 ## Usage
 
 ```dart
 import 'package:devpul_flutter/devpul_flutter.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   DevpulFlutter.install();
   DevpulFlutter.captureDebugPrint(); // optional: debugPrint to the Logs tab
-  runApp(MaterialApp(
-    navigatorObservers: [DevpulNavigatorObserver()], // optional: route events
-    home: const Home(),
-  ));
+  runApp(
+    MaterialApp(
+      navigatorObservers: [DevpulNavigatorObserver()], // optional: route events
+      home: const Home(),
+    ),
+  );
 }
 ```
 
-Existing `FlutterError.onError` and `PlatformDispatcher.onError` handlers keep running, so crash reporters are unaffected.
+Existing `FlutterError.onError` and `PlatformDispatcher.onError` handlers keep running, so crash reporters are unaffected. See the [Flutter page](https://devpul.saradgajurel.com.np/docs/flutter/).
 
 ## Limits
 
