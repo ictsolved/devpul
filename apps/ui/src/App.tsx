@@ -321,7 +321,9 @@ export function App() {
     callApp(e, 'ext.devpul.action', { name, ...(args && { args: JSON.stringify(args) }) }).then(
       (result) => {
         const value = result && typeof result === 'object' ? (result as { result?: unknown }).result : undefined;
-        flash(`${name}: ${value === undefined || value === null ? 'done' : String(value)}`);
+        const text =
+          value === undefined || value === null ? 'done' : typeof value === 'string' ? value : JSON.stringify(value);
+        flash(`${name}: ${text}`);
       },
       (err: unknown) => flash(`${name} failed: ${rpcMessage(err)}`),
     );
