@@ -1,7 +1,6 @@
 import { cn } from 'cn';
-import { CircleHelp, RefreshCw, RotateCcw, Settings as SettingsIcon, Trash2 } from 'lucide-react';
+import { CircleHelp, RotateCcw, Settings as SettingsIcon, Trash2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { appName, SessionHeader, sessionFields } from './components/SessionHeader';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Tip } from './components/Tip';
@@ -11,9 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { approve } from './core/approvals';
 import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
+import { parseInfo } from './core/info';
 import { formatTime } from './core/json';
 import { Persist } from './core/persist';
 import { type ConnState, Connection, isPaused } from './core/rpc';
+import { appName, sessionFields } from './core/session';
 import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl, toWsUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
@@ -28,6 +29,7 @@ import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOf
 import { type AppCall, PluginTab } from './features/plugins/PluginTab';
 import { matches, registry } from './features/plugins/plugins';
 import { SettingsDialog } from './features/settings/SettingsDialog';
+import { type Limited, StatusBar } from './features/status/StatusBar';
 import { cli, listenCli } from './lib/cli';
 import { devtools, hostUri, listenHost } from './lib/devtools';
 import { pageUrl } from './lib/links';
@@ -195,6 +197,8 @@ export function App() {
 
   const storeConnections = (next: ConnEntry[]) => {
     setConnections(next);
+    // A stopped connection reports no state change.
+    setStates((s) => Object.fromEntries(Object.entries(s).filter(([id]) => next.some((c) => c.id === id))));
     if (!devtools) save('connections', next);
   };
 
@@ -387,6 +391,15 @@ export function App() {
       : [],
   );
 
+  const openRuns = latestRuns(runs).filter((r) => r.info && states[r.conn]?.status === 'open');
+  const limited = openRuns.flatMap((run): Limited[] =>
+    Object.entries(run.info ? parseInfo(run.info.data).limits : {}).map(([kind, perSecond]) => ({
+      app: openRuns.length > 1 ? runName(run) : undefined,
+      kind,
+      perSecond,
+    })),
+  );
+
   const errors = store.errors;
   const logs = store.logs;
   const allOther = store.other;
@@ -485,6 +498,34 @@ export function App() {
     </>
   );
 
+  const controls = (
+    <>
+      {(Object.keys(HOT) as Hot[]).map(
+        (service) =>
+          hotTargets(service, connections, states).length > 0 && (
+            <Tip key={service} content={HOT[service].tip}>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                aria-label={HOT[service].label}
+                onClick={() => runHot(service)}
+              >
+                {service === 'reloadSources' ? <Zap /> : <RotateCcw />}
+                <span className={LABEL}>{HOT[service].label}</span>
+              </Button>
+            </Tip>
+          ),
+      )}
+      <ActionsMenu apps={actions} onRun={runAction} />
+      <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
+      <Button type="button" variant="outline" size="xs" aria-label="Clear" onClick={clearAll}>
+        <Trash2 />
+        <span className={LABEL}>Clear</span>
+      </Button>
+    </>
+  );
+
   const connectionBar = (hero: boolean) => (
     <ConnectionBar
       connections={connections}
@@ -493,6 +534,7 @@ export function App() {
       localOrigin={localOrigin}
       managed={devtools}
       hero={hero}
+      controls={hero ? undefined : controls}
       onAdd={addConnection}
       onRemove={removeConnection}
     />
@@ -510,9 +552,9 @@ export function App() {
         />
       ) : (
         <>
-          <header className="flex items-start gap-3 border-b bg-card px-3 py-2 max-[860px]:flex-wrap">
+          <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1.5 border-b bg-card px-3 py-2 max-[860px]:grid-cols-[minmax(0,1fr)_auto]">
             <a
-              className="flex items-center gap-1.5 pt-1 text-[15px] font-bold whitespace-nowrap max-[860px]:flex-1"
+              className="col-start-1 row-start-1 flex items-center gap-1.5 pt-1 text-[15px] font-bold whitespace-nowrap"
               // DevTools passes the connection in the query.
               href={devtools ? `./${location.search}` : './'}
               aria-label="DevPul home"
@@ -521,7 +563,7 @@ export function App() {
               DevPul
             </a>
             {connectionBar(false)}
-            <nav className="flex gap-1.5">
+            <nav className="col-start-3 row-start-1 flex gap-1.5 max-[860px]:col-start-2">
               {tools}
               <Tip content="Help opens in a new tab. Press ? for shortcuts.">
                 <Button asChild variant="outline" size="sm">
@@ -534,8 +576,8 @@ export function App() {
             </nav>
           </header>
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
-            <div className="flex min-h-9 items-center gap-3 border-b bg-card px-3 max-[860px]:flex-wrap max-[860px]:gap-1.5 max-[860px]:pb-1.5">
-              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto p-0">
+            <div className="flex min-h-9 items-center border-b bg-card px-3">
+              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto p-0 [scrollbar-width:none]">
                 {tabs.map((t) => (
                   <TabsTrigger
                     key={t.id}
@@ -548,7 +590,13 @@ export function App() {
                     {t.icon && (
                       <span className="inline-flex" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />
                     )}
-                    {t.label}
+                    {t.id.startsWith('plugin:') ? (
+                      <Tip content={t.label} whenCut>
+                        <span className="max-w-40 truncate">{t.label}</span>
+                      </Tip>
+                    ) : (
+                      t.label
+                    )}
                     {t.count > 0 && (
                       <Badge
                         variant={t.alert ? 'destructive' : 'secondary'}
@@ -560,29 +608,6 @@ export function App() {
                   </TabsTrigger>
                 ))}
               </TabsList>
-              <SessionHeader session={latestSession} fields={settings.headerFields} runs={runs.size} />
-              {notice && (
-                <span className="max-w-80 truncate text-xs text-primary max-[860px]:hidden" role="status">
-                  {notice}
-                </span>
-              )}
-              {(Object.keys(HOT) as Hot[]).map(
-                (service) =>
-                  hotTargets(service, connections, states).length > 0 && (
-                    <Tip key={service} content={HOT[service].tip}>
-                      <Button type="button" variant="outline" size="xs" onClick={() => runHot(service)}>
-                        {service === 'reloadSources' ? <RefreshCw /> : <RotateCcw />}
-                        {HOT[service].label}
-                      </Button>
-                    </Tip>
-                  ),
-              )}
-              <ActionsMenu apps={actions} onRun={runAction} />
-              <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
-              <Button type="button" variant="outline" size="xs" onClick={clearAll}>
-                <Trash2 />
-                Clear
-              </Button>
             </div>
             <PluginOffers offers={pluginOffers.offers} onAllow={pluginOffers.allow} onDismiss={pluginOffers.dismiss} />
             <main className="flex min-h-0 flex-1">
@@ -630,6 +655,17 @@ export function App() {
               </TabsContent>
             </main>
           </Tabs>
+          <StatusBar
+            session={latestSession}
+            fields={settings.statusFields}
+            states={connections.map((c) => states[c.id])}
+            runs={runs.size}
+            notice={notice}
+            memory={{ count: store.size, bytes: store.bytes, dropped: store.dropped, maxBytes: settings.maxMB * MB }}
+            limited={limited}
+            pluginErrors={pluginOffers.errors}
+            onOpenSettings={openSettings}
+          />
         </>
       )}
 

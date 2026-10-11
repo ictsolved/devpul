@@ -1,6 +1,6 @@
 import { cn } from 'cn';
 import { Plug, X } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tip } from '../../components/Tip';
@@ -28,12 +28,14 @@ interface Props {
   /** The host passes the connection: no URL field, no remove buttons. */
   managed?: boolean;
   hero?: boolean;
+  /** Shown on the right of the connection chips. */
+  controls?: ReactNode;
   onAdd: (wsUrl: string) => void;
   onRemove: (id: string) => void;
 }
 
 export function ConnectionBar(props: Props) {
-  const { connections, states, names, localOrigin, managed, hero, onAdd, onRemove } = props;
+  const { connections, states, names, localOrigin, managed, hero, controls, onAdd, onRemove } = props;
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -54,16 +56,14 @@ export function ConnectionBar(props: Props) {
     return s?.status === 'closed' && !s.everOpened;
   });
 
+  // In the header grid: the URL field between logo and nav, the rows below it running to the right edge.
+  const row = hero ? undefined : 'col-[2/-1] max-[860px]:col-span-full';
+  const first = 'col-start-2 row-start-1 max-[860px]:col-span-full max-[860px]:row-start-2';
   return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-1 flex-col gap-1.5',
-        hero ? 'w-full flex-none items-center' : 'max-[860px]:order-3 max-[860px]:basis-full',
-      )}
-    >
+    <div className={hero ? 'flex w-full flex-col items-center gap-1.5' : 'contents'}>
       {!managed && (
         <form
-          className={cn('flex gap-1.5', hero && 'w-full flex-wrap justify-center')}
+          className={cn('flex gap-1.5', hero ? 'w-full flex-wrap justify-center' : first)}
           onSubmit={(e) => {
             e.preventDefault();
             add(text);
@@ -93,40 +93,51 @@ export function ConnectionBar(props: Props) {
           </Button>
         </form>
       )}
-      {connections.length > 0 && (
-        <ul className={cn('flex flex-wrap gap-1.5', hero && 'justify-center')} aria-label="Connections">
-          {connections.map((c) => {
-            const s = states[c.id];
-            const status = s?.status ?? 'closed';
-            return (
-              <Tip key={c.id} content={c.url} code>
-                <li className="inline-flex items-center gap-1.5 rounded-full border py-px pr-1 pl-[9px] text-xs">
-                  <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
-                  <span>{names[c.id] ?? connectionLabel(c.url)}</span>
-                  {s?.paused.length ? <span className="text-warning">paused</span> : null}
-                  {!managed && (
-                    <button
-                      type="button"
-                      className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
-                      onClick={() => onRemove(c.id)}
-                      aria-label={`Remove ${c.url}`}
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </li>
-              </Tip>
-            );
-          })}
-        </ul>
+      {(connections.length > 0 || controls) && (
+        <div className={cn('flex min-w-0 items-center gap-3 max-[560px]:gap-1.5', managed && !hero ? first : row)}>
+          {connections.length > 0 && (
+            <ul
+              className={cn(
+                'flex gap-1.5',
+                hero ? 'flex-wrap justify-center' : 'min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]',
+              )}
+              aria-label="Connections"
+            >
+              {connections.map((c) => {
+                const s = states[c.id];
+                const status = s?.status ?? 'closed';
+                return (
+                  <Tip key={c.id} content={c.url} code>
+                    <li className="inline-flex flex-none items-center gap-1.5 rounded-full border py-px pr-1 pl-[9px] text-xs whitespace-nowrap">
+                      <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
+                      <span>{names[c.id] ?? connectionLabel(c.url)}</span>
+                      {s?.paused.length ? <span className="text-warning">paused</span> : null}
+                      {!managed && (
+                        <button
+                          type="button"
+                          className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
+                          onClick={() => onRemove(c.id)}
+                          aria-label={`Remove ${c.url}`}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </li>
+                  </Tip>
+                );
+              })}
+            </ul>
+          )}
+          {controls && <div className="ml-auto flex flex-none items-center gap-1.5">{controls}</div>}
+        </div>
       )}
-      {error && <div className={ERROR}>{error}</div>}
+      {error && <div className={cn(ERROR, row)}>{error}</div>}
       {connections.map((c) => {
         const side = states[c.id]?.incompatible;
         if (!side) return null;
         const name = names[c.id] ?? connectionLabel(c.url);
         return (
-          <div key={c.id} className={ERROR}>
+          <div key={c.id} className={cn(ERROR, row)}>
             {side === 'app'
               ? `${name} uses an older devpul package. Update the devpul packages in the app to use this UI.`
               : `${name} uses a newer devpul package than this UI. Reload the page or update the DevPul UI.`}
@@ -134,7 +145,7 @@ export function ConnectionBar(props: Props) {
         );
       })}
       {stuck.length > 0 && !managed && (
-        <div className={HINT}>
+        <div className={cn(HINT, row)}>
           Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the URL changes on every run;
           pasting the new one replaces the old.
           {!localOrigin &&

@@ -22,9 +22,9 @@ export function ExportMenu({ store, onOpenFile }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="xs">
+        <Button type="button" variant="outline" size="xs" aria-label="Export">
           <FileDown />
-          Export
+          <span className="max-[560px]:hidden">Export</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-50">

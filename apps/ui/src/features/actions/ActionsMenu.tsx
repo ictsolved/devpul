@@ -1,4 +1,4 @@
-import { Zap } from 'lucide-react';
+import { MousePointerClick } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,10 +13,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
-import { appName } from '../../components/SessionHeader';
 import type { DevEvent, Json } from '../../core/events';
 import { type ActionInfo, type ActionParam, parseInfo } from '../../core/info';
 import { type ConnState, isPaused } from '../../core/rpc';
+import { appName } from '../../core/session';
 import { latestRuns, type RunInfo } from '../../core/store';
 
 export interface AppActions {
@@ -66,9 +66,9 @@ export function ActionsMenu({ apps, onRun }: Props) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" size="xs">
-            <Zap />
-            Actions
+          <Button type="button" variant="outline" size="xs" aria-label="Actions">
+            <MousePointerClick />
+            <span className="max-[560px]:hidden">Actions</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

@@ -56,7 +56,7 @@ The source is read only when the UI asks, and only in debug builds.
 | ----------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `api`       | `1`                                            | The plugin API it was written for. A UI with another API refuses it with a message.                                                |
 | `id`        | string                                         | Unique. Registering the same id again replaces the plugin.                                                                         |
-| `label`     | string                                         | Tab name.                                                                                                                          |
+| `label`     | string                                         | Tab name, up to 32 characters; a longer one fails to load.                                                                         |
 | `icon`      | string                                         | Optional. SVG markup shown in the tab; `stroke="currentColor"` follows the theme. Defaults to the module's `icon` export.          |
 | `kinds`     | string[] or `(kind) => boolean`                | Optional. Event kinds the tab takes. Claimed kinds leave the Events tab.                                                           |
 | `summarize` | `(event) => string`                            | Optional. One line in the list.                                                                                                    |
@@ -130,7 +130,7 @@ devpul --plugin . run example/main.dart
 
 `create` writes a [plugin folder](%ROOT%docs/plugins/format/) with a module, Dart for the app and an example app that sends events. `--js` or `--dart` writes one half; run again on the folder, it adds a half or writes missing files back. `devpul.d.ts` holds the plugin API types, which editors check the module against through its `// @ts-check` line. For TypeScript, compile to one file and point `source` at it.
 
-`--plugin` takes the folder, or a single module file. DevPul loads the module from the same origin and loads it again each time you save, and the example app hot reloads when you save the Dart. Load errors, and in a folder the problems `devpul check` reports, show in Settings.
+`--plugin` takes the folder, or a single module file. DevPul loads the module from the same origin and loads it again each time you save, and the example app hot reloads when you save the Dart. Load errors, and in a folder the problems `devpul check` reports, show in the status bar and in Settings.
 
 `devpul check` validates the folder the way `devpul add` and the registry do. To try the Dart half in an app, run `devpul add ../my_plugin` there; `devpul sync` copies it again after edits.
 

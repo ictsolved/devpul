@@ -16,7 +16,7 @@ Devpul.session(
 );
 ```
 
-Fields are free-form and show in the header; pick which ones in Settings. `name` labels the app in connection chips and run dividers. The session is sent again when DevPul connects late, so it is never missing.
+Fields are free-form and show in the status bar; pick which ones in Settings. `name` labels the app in connection chips and run dividers. The session is sent again when DevPul connects late, so it is never missing.
 
 ## Tags
 

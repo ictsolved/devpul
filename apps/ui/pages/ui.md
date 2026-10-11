@@ -15,7 +15,9 @@ description: Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR
 | Events      | Everything else sent with `Devpul.emit`.                               |
 | Plugin tabs | Events claimed by a [plugin](%ROOT%docs/plugins/).                     |
 
-The header shows the latest `Devpul.session` fields; pick which ones in Settings.
+## Status bar
+
+The bar at the bottom shows the connection state, the latest `Devpul.session` fields, the result of the last action or hot reload, muted and rate-limited kinds, plugin load errors, and stored events against the limit. Pick the session fields in Settings; those that do not fit sit behind "+N", and hovering shows them all. Click the limits or errors to open Settings.
 
 ## Filtering
 

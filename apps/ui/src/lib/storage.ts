@@ -52,8 +52,8 @@ export interface Settings {
   persist: boolean;
   /** Drop an app's earlier events when it restarts or its URL is replaced. */
   clearOnRestart: boolean;
-  /** Keys of app.session info shown in the header. Empty means the first few. */
-  headerFields: string[];
+  /** Keys of app.session info shown in the status bar. Empty shows every key that fits. */
+  statusFields: string[];
   pluginUrls: string[];
   /** Plugins the user allowed, one per plugin id. */
   plugins: Approval[];
@@ -65,7 +65,7 @@ export const defaultSettings: Settings = {
   maxMB: DEFAULT_MAX_MB,
   persist: true,
   clearOnRestart: true,
-  headerFields: [],
+  statusFields: [],
   pluginUrls: [],
   plugins: [],
 };

@@ -71,10 +71,10 @@ export function SettingsDialog(props: Props) {
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => onChange({ ...settings, [key]: value });
 
   const toggleField = (k: string) => {
-    const base = settings.headerFields.length ? settings.headerFields : sessionKeys.slice(0, 4);
-    set('headerFields', base.includes(k) ? base.filter((x) => x !== k) : [...base, k]);
+    const base = settings.statusFields.length ? settings.statusFields : sessionKeys;
+    set('statusFields', base.includes(k) ? base.filter((x) => x !== k) : [...base, k]);
   };
-  const shownFields = settings.headerFields.length ? settings.headerFields : sessionKeys.slice(0, 4);
+  const shownFields = settings.statusFields.length ? settings.statusFields : sessionKeys;
 
   return (
     <Dialog
@@ -137,7 +137,7 @@ export function SettingsDialog(props: Props) {
           <p>Set in the app before it sends events, per kind and its dotted children. App events are never limited.</p>
           <Limits apps={limitApps} call={call} />
 
-          <Heading>Header fields</Heading>
+          <Heading>Status bar fields</Heading>
           {sessionKeys.length === 0 ? (
             <p className="text-muted-foreground">Fields appear once an app sends Devpul.session.</p>
           ) : (

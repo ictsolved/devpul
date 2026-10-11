@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PAGES } from '../pages/render.ts';
 import { connect, expect, test } from './fixtures.ts';
+import { fixtureEvents, PLUGIN } from './vm.ts';
 
 test('connects from a #connect= link and shows the fixture events in each tab', async ({ page, vm }) => {
   await connect(page, vm);
@@ -121,6 +122,42 @@ test('offers the app plugin and loads it once allowed', async ({ page, vm }) => 
   await expect.poll(() => vm.callsTo('ext.devpul.backlog').length).toBe(2);
   await page.waitForTimeout(300);
   expect(vm.callsTo('ext.devpul.plugin')).toHaveLength(1);
+});
+
+test.describe('with two plugins and a limit', () => {
+  const info = {
+    ...(JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract/info.json'), 'utf8')) as object),
+    plugins: [{ id: 'my_plugin' }, { id: 'long' }],
+    limits: { route: 0 },
+  };
+  const long = PLUGIN.replace("id: 'cart'", "id: 'long'").replace("label: 'Cart'", `label: '${'x'.repeat(33)}'`);
+  test.use({
+    vmOptions: {
+      events: fixtureEvents().map((e) =>
+        e.kind === 'devpul.app.info' ? { ...e, data: { ...e.data, data: info } } : e,
+      ),
+      info,
+      plugins: { my_plugin: PLUGIN, long },
+    },
+  });
+
+  test('shows one offer at a time and the status bar', async ({ page, vm }) => {
+    await connect(page, vm);
+    const offers = page.getByRole('alert');
+    await expect(offers).toHaveCount(1);
+    await offers.getByRole('button', { name: '+1 more' }).click();
+    await expect(offers).toHaveCount(2);
+    await offers.filter({ hasText: 'plugin long' }).getByRole('button', { name: 'Allow' }).click();
+
+    const status = page.getByRole('contentinfo');
+    await expect(status).toContainText('Connected');
+    await expect(status.getByLabel('Session')).toContainText('name Shop');
+    await expect(status.getByRole('button', { name: '1 muted' })).toBeVisible();
+    await status.getByRole('button', { name: '1 plugin error' }).click();
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toContainText(
+      'The label of long has 33 characters; the limit is 32.',
+    );
+  });
 });
 
 test('checks plugin updates against the registry only on click', async ({ page, vm }) => {
