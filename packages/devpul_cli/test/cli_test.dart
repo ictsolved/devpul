@@ -63,6 +63,25 @@ void main() {
     expect(readServiceInfo(file), 'http://127.0.0.1:1/a=/');
   });
 
+  test('run keeps DevPul in a flutter profile build', () {
+    final ui = Uri.parse('http://127.0.0.1:7171/');
+    final info = File('vm');
+    final (_, profile) = toolCommand(
+      ['--profile', '-d', 'linux'],
+      ui: ui,
+      info: info,
+      flutter: true,
+    );
+    expect(profile, contains('--dart-define=DEVPUL_PROFILE=true'));
+    final (_, debug) = toolCommand(
+      ['-d', 'linux'],
+      ui: ui,
+      info: info,
+      flutter: true,
+    );
+    expect(debug.where((a) => a.contains('DEVPUL_PROFILE')), isEmpty);
+  });
+
   test('run starts dart run, connects to it and exits with its code', () async {
     final dir = await Directory.systemTemp.createTemp('devpul_run');
     addTearDown(() => dir.delete(recursive: true));

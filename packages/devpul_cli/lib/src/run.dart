@@ -16,28 +16,13 @@ Future<int> runApp(
 }) async {
   final dir = await Directory.systemTemp.createTemp('devpul');
   final info = File('${dir.path}${Platform.pathSeparator}vm');
-  final define = 'DEVPUL_UI=$ui';
   final flutter = _isFlutter(Directory.current);
-  final (executable, arguments) = flutter
-      ? (
-          'flutter',
-          [
-            'run',
-            '--vmservice-out-file=${info.path}',
-            '--dart-define=$define',
-            ...args,
-          ],
-        )
-      : (
-          'dart',
-          [
-            'run',
-            '--enable-vm-service=0',
-            '--write-service-info=${info.uri}',
-            '-D$define',
-            ...args,
-          ],
-        );
+  final (executable, arguments) = toolCommand(
+    args,
+    ui: ui,
+    info: info,
+    flutter: flutter,
+  );
   final Process process;
   try {
     process = await Process.start(
@@ -80,6 +65,38 @@ Future<int> runApp(
   }
   await dir.delete(recursive: true);
   return code;
+}
+
+/// The tool and arguments [runApp] starts. A flutter `--profile` run keeps
+/// DevPul in the build with `DEVPUL_PROFILE`.
+(String, List<String>) toolCommand(
+  List<String> args, {
+  required Uri ui,
+  required File info,
+  required bool flutter,
+}) {
+  final define = 'DEVPUL_UI=$ui';
+  return flutter
+      ? (
+          'flutter',
+          [
+            'run',
+            '--vmservice-out-file=${info.path}',
+            '--dart-define=$define',
+            if (args.contains('--profile')) '--dart-define=DEVPUL_PROFILE=true',
+            ...args,
+          ],
+        )
+      : (
+          'dart',
+          [
+            'run',
+            '--enable-vm-service=0',
+            '--write-service-info=${info.uri}',
+            '-D$define',
+            ...args,
+          ],
+        );
 }
 
 /// The URL in a `flutter run --vmservice-out-file` file (plain text) or a

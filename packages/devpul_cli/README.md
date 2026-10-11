@@ -14,6 +14,7 @@ This installs the `devpul` command. It runs from the pub cache, where it finds t
 
 ```sh
 devpul run -d macos          # flutter run with these arguments, UI connected
+devpul run --profile -d macos   # profile build with DevPul kept in
 devpul run bin/server.dart   # dart run outside a Flutter project, hot reload on save
 devpul                       # just the UI, at http://127.0.0.1:7171
 devpul http://127.0.0.1:41234/AbCdEf12=/   # the UI connected to a running app
