@@ -21,7 +21,12 @@ void main(List<String> args) {
 
   final pubspecs = [
     for (final path in packages.values) File('$path/pubspec.yaml'),
-    for (final dir in ['examples', 'plugins', 'contract/app'])
+    for (final dir in [
+      'examples',
+      'plugins',
+      'contract/app',
+      'apps/docs/samples',
+    ])
       ...Directory(dir)
           .listSync(recursive: true)
           .whereType<File>()
@@ -34,6 +39,9 @@ void main(List<String> args) {
   ];
   for (final pubspec in pubspecs) {
     _bumpPubspec(pubspec, version, packages.keys);
+  }
+  for (final file in _snippetFiles()) {
+    _bumpSnippets(file, version, packages.keys);
   }
   _bumpJson(File('apps/ui/package.json'), version, (json) => json);
   _bumpJson(
@@ -104,6 +112,27 @@ void _bumpPubspec(File file, String version, Iterable<String> packages) {
       '  $name: ^$version',
     );
   }
+  file.writeAsStringSync(text);
+}
+
+/// Files with install snippets: READMEs, docs pages and the app's home page.
+Iterable<File> _snippetFiles() => [
+  File('README.md'),
+  for (final dir in Directory('packages').listSync().whereType<Directory>())
+    if (File('${dir.path}/README.md').existsSync())
+      File('${dir.path}/README.md'),
+  ...Directory('apps/docs/src/content/docs')
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.md')),
+  File('apps/ui/src/features/home/Home.tsx'),
+];
+
+void _bumpSnippets(File file, String version, Iterable<String> packages) {
+  final text = file.readAsStringSync().replaceAllMapped(
+    RegExp('\\b(${packages.join('|')}): \\^[0-9A-Za-z.+-]+'),
+    (m) => '${m[1]}: ^$version',
+  );
   file.writeAsStringSync(text);
 }
 
