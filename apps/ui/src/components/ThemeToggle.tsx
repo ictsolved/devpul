@@ -7,9 +7,10 @@ import { load, save } from '../lib/storage';
 type Theme = 'system' | 'light' | 'dark';
 
 const NEXT: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' };
+const NAME: Record<Theme, string> = { system: 'Auto', light: 'Light', dark: 'Dark' };
 
 // index.html applies the saved theme before first paint.
-export function ThemeToggle({ variant }: { variant: 'outline' | 'ghost' }) {
+export function ThemeToggle({ variant, label }: { variant: 'outline' | 'ghost'; label?: boolean }) {
   const [theme, setTheme] = useState<Theme>(() => load<Theme>('theme', 'system'));
   const change = () => {
     const next = NEXT[theme];
@@ -20,9 +21,16 @@ export function ThemeToggle({ variant }: { variant: 'outline' | 'ghost' }) {
   };
   const Icon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor;
   return (
-    <Tip content={`Theme: ${theme}`}>
-      <Button type="button" variant={variant} size="icon-sm" onClick={change} aria-label={`Theme: ${theme}`}>
+    <Tip content={`Theme: ${NAME[theme]}`}>
+      <Button
+        type="button"
+        variant={variant}
+        size={label ? 'sm' : 'icon-sm'}
+        onClick={change}
+        aria-label={`Theme: ${NAME[theme]}`}
+      >
         <Icon />
+        {label && <span className="max-[560px]:hidden">{NAME[theme]}</span>}
       </Button>
     </Tip>
   );

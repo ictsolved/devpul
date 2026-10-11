@@ -533,12 +533,11 @@ export function App() {
     setSettingsOpen(true);
   };
 
-  // Ghost in the header, so the session controls under it carry the weight.
-  const navVariant = showMain ? 'ghost' : 'outline';
   const settingsButton = (
     <Button
       type="button"
-      variant={navVariant}
+      // Ghost in the header, so the session controls under it carry the weight.
+      variant={showMain ? 'ghost' : 'outline'}
       size={showMain ? 'sm' : 'icon-sm'}
       onClick={openSettings}
       aria-label="Settings"
@@ -549,8 +548,8 @@ export function App() {
   );
   const tools = (
     <>
-      {showMain ? settingsButton : <Tip content="Settings">{settingsButton}</Tip>}
-      {!devtools && <ThemeToggle variant={navVariant} />}
+      <Tip content="Settings">{settingsButton}</Tip>
+      {!devtools && <ThemeToggle variant="outline" />}
     </>
   );
 
@@ -624,15 +623,16 @@ export function App() {
             </a>
             {connectionBar(false)}
             <nav className="col-start-3 row-start-1 flex gap-1.5 max-[860px]:col-start-2">
-              {tools}
+              {settingsButton}
               <Tip content="Help opens in a new tab. Press ? for shortcuts.">
-                <Button asChild variant={navVariant} size="sm">
+                <Button asChild variant="ghost" size="sm">
                   <a href={pageUrl('help/')} target="_blank" rel="noopener">
                     <CircleHelp />
                     <span className={LABEL}>Help</span>
                   </a>
                 </Button>
               </Tip>
+              {!devtools && <ThemeToggle variant="ghost" label />}
             </nav>
           </header>
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
