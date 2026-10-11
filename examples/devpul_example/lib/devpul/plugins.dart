@@ -18,15 +18,11 @@ export 'bloc/bloc.dart';
 export 'files/files.dart';
 export 'riverpod/riverpod.dart';
 
-const _debug =
-    !bool.fromEnvironment('dart.vm.product') &&
-    !bool.fromEnvironment('dart.vm.profile');
-
-/// Offers the plugins in devpul.lock to DevPul in debug builds. Release and
-/// profile builds leave them out.
+/// Offers the plugins in devpul.lock to DevPul. Builds without
+/// `Devpul.included` leave them out.
 abstract final class DevpulPlugins {
   static void install() {
-    if (!_debug) return;
+    if (!Devpul.included) return;
     Devpul.plugin(
       'bloc',
       () => r'''

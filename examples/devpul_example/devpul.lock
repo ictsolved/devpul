@@ -4,17 +4,17 @@
     "bloc": {
       "url": "../../plugins/bloc",
       "version": "0.1.0",
-      "hash": "e972d6d6e4dafefb02ff73cff2c95bf7cf0ce06792263eb9b3279bf213b900f2"
+      "hash": "1498cec101c12772a18b3c947e4371c6562d572d451ba7ebd000ba53feffa4ea"
     },
     "files": {
       "url": "../../plugins/files",
       "version": "0.1.0",
-      "hash": "e2670e7231b2ffc849f3e6c8abedc6fdf9a9cac811a514ca3c6c39f6dbdd7a08"
+      "hash": "209a3b71f34903b8666da45c592f31a3fb8d5726f8ca07c86451a3568cdb9e92"
     },
     "riverpod": {
       "url": "../../plugins/riverpod",
       "version": "0.1.0",
-      "hash": "861f296e374674723d66723b03540c8a4984c630cbfd89df96e2ed65f4a5784e"
+      "hash": "90e761685caa2fca3433144e7a5c1798bca7014f870208a40495147b14ac213e"
     }
   }
 }

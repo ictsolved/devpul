@@ -2,12 +2,8 @@ import 'package:devpul/devpul.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 
-const _debug =
-    !bool.fromEnvironment('dart.vm.product') &&
-    !bool.fromEnvironment('dart.vm.profile');
-
 /// Observers that send provider changes to DevPul for the Riverpod tab, or
-/// none in release and profile builds.
+/// none unless [Devpul.included].
 ///
 /// Providers left out by [include], [exclude] or [filter] send nothing.
 /// [include] and [exclude] take providers and families.
@@ -20,7 +16,7 @@ List<ProviderObserver> devpulRiverpodObservers({
   List<ProviderOrFamily> exclude = const [],
   bool Function(ProviderBase<Object?> provider)? filter,
 }) {
-  if (!_debug) return const [];
+  if (!Devpul.included) return const [];
   bool matches(List<ProviderOrFamily> list, ProviderBase<Object?> provider) =>
       list.contains(provider) || list.contains(provider.from);
   return [

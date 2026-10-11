@@ -1,17 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
 
-const _debug =
-    !bool.fromEnvironment('dart.vm.product') &&
-    !bool.fromEnvironment('dart.vm.profile');
-
 /// Sends bloc and cubit changes to DevPul for the Bloc tab.
 abstract final class DevpulBloc {
   /// Sets [Bloc.observer] to one that sends every change to DevPul and then
-  /// calls the observer set before. Does nothing in release and profile
-  /// builds.
+  /// calls the observer set before. Does nothing unless [Devpul.included].
   static void install() {
-    if (!_debug || Bloc.observer is _Observer) return;
+    if (!Devpul.included || Bloc.observer is _Observer) return;
     Bloc.observer = _Observer(Bloc.observer);
     Devpul.handle(
       'bloc.state',

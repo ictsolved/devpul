@@ -25,7 +25,7 @@ final class DevpulConfig {
     this.idGenerator,
   });
 
-  /// Has no effect in release and profile builds, which never emit.
+  /// Has no effect unless `Devpul.included`.
   final bool enabled;
 
   final ConsoleMode console;

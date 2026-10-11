@@ -31,9 +31,8 @@ String render(Lock lock, Map<String, Map<String, String>> vendored) {
 // dart format off
 // ignore_for_file: type=lint
 ''');
-  if (plugins.any((p) => p.manifest.source != null)) {
-    out.write("\nimport 'package:devpul/devpul.dart';\n");
-  }
+  final offers = plugins.any((p) => p.manifest.source != null);
+  if (offers) out.write("\nimport 'package:devpul/devpul.dart';\n");
   final exports = [
     for (final (:id, entry: _, :manifest) in plugins)
       if (manifest.dart case final dart?) "export '$id/$dart';",
@@ -41,16 +40,12 @@ String render(Lock lock, Map<String, Map<String, String>> vendored) {
   if (exports.isNotEmpty) out.write('\n${exports.join('\n')}\n');
   out.write('''
 
-const _debug =
-    !bool.fromEnvironment('dart.vm.product') &&
-    !bool.fromEnvironment('dart.vm.profile');
-
-/// Offers the plugins in devpul.lock to DevPul in debug builds. Release and
-/// profile builds leave them out.
+/// Offers the plugins in devpul.lock to DevPul. Builds without
+/// `Devpul.included` leave them out.
 abstract final class DevpulPlugins {
   static void install() {
-    if (!_debug) return;
 ''');
+  if (offers) out.write('    if (!Devpul.included) return;\n');
   for (final (:id, :entry, :manifest) in plugins) {
     final source = module(manifest, vendored[id]!);
     if (source == null) continue;

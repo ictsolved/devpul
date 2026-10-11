@@ -3,6 +3,7 @@ import 'dart:io';
 
 // Builds the example and contract/app for release and fails on debug-only
 // strings left in them: service extensions, event kinds, plugin modules.
+// Profile builds keep them only with DEVPUL_PROFILE.
 
 const _core = ['ext.devpul.', 'app.session'];
 
@@ -23,18 +24,27 @@ Future<void> main() async {
 
     // Without the product define the guards are off, so every needle must be
     // there; otherwise the check below proves nothing.
-    await _run('dart', [
-      'compile',
-      'js',
-      '-o',
-      '${out.path}/debug.js',
-      'contract/app/bin/main.dart',
-    ]);
-    final missing = contract
-        .where((n) => !_contains('${out.path}/debug.js', n))
-        .toList();
-    if (missing.isNotEmpty) {
-      stderr.writeln('Not found in a debug build, so not checked:');
+    final kept = {
+      'debug.js': <String>[],
+      'profile-devpul.js': ['-Ddart.vm.profile=true', '-DDEVPUL_PROFILE=true'],
+    };
+    for (final MapEntry(key: name, value: defines) in kept.entries) {
+      await _run('dart', [
+        'compile',
+        'js',
+        ...defines,
+        '-o',
+        '${out.path}/$name',
+        'contract/app/bin/main.dart',
+      ]);
+      final missing = contract
+          .where((n) => !_contains('${out.path}/$name', n))
+          .toList();
+      if (missing.isEmpty) {
+        stdout.writeln('ok contract/app $name');
+        continue;
+      }
+      stderr.writeln('Not found in contract/app $name:');
       for (final needle in missing) {
         stderr.writeln('  $needle');
       }
@@ -56,6 +66,14 @@ Future<void> main() async {
       '${out.path}/release.js',
       'contract/app/bin/main.dart',
     ]);
+    await _run('dart', [
+      'compile',
+      'js',
+      '-Ddart.vm.profile=true',
+      '-o',
+      '${out.path}/profile.js',
+      'contract/app/bin/main.dart',
+    ]);
     const app = 'examples/devpul_example';
     await _run('flutter', ['build', 'web', '--release'], dir: app);
     await _run('flutter', ['build', 'linux', '--release'], dir: app);
@@ -63,6 +81,7 @@ Future<void> main() async {
     final builds = {
       '${out.path}/app': contract,
       '${out.path}/release.js': contract,
+      '${out.path}/profile.js': contract,
       '$app/build/web/main.dart.js': example,
       '$app/build/linux/x64/release/bundle/lib/libapp.so': example,
     };

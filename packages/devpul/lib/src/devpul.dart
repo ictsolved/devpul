@@ -12,9 +12,6 @@ import 'limits.dart';
 import 'sha256.dart';
 import 'version.dart';
 
-const _off =
-    bool.fromEnvironment('dart.vm.product') ||
-    bool.fromEnvironment('dart.vm.profile');
 const _web = bool.fromEnvironment('dart.library.js_interop');
 const _flutter = bool.fromEnvironment('dart.library.ui');
 
@@ -63,6 +60,14 @@ final class _Plugin {
 }
 
 abstract final class Devpul {
+  /// True in debug builds, and in profile builds compiled with
+  /// `--dart-define=DEVPUL_PROFILE=true`. A constant, so code behind
+  /// `if (!Devpul.included)` is left out of every other build.
+  static const included =
+      !bool.fromEnvironment('dart.vm.product') &&
+      (!bool.fromEnvironment('dart.vm.profile') ||
+          bool.fromEnvironment('DEVPUL_PROFILE'));
+
   static DevpulConfig _config = const DevpulConfig();
   static DevpulConfig get config => _config;
   static void configure(DevpulConfig config) => _config = config;
@@ -70,7 +75,7 @@ abstract final class Devpul {
   /// Merged into every event. The UI builds filters from them.
   static final Map<String, String> tags = {};
 
-  static bool get enabled => !_off && _config.enabled;
+  static bool get enabled => included && _config.enabled;
 
   // Random per isolate, so ids stay unique across hot restarts and isolates.
   static final String _session = _randomId();

@@ -5,9 +5,6 @@ import 'dart:math';
 import 'package:devpul/devpul.dart';
 import 'package:path_provider/path_provider.dart';
 
-const _debug =
-    !bool.fromEnvironment('dart.vm.product') &&
-    !bool.fromEnvironment('dart.vm.profile');
 const _web = bool.fromEnvironment('dart.library.js_interop');
 
 // Below the UI's 5 s call timeout.
@@ -18,10 +15,10 @@ const _maxRead = 1 << 20;
 /// Serves the app's path_provider directories to the Files tab.
 abstract final class DevpulFiles {
   /// Lets the Files tab list, read and, with Allow writes on, delete files
-  /// in the app's path_provider directories. Does nothing in release and
-  /// profile builds.
+  /// in the app's path_provider directories. Does nothing unless
+  /// [Devpul.included].
   static void install() {
-    if (!_debug) return;
+    if (!Devpul.included) return;
     if (_web) {
       Devpul.handle(
         'files.roots',
