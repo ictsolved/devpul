@@ -13,6 +13,7 @@ workspace:
   - contract/app
   - examples/devpul_example
   - plugins/bloc
+  - plugins/files
   - plugins/riverpod
 
 dev_dependencies:

@@ -1,0 +1,15 @@
+name: devpul_plugin_files
+description: Analyzes the files plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+resolution: workspace
+
+dependencies:
+  devpul: ^0.2.0
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.0
