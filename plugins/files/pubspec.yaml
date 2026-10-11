@@ -9,7 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  devpul: ^0.2.0
+  devpul: ^1.0.0-dev.1
   flutter:
     sdk: flutter
   path_provider: ^2.1.0

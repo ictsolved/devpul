@@ -18,7 +18,7 @@ executables:
 dependencies:
   crypto: ^3.0.7
   # Holds the UI build.
-  devpul: ^0.2.0
+  devpul: ^1.0.0-dev.1
   path: ^1.9.0
   pub_semver: ^2.2.1
 

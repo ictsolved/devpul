@@ -9,4 +9,4 @@ resolution: workspace
 
 dependencies:
   bloc: ^9.1.0
-  devpul: ^0.2.0
+  devpul: ^1.0.0-dev.1

@@ -1,7 +1,7 @@
 name: devpul_example
 description: Example Flutter app using every DevPul package.
 publish_to: none
-version: 0.2.0
+version: 1.0.0-dev.1
 
 environment:
   sdk: ^3.8.0
@@ -10,10 +10,10 @@ resolution: workspace
 
 dependencies:
   bloc: ^9.1.0
-  devpul: ^0.2.0
-  devpul_dio: ^0.2.0
-  devpul_flutter: ^0.2.0
-  devpul_http: ^0.2.0
+  devpul: ^1.0.0-dev.1
+  devpul_dio: ^1.0.0-dev.1
+  devpul_flutter: ^1.0.0-dev.1
+  devpul_http: ^1.0.0-dev.1
   dio: ^5.2.0
   flutter:
     sdk: flutter

@@ -1,5 +1,5 @@
 name: devpul
 issueTracker: https://github.com/ictsolved/devpul/issues
-version: 0.2.0
+version: 1.0.0-dev.1
 materialIconCodePoint: '0xe424'
 requiresConnection: true
