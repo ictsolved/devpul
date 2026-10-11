@@ -127,6 +127,7 @@ CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks 
 - [Riverpod](%REPO_URL%/tree/main/plugins/riverpod) and [Bloc](%REPO_URL%/tree/main/plugins/bloc), in the repository: an observer sends every change to a tab with each provider's or bloc's current value and recent changes. They use `renderTab`, `onEvents`, a handler for the current state, and `context.ui`.
 - [Files](%REPO_URL%/tree/main/plugins/files), in the repository: no events; the tab asks the app for directory listings, file bytes in chunks and deletes, through `context.request`, and shows delete only while `context.writes` is on.
 - [Secure storage](%REPO_URL%/tree/main/plugins/secure_storage), in the repository: the tab lists keys and asks for one value when the user reveals it, so secrets stay in the app until then; add, edit and delete are `writes` handlers.
+- [sqflite](%REPO_URL%/tree/main/plugins/sqflite), in the repository: the app passes each database with `DevpulSqflite.add`; the tab sends SQL through a read handler, which refuses statements that write, and a `writes` handler for the rest.
 
 ## Security
 

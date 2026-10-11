@@ -1,0 +1,16 @@
+name: devpul_plugin_sqflite
+description: Analyzes and tests the sqflite plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0-dev.1
+  sqflite_common: ">=2.4.0+2 <3.0.0"
+
+dev_dependencies:
+  sqflite_common_ffi: ^2.3.0
+  test: ^1.25.0

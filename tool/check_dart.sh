@@ -11,5 +11,6 @@ done
 for p in devpul devpul_dio devpul_http devpul_cli; do
   (cd packages/$p && dart test)
 done
+(cd plugins/sqflite && dart test)
 (cd packages/devpul && dart test -p chrome)
 (cd packages/devpul_flutter && flutter test)

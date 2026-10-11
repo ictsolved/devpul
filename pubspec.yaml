@@ -17,6 +17,7 @@ workspace:
   - plugins/files
   - plugins/riverpod
   - plugins/secure_storage
+  - plugins/sqflite
 
 dev_dependencies:
   devpul_cli: any
