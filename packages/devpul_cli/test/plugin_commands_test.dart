@@ -259,6 +259,8 @@ void main() {
     expect(parsePluginArgs(['upgrade', '--major-versions']).rest, isEmpty);
     expect(parsePluginArgs(['upgrade', 'cart', '--yes']).rest, ['cart']);
     expect(parsePluginArgs(['outdated', '--exit-code']).flags, {'--exit-code'});
+    expect(parsePluginArgs(['create', '--help']).flags, {'--help'});
+    expect(parsePluginArgs(['cache', '-h']).flags, {'--help'});
     for (final args in [
       ['add'],
       ['add', 'a', 'b'],

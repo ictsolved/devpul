@@ -155,6 +155,9 @@ typedef PluginArgs = ({
 /// Throws a [FormatException] for a usage error.
 PluginArgs parsePluginArgs(List<String> args) {
   final [command, ...tail] = args;
+  if (tail.any((a) => a == '-h' || a == '--help')) {
+    return (command: command, rest: [], flags: {'--help'}, options: {});
+  }
   final (flags, options, count) = switch (command) {
     'add' => ({'--yes'}, {'--path'}, 1),
     'sync' => ({'--check'}, <String>{}, 0),
@@ -209,6 +212,10 @@ Future<int> _plugins(List<String> args) async {
   } on FormatException catch (e) {
     stderr.writeln('devpul: ${e.message}\n\n$usage');
     return 64;
+  }
+  if (parsed.flags.contains('--help')) {
+    stdout.write(usage);
+    return 0;
   }
   final terminal = stdin.hasTerminal && stdout.hasTerminal;
   final console = plugins.Console(
