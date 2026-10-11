@@ -117,7 +117,7 @@ export default {
     draw();
     // The app's current values win over what events rebuilt; the next event
     // joins whatever run it belongs to.
-    context.call('ext.devpul.bloc.state').then(
+    context.request('bloc.state').then(
       (result) => {
         for (const p of result.blocs) {
           const item = items.get(p.id);

@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:developer' as developer;
-
 import 'package:devpul/devpul.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -38,22 +35,10 @@ List<ProviderObserver> devpulRiverpodObservers({
 
 final class _Observer extends ProviderObserver {
   _Observer(this._shows) {
-    if (_ready || !Devpul.enabled) return;
-    _ready = true;
-    try {
-      developer.registerExtension('ext.devpul.riverpod.state', (_, _) async {
-        return developer.ServiceExtensionResponse.result(
-          jsonEncode({'providers': toJsonSafe(_live.values.toList())}),
-        );
-      });
-    } catch (_) {
-      // Already registered in this isolate.
-    }
+    Devpul.handle('riverpod.state', (_) => {'providers': _live.values});
   }
 
   final bool Function(ProviderBase<Object?> provider) _shows;
-
-  static bool _ready = false;
 
   // Live providers by id: their event fields and current value.
   static final _live = <String, Map<String, Object?>>{};

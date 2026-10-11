@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:developer' as developer;
-
 import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
 
@@ -16,20 +13,15 @@ abstract final class DevpulBloc {
   static void install() {
     if (!_debug || Bloc.observer is _Observer) return;
     Bloc.observer = _Observer(Bloc.observer);
-    if (!Devpul.enabled) return;
-    try {
-      developer.registerExtension('ext.devpul.bloc.state', (_, _) async {
-        final blocs = [
+    Devpul.handle(
+      'bloc.state',
+      (_) => {
+        'blocs': [
           for (final bloc in _Observer._live)
             {..._Observer._key(bloc), 'value': bloc.state},
-        ];
-        return developer.ServiceExtensionResponse.result(
-          jsonEncode({'blocs': toJsonSafe(blocs)}),
-        );
-      });
-    } catch (_) {
-      // Already registered in this isolate.
-    }
+        ],
+      },
+    );
   }
 }
 
