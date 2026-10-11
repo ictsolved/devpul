@@ -14,6 +14,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'devpul/plugins.dart';
@@ -53,6 +54,7 @@ void main() {
   );
   DevpulBloc.install();
   DevpulFiles.install();
+  DevpulSecureStorage.install(storage: storage);
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
@@ -105,6 +107,24 @@ final dio = Dio(
 )..interceptors.add(DevpulDioInterceptor());
 
 final client = DevpulClient();
+
+const storage = FlutterSecureStorage();
+
+// Something to look at in the Secure storage tab.
+Future<void> _saveSecrets() async {
+  await storage.write(
+    key: 'auth_token',
+    value: 'eyJhbGciOiJIUzI1NiJ9.e30.example',
+  );
+  await storage.write(
+    key: 'refresh_token',
+    value: 'r-${DateTime.now().millisecondsSinceEpoch}',
+  );
+  await storage.write(
+    key: 'user',
+    value: jsonEncode({'id': 7, 'email': 'user@example.com'}),
+  );
+}
 
 // Something to look at in the Files tab.
 Future<void> _writeFiles() async {
@@ -273,6 +293,7 @@ class _HomePageState extends State<HomePage> {
         () => throw const FormatException('Bad payload from sync job'),
       ),
     ),
+    ('Save secrets', _saveSecrets),
     if (!kIsWeb) ('Write files', _writeFiles),
     if (!kIsWeb)
       (
