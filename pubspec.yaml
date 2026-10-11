@@ -5,6 +5,7 @@ environment:
   sdk: ^3.8.0
 
 workspace:
+  - apps/docs/samples
   - packages/devpul
   - packages/devpul_dio
   - packages/devpul_http

@@ -1,0 +1,22 @@
+name: devpul_docs_samples
+description: Dart code samples from the docs and READMEs, analyzed in place. apps/docs/src/samples.test.ts checks the docs against them.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0-dev.1
+  devpul_dio: ^1.0.0-dev.1
+  devpul_flutter: ^1.0.0-dev.1
+  devpul_http: ^1.0.0-dev.1
+  dio: ^5.2.0
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.0
+  flutter_riverpod: ^3.0.0
+  http: ^1.2.0
+  logging: ^1.2.0
