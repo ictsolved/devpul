@@ -5,6 +5,8 @@ export const API = 1;
 
 /** Largest plugin source the UI loads, in bytes. */
 export const MAX_SOURCE = 512 * 1024;
+/** Longest tab label, in characters; the same as a plugin id. */
+export const MAX_LABEL = 32;
 
 export interface PluginEvent {
   /** Unique per event; stable across reloads. */
@@ -76,8 +78,11 @@ class Registry {
   private listeners = new Set<() => void>();
 
   register(plugin: DevpulPlugin, origin: string): void {
-    if (typeof plugin?.id !== 'string' || typeof plugin.label !== 'string') {
+    if (typeof plugin?.id !== 'string' || typeof plugin.label !== 'string' || !plugin.label) {
       throw new Error('A plugin needs a string id and label.');
+    }
+    if (plugin.label.length > MAX_LABEL) {
+      throw new Error(`The label of ${plugin.id} has ${plugin.label.length} characters; the limit is ${MAX_LABEL}.`);
     }
     if (plugin.api !== undefined && plugin.api !== API) {
       throw new Error(`${plugin.id} needs plugin API ${String(plugin.api)}; this UI has API ${API}.`);
