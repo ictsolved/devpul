@@ -6,14 +6,17 @@ import 'dart:io';
 import 'package:devpul_cli/src/plugins/build_registry.dart';
 import 'package:devpul_cli/src/plugins/fetch.dart';
 
-const _usage = 'Usage: dart run tool/build_registry.dart <out-dir>';
+const _usage =
+    'Usage: dart run tool/build_registry.dart [--skip-broken] <out-dir>';
 
 Future<void> main(List<String> args) async {
-  if (args.length != 1) {
+  final rest = [...args];
+  final skipBroken = rest.remove('--skip-broken');
+  if (rest.length != 1 || rest.single.startsWith('-')) {
     stderr.writeln(_usage);
     exit(64);
   }
-  final out = Directory(args.single).absolute;
+  final out = Directory(rest.single).absolute;
   final root = File.fromUri(Platform.script).parent.parent.path;
   final site = jsonDecode(File('$root/site.json').readAsStringSync()) as Map;
   final cache = Directory.systemTemp.createTempSync('devpul_registry');
@@ -24,6 +27,7 @@ Future<void> main(List<String> args) async {
       root,
       repo: site['repo'] as String,
       fetcher: fetcher,
+      skipBroken: skipBroken,
       log: stdout.writeln,
     );
     if (built.problems.isNotEmpty) {

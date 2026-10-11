@@ -22,6 +22,9 @@ on:
         apps/docs/src/plugins.ts,
         .github/workflows/registry.yml,
       ]
+  # Deploys skip a third-party plugin that breaks upstream; this run fails on it.
+  schedule:
+    - cron: '17 6 * * 1'
 
 permissions:
   contents: read

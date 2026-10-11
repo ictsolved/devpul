@@ -17,12 +17,15 @@ typedef BuiltRegistry = ({
 /// Builds registry.json from the tagged plugins in [root]/plugins, listed
 /// at [repo], and the pointers in [root]/registry/third-party.json, each
 /// fetched as `devpul add <id>` fetches it. [local] lets pointers use file
-/// and loopback URLs, for tests.
+/// and loopback URLs, for tests. [skipBroken] logs and leaves out a pointer
+/// whose plugin fails to fetch or check, so one upstream repo cannot block a
+/// deploy.
 Future<BuiltRegistry> buildRegistry(
   String root, {
   required String repo,
   required Fetcher fetcher,
   bool local = false,
+  bool skipBroken = false,
   void Function(String line)? log,
 }) async {
   log ??= (_) {};
@@ -122,7 +125,8 @@ Future<BuiltRegistry> buildRegistry(
     try {
       await list(id, '$url', path as String?, '$url');
     } on PluginException catch (e) {
-      problems.add('$where: $id: ${e.message}');
+      final problem = '$where: $id: ${e.message}';
+      skipBroken ? log('$problem, not listed') : problems.add(problem);
     }
   }
 

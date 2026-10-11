@@ -73,7 +73,11 @@ void main() {
   });
 
   late List<String> log;
-  Future<BuiltRegistry> build(List<Object?> pointers, {bool local = true}) {
+  Future<BuiltRegistry> build(
+    List<Object?> pointers, {
+    bool local = true,
+    bool skipBroken = false,
+  }) {
     File('$root/registry/third-party.json')
       ..parent.createSync(recursive: true)
       ..writeAsStringSync(jsonEncode(pointers));
@@ -84,6 +88,7 @@ void main() {
       repo: 'https://example.com/site',
       fetcher: Fetcher(root: root, cache: cache),
       local: local,
+      skipBroken: skipBroken,
       log: log.add,
     );
   }
@@ -150,6 +155,24 @@ void main() {
       'registry/third-party.json #8: id needs a plugin id',
       'registry/third-party.json #9: needs an object of id, url and path',
     ]);
+  });
+
+  test('skips pointers whose plugin breaks when asked', () async {
+    final url = Uri.file(third).toString();
+    final built = await build([
+      {'id': 'bad', 'url': url, 'path': 'bad'},
+      {'id': 'shop', 'url': url, 'path': 'shop'},
+      {'id': 'Up', 'url': url},
+    ], skipBroken: true);
+    expect(built.problems, [
+      'registry/third-party.json #3: id needs a plugin id',
+    ]);
+    expect(log, [
+      'draft: no draft-v<version> tags, not listed',
+      'registry/third-party.json #1: bad: plugin.json: x: unknown field, '
+          'not listed',
+    ]);
+    expect(parseRegistry(built.json).keys, ['cart', 'shop']);
   });
 
   test('takes https URLs only', () async {
