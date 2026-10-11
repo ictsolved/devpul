@@ -50,7 +50,7 @@ Its error shows under the plugin URLs in Settings. The module must be served wit
 - The VM service URL token is the only access check. With `--disable-service-auth-codes`, any local process and any web page open in your browser can connect while the app runs.
 - `#connect=` links connect only to apps on this machine. A URL you paste can point anywhere.
 - Every page sets a Content Security Policy: scripts come only from DevPul itself and the plugins you allowed, with no `eval`.
-- Plugins run with full access to the page. Load only code you trust.
+- Plugins run with full access to the page. Load only code you trust. `devpul add` copies a plugin's code into the app's repository, where it shows up in diffs, and DevPul asks before running each plugin, once per id and SHA-256.
 - Release and profile builds never emit.
 
 ## Questions

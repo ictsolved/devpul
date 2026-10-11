@@ -94,7 +94,8 @@ export function pluginPages({ plugins, readmes }: Registry, site: Site, csp: str
     sideGroup(
       'Docs',
       [
-        { href: 'docs/plugins/', label: 'Using plugins' },
+        { href: 'docs/plugins/install/', label: 'Installing plugins' },
+        { href: 'docs/plugins/', label: 'Writing plugins' },
         { href: 'docs/plugins/format/', label: 'Plugin format' },
       ],
       path,
@@ -116,7 +117,7 @@ export function pluginPages({ plugins, readmes }: Registry, site: Site, csp: str
       description: 'Plugins for DevPul: tabs for app state and adapters, installed with devpul add.',
       side: side('plugins/'),
       main: `<h1>Plugins</h1>
-        <p><code>devpul add &lt;id&gt;</code> copies a plugin into your app. <a href="../docs/plugins/">Using plugins</a> covers how they run, <a href="../docs/plugins/format/">Plugin format</a> how to list your own.</p>
+        <p><code>devpul add &lt;id&gt;</code> copies a plugin into your app. <a href="../docs/plugins/install/">Installing plugins</a> covers wiring and upgrades, <a href="../docs/plugins/#publishing">Writing plugins</a> how to list your own.</p>
         ${cards ? `<ul class="plugins">${cards}</ul>` : '<p>No plugins listed yet.</p>'}`,
     }),
   };

@@ -1,9 +1,9 @@
 ---
-title: Plugins
-description: Write a DevPul plugin, an ES module that adds a tab for your own event kinds, renders events or the whole tab, and calls into the app. Ship it in a Dart package.
+title: Writing plugins
+description: Write a DevPul plugin, an ES module that adds a tab for your own event kinds, renders events or the whole tab, and calls into the app. Develop it with devpul create and publish it with a git tag.
 ---
 
-# Plugins
+# Writing plugins
 
 A plugin adds a tab. It is a single-file ES module, plain JavaScript or TypeScript compiled to one file, with no imports. It can list some event kinds with the same filter, pause and keyboard navigation as the built-in tabs and render the selected one, or fill the whole tab itself.
 
@@ -33,7 +33,7 @@ Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 
 ## Shipping a plugin
 
-A plugin folder with a `plugin.json` is copied into the app and registered by a generated file; [Plugin format](%ROOT%docs/plugins/format/) has the layout. `devpul add <id>` takes one listed on the [plugins page](%ROOT%plugins/).
+A plugin folder with a `plugin.json` is copied into the app and registered by a generated file; [Plugin format](%ROOT%docs/plugins/format/) has the layout and [Installing plugins](%ROOT%docs/plugins/install/) the commands. `devpul add <id>` takes one listed on the [plugins page](%ROOT%plugins/).
 
 A Dart package can also offer its plugin itself with `Devpul.plugin`, usually from the code that also sends its events:
 
@@ -64,6 +64,8 @@ The source is read only when the UI asks, and only in debug builds.
 | `renderTab` | `(el, context) => void \| (() => void)`        | Optional. Fills the whole tab in place of the event list. May return a cleanup function.                                           |
 
 An event is `{key, kind, data, tags, ts, session, run}`. `data` holds the fields the app sent. `run` identifies one launch or hot restart of one app.
+
+Within API 1 the UI only adds: optional plugin fields and context members. A module written for API 1 keeps loading, and DevPul's CI fails any change to these types that would break one. A member added later is missing in an older UI, so check for it before calling it. A breaking change gets a new `api` number.
 
 The module's default export is a plugin, or a function that receives `{api, register}` and registers several:
 
@@ -134,7 +136,29 @@ devpul --plugin . run example/main.dart
 
 A plugin on any static server that sets CORS headers works too: add its URL in Settings > Plugins and reload DevPul after editing. A file or URL you add yourself runs without the approval prompt.
 
+## Publishing
+
+A plugin is published from a git repository with a tag; there is nothing to upload.
+
+1. Set `version` in `plugin.json`, a semantic version. A change to the Dart an app calls, such as the wiring line, is a new major version, so `devpul upgrade` does not take it without `--major-versions`.
+2. Run `devpul check`.
+3. Commit, tag `<id>-v<version>`, such as `cart-v1.2.0`, and push the tag.
+
+`devpul add https://example.com/plugins.git --path cart` then takes the newest tag, and `devpul outdated` in apps sees each new one. One repository can hold several plugins, one folder each. A `plugin.json` served over https needs no git, but has no versions to choose from: apps get what it serves.
+
+`devpul` in `plugin.json` is the range of `devpul` versions the Dart works with, such as `^1.0.0`; `requires` lists the other packages it imports, with the constraints an app must meet. `tags` are up to five words shown on the plugins page.
+
+To list a plugin on the [plugins page](%ROOT%plugins/), so `devpul add <id>` finds it, add it to [`registry/third-party.json`](%REPO_URL%/tree/main/registry) by pull request:
+
+```json
+{ "id": "cart", "url": "https://github.com/example/devpul-plugins.git", "path": "cart" }
+```
+
+CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks on it and fails the pull request on any problem. Later versions need only a new tag; the next registry build lists them. The README is shown on the plugin's page as markdown without HTML, with images as links.
+
 ## Security
+
+A plugin installed with `devpul add` is copied into the app's repository, so its code is reviewed in diffs, and `devpul upgrade` shows the diff before writing. DevPul still asks before running its module, once per id and SHA-256.
 
 A plugin runs with full access to the page: every event, header and body DevPul has seen, from every app. Allow only plugins from sources you trust.
 
