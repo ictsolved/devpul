@@ -10,6 +10,7 @@
     "check": "npm run check:dart && npm run check:web",
     "check:dart": "tool/check_dart.sh",
     "check:web": "prettier --check . && npm run check -w apps/ui",
+    "check:release": "dart run tool/release_check.dart",
     "format": "prettier --write .",
     "deploy": "npm run build:registry && npm run deploy -w apps/ui",
     "build:registry": "dart run tool/build_registry.dart build/registry",
