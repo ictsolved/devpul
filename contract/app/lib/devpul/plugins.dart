@@ -39,6 +39,7 @@ export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 
 ''',
       version: '1.2.0',
       origin: 'https://example.com/plugins.git',
+      description: 'Cart contents and totals in a Cart tab.',
     );
     Devpul.plugin(
       'flags',
@@ -56,6 +57,7 @@ export default {
 ''',
       version: '0.3.1',
       origin: 'https://example.com/flags/plugin.json',
+      description: 'Feature flags the app reports, as a table.',
     );
   }
 }

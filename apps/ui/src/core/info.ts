@@ -21,6 +21,8 @@ export interface PluginInfo {
   version?: string;
   /** Where the plugin comes from, such as a git URL or a package name. */
   origin?: string;
+  /** One line on what the plugin shows. */
+  description?: string;
   /** SHA-256 of the source, as the app reports it; only picks an approved, cached source. */
   hash?: string;
 }
@@ -74,6 +76,7 @@ export function parseInfo(data: JsonObject): AppInfo {
               id: p.id,
               version: str(p.version),
               origin: str(p.origin),
+              description: str(p.description),
               hash: typeof p.hash === 'string' && HASH.test(p.hash) ? p.hash : undefined,
             },
           ]

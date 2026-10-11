@@ -167,6 +167,7 @@ export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 
 ''',
       version: '0.1.0',
       origin: '../../plugins/bloc',
+      description: 'Blocs and cubits in a Bloc tab: each one\'s current state and recent events.',
     );
     Devpul.plugin(
       'riverpod',
@@ -310,6 +311,7 @@ export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 
 ''',
       version: '0.1.0',
       origin: '../../plugins/riverpod',
+      description: 'Riverpod providers in a Riverpod tab: each provider\'s current value and recent changes.',
     );
   }
 }

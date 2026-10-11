@@ -60,6 +60,7 @@ abstract final class DevpulPlugins {
       () => ${multiline(source)},
       version: ${_string('${entry.version}')},
       origin: ${_string(entry.url)},
+      description: ${_string(manifest.description)},
     );
 ''');
   }

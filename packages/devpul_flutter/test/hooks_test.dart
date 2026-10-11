@@ -110,6 +110,7 @@ void main() {
       {
         'id': 'routes',
         'origin': 'devpul_flutter',
+        'description': 'The navigator stack after each route change.',
         'hash': matches(RegExp(r'^[0-9a-f]{64}$')),
       },
     ]);

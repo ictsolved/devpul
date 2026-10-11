@@ -33,6 +33,7 @@ void main() {
       () => 'export default {}',
       version: '1.0.0',
       origin: 'https://example.com/my_plugin.git',
+      description: 'Cart contents and totals in a Cart tab.',
     );
     Devpul.limit('frame', 0);
     await pumpEventQueue();

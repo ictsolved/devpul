@@ -40,11 +40,12 @@ typedef _Action = ({
 });
 
 final class _Plugin {
-  _Plugin(this.source, this.version, this.origin);
+  _Plugin(this.source, this.version, this.origin, this.description);
 
   final String Function() source;
   final String? version;
   final String? origin;
+  final String? description;
 
   late final String hash = sha256Hex(source());
 }
@@ -171,15 +172,17 @@ abstract final class Devpul {
   /// source. [source] is an ES module; its SHA-256 goes in the handshake so
   /// the UI can load an approved copy it keeps without asking for the source.
   /// [origin] says where the plugin comes from, such as a git URL or a
-  /// package name, and shows in the UI's settings.
+  /// package name. [description] is one line on what the plugin shows. Both
+  /// show in the UI's Plugins tab.
   static void plugin(
     String id,
     String Function() source, {
     String? version,
     String? origin,
+    String? description,
   }) {
     if (!enabled) return;
-    _plugins[id] = _Plugin(source, version, origin);
+    _plugins[id] = _Plugin(source, version, origin, description);
     _infoChanged();
   }
 
@@ -229,6 +232,7 @@ abstract final class Devpul {
           'id': key,
           'version': ?value.version,
           'origin': ?value.origin,
+          'description': ?value.description,
           'hash': value.hash,
         },
     ],

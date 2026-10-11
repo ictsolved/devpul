@@ -47,7 +47,7 @@ cart/
 | `version`     | yes           | A semantic version, such as `1.2.0` or `2.0.0-dev.1`.                                                                       |
 | `api`         | with `source` | `1`, the [plugin API](%ROOT%docs/plugins/#api) the module is written for.                                                   |
 | `devpul`      | yes           | A pub version constraint on the `devpul` package the app uses.                                                              |
-| `description` | yes           | One line, up to 160 characters.                                                                                             |
+| `description` | yes           | One line, up to 160 characters: what the plugin shows.                                                                      |
 | `tags`        |               | Up to 5, each up to 20 lowercase letters, digits or `-`.                                                                    |
 | `icon`        |               | An SVG file in `files`, shown as the tab icon. Only with `source`.                                                          |
 | `readme`      |               | A file in the folder, shown in the registry. Not copied unless it is in `files`.                                            |
@@ -169,12 +169,13 @@ export const icon = "<svg ...>";
 ''',
       version: '1.2.0',
       origin: 'https://example.com/plugins.git',
+      description: 'Cart contents and totals in a Cart tab.',
     );
   }
 }
 ```
 
-The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. A plugin with no `source` is exported and not offered. The handshake lists `origin`, the lock's `url`.
+The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. A plugin with no `source` is exported and not offered. The handshake lists `origin`, the lock's `url`, and the manifest's `description`.
 
 - Not named `.g.dart`, so ignore rules for build_runner output leave it committed.
 - `// dart format off` keeps it the same under any formatter settings.

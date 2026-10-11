@@ -8,7 +8,7 @@
 - `ext.devpul.info` handshake with the protocol version, actions, plugins and limits; `app.info` events replace `app.actions`.
 - `Devpul.action` takes `params` (`DevpulParam.text`, `number`, `flag`, `choice`); the callback receives their values.
 - `Devpul.limit` mutes or rate-limits a kind; the UI can set limits through `ext.devpul.limit`.
-- `Devpul.plugin` offers a browser plugin to the UI under its plugin id; the handshake lists its origin and the SHA-256 of its source.
+- `Devpul.plugin` offers a browser plugin to the UI under its plugin id; the handshake lists its origin, description and the SHA-256 of its source.
 
 ## 0.2.0
 

@@ -96,6 +96,7 @@ void main() {
       () => 'export default {}',
       version: '1.2.0',
       origin: 'https://example.com/my_plugin.git',
+      description: 'Cart contents and totals in a Cart tab.',
     );
     Devpul.limit('frame', 0);
     await pumpEventQueue();
@@ -116,6 +117,7 @@ void main() {
           'id': 'my_plugin',
           'version': '1.2.0',
           'origin': 'https://example.com/my_plugin.git',
+          'description': 'Cart contents and totals in a Cart tab.',
           'hash':
               '9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec',
         }),

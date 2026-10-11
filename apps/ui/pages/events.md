@@ -79,21 +79,28 @@ The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, 
   "version": "1.0.0",
   "capabilities": [],
   "actions": [{ "name": "Seed cart", "params": [{ "name": "items", "type": "number", "initial": 3 }] }],
-  "plugins": [{ "id": "routes", "origin": "devpul_flutter", "hash": "9aeb8d59b4d4..." }],
+  "plugins": [
+    {
+      "id": "routes",
+      "origin": "devpul_flutter",
+      "description": "The navigator stack after each route change.",
+      "hash": "9aeb8d59b4d4..."
+    }
+  ],
   "limits": { "frame": 0 },
   "dropped": { "frame": 1520 }
 }
 ```
 
-| Field          |                                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------------------- |
-| `protocol`     | `1`. The UI compares it, not package versions.                                                        |
-| `version`      | The `devpul` package version.                                                                         |
-| `capabilities` | Features added after protocol 1, by name.                                                             |
-| `actions`      | In registration order. Param `type` is `text`, `number`, `flag` or `choice`; choices carry `options`. |
-| `plugins`      | Browser plugins from `Devpul.plugin`: id, optional version and origin, SHA-256 of the source in hex.  |
-| `limits`       | Events per second by kind; `0` is muted.                                                              |
-| `dropped`      | Events dropped by each limit so far.                                                                  |
+| Field          |                                                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `protocol`     | `1`. The UI compares it, not package versions.                                                                    |
+| `version`      | The `devpul` package version.                                                                                     |
+| `capabilities` | Features added after protocol 1, by name.                                                                         |
+| `actions`      | In registration order. Param `type` is `text`, `number`, `flag` or `choice`; choices carry `options`.             |
+| `plugins`      | Browser plugins from `Devpul.plugin`: id, optional version, origin and description, SHA-256 of the source in hex. |
+| `limits`       | Events per second by kind; `0` is muted.                                                                          |
+| `dropped`      | Events dropped by each limit so far.                                                                              |
 
 ## Session files
 

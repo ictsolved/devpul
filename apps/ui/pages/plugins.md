@@ -42,11 +42,16 @@ const _plugin = r'''
 export default { api: 1, id: 'cart', label: 'Cart', kinds: ['cart.updated'] };
 ''';
 
-void installCartTab() =>
-    Devpul.plugin('cart', () => _plugin, version: '1.0.0', origin: 'my_cart');
+void installCartTab() => Devpul.plugin(
+  'cart',
+  () => _plugin,
+  version: '1.0.0',
+  origin: 'my_cart',
+  description: 'Cart contents and totals.',
+);
 ```
 
-The first argument is the plugin id. `origin` says where the plugin comes from, such as a package name or git URL. When an app offers a plugin, DevPul shows the id, size and SHA-256 of the source and runs it only after you allow it. An approval covers one id at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. Settings lists approvals with id, source, version and hash; switch one off to stop loading it, or remove it. Check for updates there fetches the registry's `registry.json`, only on that click, and shows the latest version of each plugin listed with the same id and source, with the `devpul upgrade` command. Other plugins show "Can't check"; `devpul outdated` in the app checks every source. Sources larger than 512 KB are refused.
+The first argument is the plugin id. `origin` says where the plugin comes from, such as a package name or git URL, and `description` what it shows, in one line. When an app offers a plugin, DevPul shows the id, size and SHA-256 of the source and runs it only after you allow it. An approval covers one id at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. Settings lists approvals with id, source, version and hash; switch one off to stop loading it, or remove it. Check for updates there fetches the registry's `registry.json`, only on that click, and shows the latest version of each plugin listed with the same id and source, with the `devpul upgrade` command. Other plugins show "Can't check"; `devpul outdated` in the app checks every source. Sources larger than 512 KB are refused.
 
 The source is read only when the UI asks, and only in debug builds.
 
