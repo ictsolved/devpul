@@ -175,7 +175,7 @@ The file is written whole from `devpul.lock` and the copied files, so it is neve
 
 - Not named `.g.dart`, so ignore rules for build_runner output leave it committed.
 - `// dart format off` keeps it the same under any formatter settings.
-- `Devpul.included` is false when `dart.vm.product` is set, and when `dart.vm.profile` is set without `DEVPUL_PROFILE`. Those are the constants behind Flutter's `kReleaseMode` and `kProfileMode`, so release builds and profile builds that do not opt in drop every plugin on every platform, and so does `dart compile exe`. `dart compile js` sets neither; pass `-Ddart.vm.product=true`.
+- `Devpul.included` is false when `dart.vm.product` is set, and when `dart.vm.profile` is set without `DEVPUL_PROFILE` or on the web. Those are the constants behind Flutter's `kReleaseMode` and `kProfileMode`, so release builds and profile builds that do not opt in drop every plugin on every platform, and so does `dart compile exe`. `dart compile js` sets neither; pass `-Ddart.vm.product=true`.
 
 ## registry.json
 

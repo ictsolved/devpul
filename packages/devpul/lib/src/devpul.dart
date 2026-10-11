@@ -60,13 +60,14 @@ final class _Plugin {
 }
 
 abstract final class Devpul {
-  /// True in debug builds, and in profile builds compiled with
+  /// True in debug builds, and in native profile builds compiled with
   /// `--dart-define=DEVPUL_PROFILE=true`. A constant, so code behind
   /// `if (!Devpul.included)` is left out of every other build.
+  // Web profile builds have no VM service.
   static const included =
       !bool.fromEnvironment('dart.vm.product') &&
       (!bool.fromEnvironment('dart.vm.profile') ||
-          bool.fromEnvironment('DEVPUL_PROFILE'));
+          (bool.fromEnvironment('DEVPUL_PROFILE') && !_web));
 
   static DevpulConfig _config = const DevpulConfig();
   static DevpulConfig get config => _config;

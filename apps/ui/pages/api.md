@@ -142,9 +142,9 @@ Configuration is per isolate. Set it again in a long-lived background isolate if
 
 ## Profile builds
 
-Profile builds leave DevPul out unless built with `--dart-define=DEVPUL_PROFILE=true`, which `devpul run --profile` adds. Core, adapters and plugins then run as in debug, over the profile build's VM service. Events are encoded on the app's isolate, about 0.1 ms for a 2 KB event in a Linux profile build, so mute busy kinds with [limits](#limits) while measuring. Web profile builds have no VM service.
+Profile builds leave DevPul out unless built with `--dart-define=DEVPUL_PROFILE=true`, which `devpul run --profile` adds. Core, adapters and plugins then run as in debug, over the profile build's VM service. Events are encoded on the app's isolate, about 0.1 ms for a 2 KB event in a Linux profile build, so mute busy kinds with [limits](#limits) while measuring. Web profile builds have no VM service and leave DevPul out with or without the define.
 
-`Devpul.included` is the constant behind this: true in debug builds and in profile builds that opt in. Code behind it is left out of every other build:
+`Devpul.included` is the constant behind this: true in debug builds and in native profile builds that opt in. Code behind it is left out of every other build:
 
 ```dart
 if (Devpul.included) Bloc.observer = MyObserver();
