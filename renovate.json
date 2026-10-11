@@ -13,6 +13,12 @@
       "enabled": false
     },
     { "matchManagers": ["npm"], "matchUpdateTypes": ["minor", "patch"], "groupName": "npm minor and patch" },
-    { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" }
+    { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" },
+    {
+      "description": "Starlight pins a range of Astro",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["astro", "@astrojs/**", "starlight-*", "satteri"],
+      "groupName": "Astro and Starlight"
+    }
   ]
 }
