@@ -20,6 +20,11 @@
       "url": "../../plugins/secure_storage",
       "version": "0.1.0",
       "hash": "81a5569ad3df4eb26ef2537be220bf2e755a1719dbded6146c1ad960de3c2347"
+    },
+    "sqflite": {
+      "url": "../../plugins/sqflite",
+      "version": "0.1.0",
+      "hash": "1ea15b75f2729eb048f016ce630a36708f0e9cbade44d2c79af482d03e3f84eb"
     }
   }
 }

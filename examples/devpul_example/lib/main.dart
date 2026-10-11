@@ -16,6 +16,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'
+    show databaseFactoryFfi, sqfliteFfiInit;
 
 import 'devpul/plugins.dart';
 
@@ -58,6 +61,7 @@ void main() {
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
+  if (!kIsWeb) unawaited(_openShop());
 }
 
 final container = ProviderContainer(observers: devpulRiverpodObservers());
@@ -153,6 +157,63 @@ Future<void> _writeFiles() async {
   final png = await image.toByteData(format: ui.ImageByteFormat.png);
   await File('$dir/dot.png').writeAsBytes(png!.buffer.asUint8List());
 }
+
+Database? shop;
+
+// Something to look at in the SQLite tab.
+Future<void> _openShop() async {
+  if (Platform.isLinux || Platform.isWindows) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+  final db = await openDatabase(
+    'shop.db',
+    version: 1,
+    onCreate: (db, _) async {
+      await db.execute(
+        'CREATE TABLE customer (id INTEGER PRIMARY KEY, name TEXT NOT NULL, '
+        'email TEXT UNIQUE)',
+      );
+      await db.execute(
+        'CREATE TABLE "order" (id INTEGER PRIMARY KEY, '
+        'customer_id INTEGER REFERENCES customer (id), total REAL, '
+        'created TEXT, receipt BLOB)',
+      );
+      await db.execute('CREATE INDEX order_customer ON "order" (customer_id)');
+      await db.execute(
+        'CREATE TRIGGER order_created AFTER INSERT ON "order" '
+        'WHEN NEW.created IS NULL BEGIN UPDATE "order" '
+        "SET created = datetime('now') WHERE id = NEW.id; END",
+      );
+      await db.execute(
+        'CREATE VIEW customer_total AS SELECT c.name, count(o.id) AS orders, '
+        'sum(o.total) AS total FROM customer c '
+        'LEFT JOIN "order" o ON o.customer_id = c.id GROUP BY c.id',
+      );
+      for (final name in ['Ada', 'Grace', 'Linus']) {
+        await db.insert('customer', {
+          'name': name,
+          'email': '${name.toLowerCase()}@example.com',
+        });
+      }
+      final batch = db.batch();
+      for (var i = 0; i < 240; i++) {
+        batch.insert('order', _order(i));
+      }
+      await batch.commit(noResult: true);
+    },
+  );
+  shop = db;
+  DevpulSqflite.add(db, name: 'shop');
+}
+
+Map<String, Object?> _order(int i) => {
+  'customer_id': i % 3 + 1,
+  'total': (i * 7 % 50) + 0.99,
+  'receipt': i.isEven
+      ? Uint8List.fromList(List.generate(64, (j) => i ^ j))
+      : null,
+};
 
 class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key});
@@ -294,6 +355,11 @@ class _HomePageState extends State<HomePage> {
       ),
     ),
     ('Save secrets', _saveSecrets),
+    if (!kIsWeb)
+      (
+        'SQLite: add order',
+        () => shop?.insert('order', _order(Random().nextInt(1000))),
+      ),
     if (!kIsWeb) ('Write files', _writeFiles),
     if (!kIsWeb)
       (

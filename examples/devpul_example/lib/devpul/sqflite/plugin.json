@@ -1,0 +1,15 @@
+{
+  "id": "sqflite",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": ">=1.0.0-dev.1 <2.0.0",
+  "description": "The app's sqflite databases in an SQLite tab: tables and views, paged rows and a SQL console.",
+  "tags": ["database", "storage"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulSqflite.add(db, name: 'app');"],
+  "requires": { "sqflite_common": ">=2.4.0+2 <3.0.0" },
+  "source": "sqflite.js",
+  "dart": "sqflite.dart",
+  "files": ["icon.svg", "sqflite.dart", "sqflite.js"]
+}
