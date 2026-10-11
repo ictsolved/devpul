@@ -14,6 +14,9 @@ description: Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR
 | Plugin tabs | Events claimed by a [plugin](/docs/plugins/).                               |
 | Plugins     | Offers, approvals, updates, load errors and Allow writes. At the right end. |
 
+<img class="dark:sl-hidden" src="/screenshots/http-light.webp" alt="The HTTP tab with a POST request open: URL, headers and JSON bodies" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/http-dark.webp" alt="The HTTP tab with a POST request open: URL, headers and JSON bodies" width="1440" height="900" loading="lazy" />
+
 ## Status bar
 
 The bar at the bottom shows the connection state, the latest `Devpul.session` fields, the result of the last action or hot reload, Writes on while Allow writes is on, muted and rate-limited kinds, plugin load errors, and stored events against the limit. Pick the session fields in Settings; those that do not fit sit behind "+N", and hovering shows them all. Click Writes on to turn writes off, the limits to open Settings, or the errors to open the Plugins tab.
@@ -45,6 +48,9 @@ Click a column header in HTTP to sort by it; click again to flip the direction. 
 ## Details
 
 Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch to a tree with the Tree button. Copy the URL, any section, a curl command or a `fetch()` call for the browser console.
+
+<img class="dark:sl-hidden" src="/screenshots/errors-light.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and the requests made before it" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/errors-dark.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and the requests made before it" width="1440" height="900" loading="lazy" />
 
 In Errors, **Group repeats** folds identical errors into one row with a count, and each error lists the requests made in the 10 seconds before it. Click one to open it in HTTP; **Back to error** returns.
 

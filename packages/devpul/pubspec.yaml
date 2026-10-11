@@ -7,6 +7,14 @@ repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul
 issue_tracker: https://github.com/ictsolved/devpul/issues
 topics: [debugging, network, logging, http, devtools]
 
+screenshots:
+  - description: A session in the DevPul UI. Requests arrive, a POST opens with its headers and bodies, then an error shows with the requests before it.
+    path: screenshots/session-light.webp
+  - description: The HTTP tab with a request's headers and bodies.
+    path: screenshots/http-light.webp
+  - description: The Errors tab with a stack trace and the requests made before the error.
+    path: screenshots/errors-light.webp
+
 environment:
   sdk: ^3.8.0
 

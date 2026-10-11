@@ -5,6 +5,9 @@ description: Copy DevPul plugins into an app with devpul add, wire them in main,
 
 A plugin is copied into the app, not added as a dependency. `devpul add` puts its files in `lib/devpul/<id>/`, records where they came from in `devpul.lock` and writes `lib/devpul/plugins.dart`. Commit all three: builds need no network, and plugin code shows up in the app's diffs.
 
+<img class="dark:sl-hidden" src="/screenshots/sqlite-light.webp" alt="The SQLite tab of the sqflite plugin showing the products table of the app's database" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/sqlite-dark.webp" alt="The SQLite tab of the sqflite plugin showing the products table of the app's database" width="1440" height="900" loading="lazy" />
+
 The commands come with `devpul_cli` and run in the app root, the folder with `pubspec.yaml`:
 
 ```sh
@@ -40,6 +43,9 @@ When an app offers a plugin, DevPul shows its id, version, description and sourc
 Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. Sources larger than 512 KB are refused.
 
 The Plugins tab lists approvals with icon, id, version, description and a link to an http(s) source; hovering shows the origin on the id and the hash on the version. Switch one off to stop loading it, or remove it.
+
+<img class="dark:sl-hidden" src="/screenshots/plugins-light.webp" alt="The Plugins tab listing the riverpod and sqflite plugins, the Allow writes switch and module URLs" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/plugins-dark.webp" alt="The Plugins tab listing the riverpod and sqflite plugins, the Allow writes switch and module URLs" width="1440" height="900" loading="lazy" />
 
 **Check for updates** there fetches the registry's `registry.json`, only on that click, and shows the latest version of each plugin listed with the same id and source, with the `devpul upgrade` command. Other plugins show "Can't check"; `devpul outdated` in the app checks every source.
 

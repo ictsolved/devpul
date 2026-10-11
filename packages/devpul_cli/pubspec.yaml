@@ -7,6 +7,14 @@ repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_cli
 issue_tracker: https://github.com/ictsolved/devpul/issues
 topics: [debugging, network, cli, devtools]
 
+screenshots:
+  - description: A session in the DevPul UI. Requests arrive, a POST opens with its headers and bodies, then an error shows with the requests before it.
+    path: screenshots/session-light.webp
+  - description: The Plugins tab with plugins added by devpul add.
+    path: screenshots/plugins-light.webp
+  - description: The SQLite tab of the sqflite plugin, showing a table of the app's database.
+    path: screenshots/sqlite-light.webp
+
 environment:
   sdk: ^3.8.0
 

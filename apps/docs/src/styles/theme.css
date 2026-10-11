@@ -135,3 +135,9 @@
   display: block;
   color: var(--primary);
 }
+
+/* Light shots on a light page need an edge. */
+.sl-markdown-content img[src^='/screenshots/'] {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}

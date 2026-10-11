@@ -5,8 +5,8 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 **Open the UI: [devpul.saradgajurel.com.np](https://devpul.saradgajurel.com.np)**
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
-  <img alt="DevPul showing HTTP requests from a running app, with the detail of a POST request" src="docs/screenshot-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="apps/docs/public/screenshots/session-dark.webp">
+  <img alt="DevPul connecting to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" src="apps/docs/public/screenshots/session-light.webp">
 </picture>
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
@@ -93,6 +93,7 @@ npm run check        # everything below
 npm run check:dart   # dart format, analyze, tests (Chrome for the web tests)
 npm run check:web    # prettier, oxlint, vitest, tsc, build
 npm run format       # prettier --write
+npm run screenshots  # docs, README and pub screenshots (needs img2webp)
 dart run tool/release.dart 1.2.3   # bump versions, check changelogs, print publish commands
 ```
 

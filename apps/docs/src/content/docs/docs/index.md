@@ -7,6 +7,9 @@ DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls wit
 
 > Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab and are never sent to a server. History is kept in the browser's own storage, and you can turn that off.
 
+<img class="dark:sl-hidden" src="/screenshots/session-light.webp" alt="DevPul connecting to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/session-dark.webp" alt="DevPul connecting to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" width="1440" height="900" loading="lazy" />
+
 ## 1. Add the packages
 
 ```yaml
