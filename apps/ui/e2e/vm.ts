@@ -29,6 +29,12 @@ export interface VmOptions {
 const contract = (file: string): unknown =>
   JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract', file), 'utf8'));
 
+interface CallFixture {
+  request: { name: string };
+  result: JsonObject;
+  refused: { code: number; message: string; data: JsonObject };
+}
+
 export const fixtureEvents = (): VmEvent[] => [
   ...(contract('events.json') as VmEvent[]),
   ...(contract('flutter.json') as VmEvent[]),
@@ -92,7 +98,7 @@ const ISOLATE = {
   isSystemIsolate: false,
   isolateGroupId: GROUP.id,
 };
-const EXTENSIONS = ['backlog', 'action', 'plugin', 'limit', 'info'].map((n) => `ext.devpul.${n}`);
+const EXTENSIONS = ['backlog', 'action', 'call', 'plugin', 'limit', 'info'].map((n) => `ext.devpul.${n}`);
 
 class RpcError extends Error {
   readonly code: number;
@@ -279,6 +285,13 @@ export class FakeVm {
           throw new Error(`Invalid argument (name): unknown action: "${String(params.name)}"`);
         }
         return { result: null };
+      }
+      // The handler in contract/call.json, which needs writes.
+      case 'ext.devpul.call': {
+        const { request, result, refused } = contract('call.json') as CallFixture;
+        if (params.name !== request.name) throw new Error(`No handler named ${String(params.name)}.`);
+        if (params.writes !== 'true') throw new RpcError(refused.code, refused.message, refused.data);
+        return result;
       }
       case 'ext.devpul.limit': {
         const kind = String(params.kind);

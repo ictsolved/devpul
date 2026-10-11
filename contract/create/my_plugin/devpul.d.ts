@@ -38,6 +38,19 @@ export interface PluginContext {
    * `isolateId` is given. Fails while the app is paused in the debugger and after 5 s without an answer.
    */
   call: (method: string, params?: Record<string, unknown>) => Promise<any>;
+  /**
+   * Calls a handler the app registered with `Devpul.handle`, on the same app as `call`, and
+   * resolves to its result. Rejects with the app's message, such as a `writes` handler refusing
+   * while Allow writes is off.
+   */
+  request: (name: string, args?: Record<string, unknown>) => Promise<any>;
+  /** Whether Allow writes is on. The user sets it in the Plugins tab; it is off on each load. */
+  readonly writes: boolean;
+  /**
+   * Calls `listener` when Allow writes changes. Returns a function that stops it; DevPul also
+   * stops it on cleanup.
+   */
+  onWritesChange: (listener: (writes: boolean) => void) => () => void;
   ui: PluginUi;
 }
 

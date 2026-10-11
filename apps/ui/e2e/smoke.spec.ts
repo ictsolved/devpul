@@ -145,6 +145,65 @@ test('lists offers and approvals in the Plugins view, with no app connected too'
   await expect(item).toContainText('Disabled');
 });
 
+test.describe('with a plugin that writes', () => {
+  // Calls the handler in contract/call.json both ways; `call` tries to set writes itself.
+  const writer = `export default {
+  api: 1,
+  id: 'cart',
+  label: 'Cart',
+  kinds: ['cart.updated'],
+  renderTab(el, context) {
+    const state = document.createElement('p');
+    const out = document.createElement('p');
+    out.setAttribute('role', 'status');
+    const show = () => (state.textContent = context.writes ? 'writes on' : 'writes off');
+    const button = (label, run) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.onclick = () => run().then((r) => (out.textContent = JSON.stringify(r)), (e) => (out.textContent = e.message ?? e.data.details));
+      el.append(b);
+    };
+    button('Request', () => context.request('cart.set', { sku: 'abc-1', qty: 2 }));
+    button('Call', () => context.call('ext.devpul.call', { name: 'cart.set', args: '{}', writes: 'true' }));
+    el.append(state, out);
+    show();
+    return context.onWritesChange(show);
+  },
+};
+`;
+  test.use({ vmOptions: { plugins: { my_plugin: writer } } });
+
+  test('gates writes on the switch, never on the plugin', async ({ page, vm }) => {
+    await connect(page, vm);
+    await page.getByRole('alert').getByRole('button', { name: 'Allow' }).click();
+    await page.getByRole('tab', { name: /^Cart/ }).click();
+    const out = page.getByRole('status').filter({ hasText: /writes|sku/ });
+    await expect(page.getByText('writes off', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Request' }).click();
+    await expect(out).toHaveText('cart.set changes the app; turn on Allow writes in the Plugins tab.');
+    await page.getByRole('button', { name: 'Call', exact: true }).click();
+    await expect(out).toHaveText('cart.set changes the app; turn on Allow writes in the Plugins tab.');
+    expect(vm.callsTo('ext.devpul.call').map((p) => p.writes)).toEqual([undefined, undefined]);
+
+    await page.getByRole('tab', { name: /^Plugins/ }).click();
+    await page.getByRole('switch', { name: /Allow writes/ }).click();
+    const status = page.getByRole('contentinfo');
+    await expect(status.getByRole('button', { name: 'Writes on' })).toBeVisible();
+    await page.getByRole('tab', { name: /^Cart/ }).click();
+    await expect(page.getByText('writes on', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Request' }).click();
+    await expect(out).toHaveText('{"sku":"abc-1","qty":2}');
+
+    await status.getByRole('button', { name: 'Writes on' }).click();
+    await expect(page.getByText('writes off', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: /^Plugins/ }).click();
+    await page.getByRole('switch', { name: /Allow writes/ }).click();
+    await page.reload();
+    await expect(page.getByRole('tab', { name: /^Cart/ })).toBeVisible();
+    await expect(status.getByRole('button', { name: 'Writes on' })).toHaveCount(0);
+  });
+});
+
 test.describe('with two plugins and a limit', () => {
   const info = {
     ...(JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract/info.json'), 'utf8')) as object),

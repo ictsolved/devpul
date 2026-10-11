@@ -51,6 +51,7 @@ Its error shows in the status bar and the Plugins tab. The module must be served
 - `#connect=` links connect only to apps on this machine. A URL you paste can point anywhere.
 - Every page sets a Content Security Policy: scripts come only from DevPul itself and the plugins you allowed, with no `eval`.
 - Plugins run with full access to the page. Load only code you trust. `devpul add` copies a plugin's code into the app's repository, where it shows up in diffs, and DevPul asks before running each plugin, once per id and SHA-256.
+- Allow writes in the Plugins tab gates plugin calls that change the app. It is off each time DevPul loads and guards against slips; an allowed plugin can reach anything the VM service can.
 - Release and profile builds never emit.
 
 ## Questions
@@ -85,4 +86,4 @@ Yes. A short `ProviderObserver` or `BlocObserver` sends every state change as an
 
 ### Can I trigger things in the app from DevPul?
 
-Yes. Register actions with `Devpul.action` and they show in the Actions menu. Plugins can call any service extension the app registers.
+Yes. Register actions with `Devpul.action` and they show in the Actions menu. Plugins call handlers the app registers with `Devpul.handle`; those that change the app wait for Allow writes in the Plugins tab.

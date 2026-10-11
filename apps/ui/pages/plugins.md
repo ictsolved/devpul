@@ -88,6 +88,9 @@ export default (devpul) => {
 | `context.events`               | Every event the plugin matches, oldest first, current when read.                                                                                                                                                                                                                                                                                              |
 | `context.onEvents(fn)`         | Calls `fn` with each batch of new matching events, oldest first. Returns a function that stops it; DevPul also stops it when the view is cleaned up.                                                                                                                                                                                                          |
 | `context.call(method, params)` | Calls a VM service method on the app and returns the result: in `render`, the app that sent the event; in `renderTab`, the app of the newest matching event, or the app that offered the plugin. Service extensions (`ext.*`) get its isolate unless you pass `isolateId`. They fail while the app is paused in the debugger and after 5 s without an answer. |
+| `context.request(name, args)`  | Calls a [`Devpul.handle`](%ROOT%docs/api/#handlers) handler on the app `context.call` reaches and returns its result. Rejects with the app's message, such as a `writes` handler refusing while Allow writes is off.                                                                                                                                          |
+| `context.writes`               | Whether Allow writes is on.                                                                                                                                                                                                                                                                                                                                   |
+| `context.onWritesChange(fn)`   | Calls `fn` with the new value when Allow writes changes. Returns a function that stops it; DevPul also stops it when the view is cleaned up.                                                                                                                                                                                                                  |
 | `context.ui.json(value)`       | A collapsible JSON tree element.                                                                                                                                                                                                                                                                                                                              |
 | `context.ui.keyValues(object)` | A two-column table element; values that are not strings show as JSON.                                                                                                                                                                                                                                                                                         |
 | `context.ui.copy(text, label)` | A copy button element. `text` may be a function, read on click.                                                                                                                                                                                                                                                                                               |
@@ -96,33 +99,41 @@ export default (devpul) => {
 
 ## Talking to the app
 
-`context.call` reaches any service extension the app registers with `dart:developer`:
+The app answers through handlers it registers with [`Devpul.handle`](%ROOT%docs/api/#handlers), named `<plugin id>.<method>`. Args and results are JSON.
 
 ```dart
-registerExtension('ext.myapp.flags', (method, params) async {
-  if (params['set'] != null) flags.toggle(params['set']!);
-  return ServiceExtensionResponse.result(jsonEncode(flags.toJson()));
-});
+Devpul.handle('flags.list', (_) => flags.toJson());
+Devpul.handle('flags.set', (args) {
+  flags.set(args['name']! as String, on: args['on']! as bool);
+  return flags.toJson();
+}, writes: true);
 ```
 
 ```js
-render(el, e, context) {
+renderTab(el, context) {
   const button = document.createElement('button');
-  button.textContent = 'Toggle beta';
+  button.textContent = 'Turn on beta';
   button.onclick = async () => {
-    const flags = await context.call('ext.myapp.flags', { set: 'beta' });
+    const flags = await context.request('flags.set', { name: 'beta', on: true });
     button.textContent = `beta: ${flags.beta}`;
   };
+  const sync = () => (button.disabled = !context.writes);
+  sync();
   el.append(button);
+  return context.onWritesChange(sync);
 }
 ```
 
-For plain buttons and small forms with no custom UI, [`Devpul.action`](%ROOT%docs/api/#actions) is simpler.
+A handler that changes the app takes `writes: true` and runs only while **Allow writes** is on in the Plugins tab: one switch for every plugin and app, off each time DevPul loads, shown in the status bar while on. DevPul sets it on each call; a plugin cannot. It guards against slips, not against a plugin, which can already reach anything the VM service can.
+
+`context.call` reaches any VM service method, including service extensions registered with `dart:developer`. Prefer handlers: registering one again replaces it, and writes apply to them.
+
+For plain buttons and small forms with no custom UI, [`Devpul.action`](%ROOT%docs/api/#actions) is simpler. Actions need no switch: the click is the intent.
 
 ## Examples
 
 - Routes, in `devpul_flutter`: [`DevpulNavigatorObserver`](%ROOT%docs/flutter/#routes) offers a tab with the navigation stack after each route event. It uses `render`.
-- [Riverpod](%REPO_URL%/tree/main/plugins/riverpod) and [Bloc](%REPO_URL%/tree/main/plugins/bloc), in the repository: an observer sends every change to a tab with each provider's or bloc's current value and recent changes. They use `renderTab`, `onEvents`, a service extension for the current state, and `context.ui`.
+- [Riverpod](%REPO_URL%/tree/main/plugins/riverpod) and [Bloc](%REPO_URL%/tree/main/plugins/bloc), in the repository: an observer sends every change to a tab with each provider's or bloc's current value and recent changes. They use `renderTab`, `onEvents`, a handler for the current state, and `context.ui`.
 
 ## Developing a plugin
 

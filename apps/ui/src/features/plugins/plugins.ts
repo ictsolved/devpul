@@ -1,4 +1,5 @@
-import type { DevEvent, JsonObject } from '../../core/events';
+import { type DevEvent, isObject, type JsonObject } from '../../core/events';
+import { rpcMessage } from '../../core/rpc';
 
 /** The plugin API this UI implements. */
 export const API = 1;
@@ -7,6 +8,8 @@ export const API = 1;
 export const MAX_SOURCE = 512 * 1024;
 /** Longest tab label, in characters; the same as a plugin id. */
 export const MAX_LABEL = 32;
+
+export const CALL = 'ext.devpul.call';
 
 export interface PluginEvent {
   /** Unique per event; stable across reloads. */
@@ -40,6 +43,11 @@ export interface PluginContext {
    * (`ext.*`) get its isolate unless `isolateId` is given.
    */
   call: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
+  /** Calls a `Devpul.handle` handler on the same app and resolves to its result. */
+  request: (name: string, args?: Record<string, unknown>) => Promise<unknown>;
+  /** Whether Allow writes is on. */
+  readonly writes: boolean;
+  onWritesChange: (listener: (writes: boolean) => void) => () => void;
   ui: PluginUi;
 }
 
@@ -129,6 +137,57 @@ export const toPluginEvent = (e: DevEvent): PluginEvent => ({
 });
 
 export const registry = new Registry();
+
+/** Allow writes: one switch for every plugin and app, off on each load. */
+class Writes {
+  on = false;
+  private listeners = new Set<(on: boolean) => void>();
+
+  set(on: boolean): void {
+    if (on === this.on) return;
+    this.on = on;
+    for (const fn of this.listeners) {
+      try {
+        fn(on);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+
+  subscribe = (fn: (on: boolean) => void): (() => void) => {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  };
+
+  get = (): boolean => this.on;
+}
+
+export const writes = new Writes();
+
+type Call = (method: string, params?: Record<string, unknown>) => Promise<unknown>;
+
+// `writes` on ext.devpul.call comes from the switch, never from the plugin.
+function withWrites(params: Record<string, unknown> = {}): Record<string, unknown> {
+  const { writes: _, ...rest } = params;
+  return writes.on ? { ...rest, writes: 'true' } : rest;
+}
+
+/** `context.call` and `context.request` over [call]. */
+export function pluginCalls(call: Call): Pick<PluginContext, 'call' | 'request'> {
+  return {
+    call: (method, params) => call(method, method === CALL ? withWrites(params) : params),
+    request: async (name, args) => {
+      let result: unknown;
+      try {
+        result = await call(CALL, withWrites({ name, ...(args && { args: JSON.stringify(args) }) }));
+      } catch (err) {
+        throw new Error(rpcMessage(err), { cause: err });
+      }
+      return isObject(result) ? result.result : undefined;
+    },
+  };
+}
 
 /**
  * Runs [source] as an ES module. Its default export is a plugin or a

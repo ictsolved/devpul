@@ -13,11 +13,11 @@ import { fromSession } from './core/export';
 import { parseInfo } from './core/info';
 import { formatTime } from './core/json';
 import { Persist } from './core/persist';
-import { type ConnState, Connection, isPaused } from './core/rpc';
+import { type ConnState, Connection, isPaused, rpcMessage } from './core/rpc';
 import { appName, sessionFields } from './core/session';
 import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl, toWsUrl } from './core/url';
-import { ActionsMenu, appActions, type RunAction, rpcMessage } from './features/actions/ActionsMenu';
+import { ActionsMenu, appActions, type RunAction } from './features/actions/ActionsMenu';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
 import { ErrorsTab } from './features/errors/ErrorsTab';
 import { EventsTab } from './features/events/EventsTab';
@@ -28,7 +28,7 @@ import { LogsTab } from './features/logs/LogsTab';
 import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOffers';
 import { PluginsView } from './features/plugins/PluginsView';
 import { type AppCall, PluginTab } from './features/plugins/PluginTab';
-import { matches, registry } from './features/plugins/plugins';
+import { matches, registry, writes } from './features/plugins/plugins';
 import { SettingsDialog } from './features/settings/SettingsDialog';
 import { type Limited, StatusBar } from './features/status/StatusBar';
 import { cli, listenCli } from './lib/cli';
@@ -80,6 +80,7 @@ export function App() {
   // Re-renders on every store change; children read from the store directly.
   useSyncExternalStore(store.subscribe, store.getVersion);
   const plugins = useSyncExternalStore(registry.subscribe, registry.getPlugins);
+  const writesOn = useSyncExternalStore(writes.subscribe, writes.get);
   const persist = useRef<Persist | null>(null);
   const live = useRef(new Map<string, Connection>());
   const filterRef = useRef<HTMLInputElement>(null);
@@ -689,6 +690,8 @@ export function App() {
                     urls={settings.pluginUrls}
                     served={cliPlugins}
                     errors={pluginOffers.errors}
+                    writes={writesOn}
+                    onWrites={(on) => writes.set(on)}
                     onAllow={pluginOffers.allow}
                     onDismiss={pluginOffers.dismiss}
                     onApprovals={(approvals) => setSettings({ ...latest.current.settings, plugins: approvals })}
@@ -718,6 +721,8 @@ export function App() {
             memory={{ count: store.size, bytes: store.bytes, dropped: store.dropped, maxBytes: settings.maxMB * MB }}
             limited={limited}
             pluginErrors={pluginOffers.errors}
+            writes={writesOn}
+            onWritesOff={() => writes.set(false)}
             onOpenSettings={openSettings}
             onOpenPlugins={() => setTab('plugins')}
           />

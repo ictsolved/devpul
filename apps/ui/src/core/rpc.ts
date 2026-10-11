@@ -35,6 +35,14 @@ const INFO = 'ext.devpul.info';
 export const isPaused = (state: ConnState | undefined, isolateId: string | undefined): boolean =>
   isolateId !== undefined && state?.paused.includes(isolateId) === true;
 
+/** The text of a failed call: an extension's own message, or the RPC error's. */
+export function rpcMessage(err: unknown): string {
+  if (!err || typeof err !== 'object') return String(err);
+  const data = 'data' in err ? err.data : undefined;
+  if (data && typeof data === 'object' && 'details' in data) return String(data.details);
+  return 'message' in err ? String(err.message) : String(err);
+}
+
 export class Connection {
   state: ConnState = { status: 'closed', everOpened: false, paused: [], services: {} };
 

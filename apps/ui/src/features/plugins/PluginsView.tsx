@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { Approval } from '../../core/approvals';
 import { marketUrl, pageUrl } from '../../lib/links';
@@ -13,6 +14,8 @@ interface Props {
   /** Files `devpul --plugin` serves. */
   served: string[];
   errors: Record<string, string>;
+  writes: boolean;
+  onWrites: (on: boolean) => void;
   onAllow: (offer: Offer) => void;
   onDismiss: (offer: Offer) => void;
   onApprovals: (approvals: Approval[]) => void;
@@ -62,7 +65,7 @@ function Heading({ children }: { children: ReactNode }) {
 const LINK = 'text-primary hover:underline';
 
 export function PluginsView(props: Props) {
-  const { offers, approvals, urls, served, errors, onAllow, onDismiss, onApprovals, onUrls } = props;
+  const { offers, approvals, urls, served, errors, writes, onWrites, onAllow, onDismiss, onApprovals, onUrls } = props;
   return (
     <div className="min-h-0 flex-1 overflow-y-auto" aria-label="Plugins" role="region">
       <div className="mx-auto max-w-190 px-4 py-3 [&_p]:my-1.5">
@@ -106,6 +109,18 @@ export function PluginsView(props: Props) {
             None yet. A running app offers the plugins it ships; allowed ones stay here.
           </p>
         )}
+
+        <Heading>Writes</Heading>
+        <label className="my-1.5 flex items-start gap-2.5">
+          <Switch className="mt-0.5" checked={writes} onCheckedChange={onWrites} />
+          <span>
+            Allow writes
+            <span className="block text-muted-foreground">
+              Lets plugins change the app, such as editing a stored value. For every plugin and app, off each time
+              DevPul loads.
+            </span>
+          </span>
+        </label>
 
         {Object.keys(errors).length > 0 && (
           <>

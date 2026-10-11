@@ -47,13 +47,6 @@ export function appActions(runs: ReadonlyMap<string, RunInfo>, states: Record<st
 }
 
 // Service extension errors carry the app's message in data.details.
-export function rpcMessage(err: unknown): string {
-  if (!err || typeof err !== 'object') return String(err);
-  const data = 'data' in err ? err.data : undefined;
-  if (data && typeof data === 'object' && 'details' in data) return String(data.details);
-  return 'message' in err ? String(err.message) : String(err);
-}
-
 interface Props {
   apps: AppActions[];
   onRun: RunAction;

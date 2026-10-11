@@ -7,18 +7,18 @@ description: Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR
 
 ## Tabs
 
-| Tab         | Shows                                                                  |
-| ----------- | ---------------------------------------------------------------------- |
-| HTTP        | Requests from the HTTP adapters, newest first, with live pending rows. |
-| Errors      | `Devpul.error`, Flutter errors and uncaught platform errors.           |
-| Logs        | `Devpul.log` and captured `debugPrint`. Appears once there are logs.   |
-| Events      | Everything else sent with `Devpul.emit`.                               |
-| Plugin tabs | Events claimed by a [plugin](%ROOT%docs/plugins/).                     |
-| Plugins     | Offers, approvals, updates and load errors. At the right end.          |
+| Tab         | Shows                                                                       |
+| ----------- | --------------------------------------------------------------------------- |
+| HTTP        | Requests from the HTTP adapters, newest first, with live pending rows.      |
+| Errors      | `Devpul.error`, Flutter errors and uncaught platform errors.                |
+| Logs        | `Devpul.log` and captured `debugPrint`. Appears once there are logs.        |
+| Events      | Everything else sent with `Devpul.emit`.                                    |
+| Plugin tabs | Events claimed by a [plugin](%ROOT%docs/plugins/).                          |
+| Plugins     | Offers, approvals, updates, load errors and Allow writes. At the right end. |
 
 ## Status bar
 
-The bar at the bottom shows the connection state, the latest `Devpul.session` fields, the result of the last action or hot reload, muted and rate-limited kinds, plugin load errors, and stored events against the limit. Pick the session fields in Settings; those that do not fit sit behind "+N", and hovering shows them all. Click the limits to open Settings, or the errors to open the Plugins tab.
+The bar at the bottom shows the connection state, the latest `Devpul.session` fields, the result of the last action or hot reload, Writes on while Allow writes is on, muted and rate-limited kinds, plugin load errors, and stored events against the limit. Pick the session fields in Settings; those that do not fit sit behind "+N", and hovering shows them all. Click Writes on to turn writes off, the limits to open Settings, or the errors to open the Plugins tab.
 
 ## Filtering
 

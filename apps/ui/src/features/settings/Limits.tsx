@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { type DevEvent, isObject } from '../../core/events';
 import { type AppInfo, limitKey, limitParams, parseInfo } from '../../core/info';
+import { rpcMessage } from '../../core/rpc';
 import type { RunInfo } from '../../core/store';
-import { rpcMessage } from '../actions/ActionsMenu';
 import type { AppCall } from '../plugins/PluginTab';
 import { NumberField } from './NumberField';
 

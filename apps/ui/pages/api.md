@@ -91,6 +91,21 @@ Params open a form first. `DevpulParam.text`, `number`, `flag` and `choice` give
 
 Actions are debug tools: keep them to things that are safe to trigger at any time.
 
+## Handlers
+
+```dart
+Devpul.handle('cart.items', (_) => cart.items);
+Devpul.handle(
+  'cart.remove',
+  (args) => cart.remove(args['sku']! as String),
+  writes: true,
+);
+```
+
+A handler answers `context.request(name, args)` from a [plugin](%ROOT%docs/plugins/#talking-to-the-app). `args` holds the JSON object the plugin sent, empty when it sent none; the return value is converted like event data, and exceptions reach the plugin as the failure message. Name it `<plugin id>.<method>`. Registering a name again replaces it.
+
+A `writes: true` handler refuses unless Allow writes is on in the UI's Plugins tab. Give it to every handler that changes the app.
+
 ## Limits
 
 ```dart

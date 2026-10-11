@@ -5,7 +5,7 @@ import { JsonView } from '../../components/JsonView';
 import type { DevEvent } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
 import { pluginUi } from './pluginUi';
-import { type DevpulPlugin, type PluginContext, type PluginEvent, toPluginEvent } from './plugins';
+import { type DevpulPlugin, type PluginContext, type PluginEvent, pluginCalls, toPluginEvent, writes } from './plugins';
 
 export type AppCall = (e: DevEvent, method: string, params?: Record<string, unknown>) => Promise<unknown>;
 
@@ -46,21 +46,30 @@ function useFeed(events: DevEvent[]) {
 function makeContext(
   feed: ReturnType<typeof useFeed>,
   call: (method: string, params?: Record<string, unknown>) => Promise<unknown>,
-  listeners: Set<Listener>,
+  stops: Set<() => void>,
 ): PluginContext {
+  const track = (off: () => void) => {
+    const stop = () => {
+      stops.delete(stop);
+      off();
+    };
+    stops.add(stop);
+    return stop;
+  };
   return {
     get events() {
       return feed.current.events.toReversed().map(toPluginEvent);
     },
     onEvents: (fn) => {
+      const listeners = feed.current.listeners;
       listeners.add(fn);
-      feed.current.listeners.add(fn);
-      return () => {
-        listeners.delete(fn);
-        feed.current.listeners.delete(fn);
-      };
+      return track(() => listeners.delete(fn));
     },
-    call,
+    ...pluginCalls(call),
+    get writes() {
+      return writes.on;
+    },
+    onWritesChange: (fn) => track(writes.subscribe(fn)),
     ui: pluginUi,
   };
 }
@@ -68,18 +77,16 @@ function makeContext(
 /** Runs a plugin's render function and undoes it when deps change. */
 function usePluginRender(
   ref: RefObject<HTMLDivElement | null>,
-  run: (el: HTMLElement, listeners: Set<Listener>) => void | (() => void),
-  feed: ReturnType<typeof useFeed>,
+  run: (el: HTMLElement, stops: Set<() => void>) => void | (() => void),
   deps: unknown[],
 ) {
   useEffect(() => {
     const el = ref.current;
-    const f = feed.current;
     if (!el) return;
-    const listeners = new Set<Listener>();
+    const stops = new Set<() => void>();
     let cleanup: void | (() => void);
     try {
-      cleanup = run(el, listeners);
+      cleanup = run(el, stops);
     } catch (err) {
       el.textContent = `Plugin error: ${String(err)}`;
     }
@@ -89,7 +96,7 @@ function usePluginRender(
       } catch {
         // Plugin cleanup errors are not ours to surface.
       }
-      for (const fn of listeners) f.listeners.delete(fn);
+      for (const stop of stops) stop();
       el.replaceChildren();
     };
     // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -169,13 +176,12 @@ function PluginView(props: { plugin: DevpulPlugin; event: DevEvent; events: DevE
   const feed = useFeed(events);
   usePluginRender(
     ref,
-    (el, listeners) =>
+    (el, stops) =>
       plugin.render?.(
         el,
         toPluginEvent(event),
-        makeContext(feed, (method, params) => call(event, method, params), listeners),
+        makeContext(feed, (method, params) => call(event, method, params), stops),
       ),
-    feed,
     [plugin, event, call],
   );
   return <div ref={ref} className="plugin-view px-3 py-2" />;
@@ -190,7 +196,7 @@ function WholeTab({ plugin, events, fallback, call }: Props) {
   }, [events, fallback]);
   usePluginRender(
     ref,
-    (el, listeners) =>
+    (el, stops) =>
       plugin.renderTab?.(
         el,
         makeContext(
@@ -199,10 +205,9 @@ function WholeTab({ plugin, events, fallback, call }: Props) {
             const e = target.current;
             return e ? call(e, method, params) : Promise.reject(new Error('No app has sent events for this tab.'));
           },
-          listeners,
+          stops,
         ),
       ),
-    feed,
     [plugin, call],
   );
   return <div ref={ref} className="plugin-view min-w-0 flex-1 overflow-auto px-3 py-2" />;

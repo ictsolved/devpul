@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { Gauge, Puzzle } from 'lucide-react';
+import { Gauge, PencilLine, Puzzle } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Tip } from '../../components/Tip';
 import type { DevEvent } from '../../core/events';
@@ -25,6 +25,8 @@ interface Props {
   memory: { count: number; bytes: number; dropped: number; maxBytes: number };
   limited: Limited[];
   pluginErrors: Record<string, string>;
+  writes: boolean;
+  onWritesOff: () => void;
   onOpenSettings: () => void;
   onOpenPlugins: () => void;
 }
@@ -33,7 +35,8 @@ const ITEM = 'flex flex-none items-center gap-1.5 whitespace-nowrap';
 const BUTTON = cn(ITEM, 'cursor-pointer rounded-sm px-1 hover:bg-secondary hover:text-foreground');
 
 export function StatusBar(props: Props) {
-  const { session, fields, states, runs, notice, memory, limited, pluginErrors, onOpenSettings, onOpenPlugins } = props;
+  const { session, fields, states, runs, notice, memory, limited, pluginErrors, writes, onWritesOff } = props;
+  const { onOpenSettings, onOpenPlugins } = props;
   const errors = Object.entries(pluginErrors);
   const muted = limited.filter((l) => l.perSecond === 0).length;
   return (
@@ -51,6 +54,14 @@ export function StatusBar(props: Props) {
         </span>
       ) : (
         <SessionFields session={session} fields={fields} />
+      )}
+      {writes && (
+        <Tip content="Plugins can change the app. Click to turn writes off." side="top" align="end">
+          <button type="button" className={cn(BUTTON, 'text-warning')} onClick={onWritesOff}>
+            <PencilLine size={12} />
+            Writes on
+          </button>
+        </Tip>
       )}
       {limited.length > 0 && (
         <Tip content={limited.map(limitLine).join('\n')} code side="top" align="end">

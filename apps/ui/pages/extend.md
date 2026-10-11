@@ -140,4 +140,4 @@ Devpul.action('Reset cart', (_) => container.invalidate(cartProvider));
 runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 ```
 
-For controls inside a plugin tab, such as editing a value in place, register a service extension and call it with `context.call`. See [Talking to the app](%ROOT%docs/plugins/#talking-to-the-app).
+For controls inside a plugin tab, such as editing a value in place, register a handler with `Devpul.handle` and call it with `context.request`. See [Talking to the app](%ROOT%docs/plugins/#talking-to-the-app).
