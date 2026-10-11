@@ -24,6 +24,10 @@ export interface VmOptions {
   plugins?: Record<string, string>;
   /** Registers `reloadSources` and `hotRestart` as `flutter run` does. */
   flutterRun?: boolean;
+  /** The auth code in the URL. */
+  token?: string;
+  /** `Devpul.handle` handlers by name, answered by `ext.devpul.call` before contract/call.json. */
+  handlers?: Record<string, (args: JsonObject) => unknown>;
 }
 
 const contract = (file: string): unknown =>
@@ -121,6 +125,7 @@ export class FakeVm {
   private info: JsonObject;
   private readonly plugins: Record<string, string>;
   private readonly flutterRun: boolean;
+  private readonly handlers: Record<string, (args: JsonObject) => unknown>;
   private readonly server: WebSocketServer;
   private readonly streams = new Map<WebSocket, Set<string>>();
   private paused = false;
@@ -129,9 +134,10 @@ export class FakeVm {
 
   private constructor(server: WebSocketServer, options: VmOptions) {
     this.server = server;
-    this.url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/e2eToken=/`;
+    this.url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/${options.token ?? 'e2eToken='}/`;
     this.plugins = options.plugins ?? { my_plugin: PLUGIN };
     this.flutterRun = options.flutterRun ?? false;
+    this.handlers = options.handlers ?? {};
     this.info = this.hashed(options.info ?? (contract('info.json') as JsonObject));
     this.events = (options.events ?? fixtureEvents()).map((e) =>
       e.kind === 'devpul.app.info' ? { ...e, data: { ...e.data, data: this.hashed(e.data.data) } } : e,
@@ -177,6 +183,11 @@ export class FakeVm {
       kind: `devpul.${kind}`,
       data: { v: 1, session, seq: (last?.data.seq ?? 0) + 1, ts: (last?.data.ts ?? Date.now()) + 1, data },
     };
+    this.post(event);
+  }
+
+  /** Posts an event with its own envelope. */
+  post(event: VmEvent): void {
     this.events.push(event);
     this.notify('Extension', {
       kind: 'Extension',
@@ -288,6 +299,8 @@ export class FakeVm {
       }
       // The handler in contract/call.json, which needs writes.
       case 'ext.devpul.call': {
+        const handler = this.handlers[String(params.name)];
+        if (handler) return { result: handler(JSON.parse(String(params.args ?? '{}')) as JsonObject) };
         const { request, result, refused } = contract('call.json') as CallFixture;
         if (params.name !== request.name) throw new Error(`No handler named ${String(params.name)}.`);
         if (params.writes !== 'true') throw new RpcError(refused.code, refused.message, refused.data);

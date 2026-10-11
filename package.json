@@ -16,7 +16,8 @@
     "build:registry": "dart run tool/build_registry.dart build/registry",
     "build:site": "node tool/build-site.mjs",
     "build:pages": "tool/build_pages.sh",
-    "build:extension": "node tool/build_extension.mjs"
+    "build:extension": "node tool/build_extension.mjs",
+    "screenshots": "npm run screenshots -w apps/ui"
   },
   "devDependencies": {
     "prettier": "^3.9.9"
