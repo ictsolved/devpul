@@ -1,0 +1,19 @@
+name: devpul_plugin_go_router
+description: Analyzes and tests the go_router plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0-dev.1
+  flutter:
+    sdk: flutter
+  go_router: ">=14.0.0 <19.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

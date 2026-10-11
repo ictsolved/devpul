@@ -45,4 +45,4 @@ Every `debugPrint` line also goes to the Logs tab at level `debug`. Console outp
 final app = MaterialApp(navigatorObservers: [DevpulNavigatorObserver()]);
 ```
 
-Each push, pop, replace and remove becomes a `route` event with `action`, `route`, `previous` and `arguments`. Routes without a name show their type. The observer also offers a Routes tab with the navigation stack at each step; allow it when DevPul asks. With `go_router`, pass the observer in `GoRouter(observers: [...])`.
+Each push, pop, replace and remove becomes a `route` event with `action`, `route`, `previous` and `arguments`. Routes without a name show their type. The observer also offers a Routes tab with the navigation stack at each step; allow it when DevPul asks. With `go_router`, pass the observer in `GoRouter(observers: [...])`; the [go_router plugin](%REPO_URL%/tree/main/plugins/go_router) adds the route tree and the match stack.

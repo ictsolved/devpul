@@ -15,6 +15,7 @@ workspace:
   - examples/devpul_example
   - plugins/bloc
   - plugins/files
+  - plugins/go_router
   - plugins/riverpod
   - plugins/secure_storage
   - plugins/sqflite

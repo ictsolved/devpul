@@ -1,0 +1,15 @@
+{
+  "id": "go_router",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": ">=1.0.0-dev.1 <2.0.0",
+  "description": "The app's GoRouter in a GoRouter tab: the route tree, the location and its matches, recent locations and a box that calls go.",
+  "tags": ["navigation", "routing"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulGoRouter.attach(router);"],
+  "requires": { "go_router": ">=14.0.0 <19.0.0" },
+  "source": "go_router.js",
+  "dart": "go_router.dart",
+  "files": ["go_router.dart", "go_router.js", "icon.svg"]
+}
