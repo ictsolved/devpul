@@ -21,15 +21,16 @@ void main(List<String> args) {
 
   final pubspecs = [
     for (final path in packages.values) File('$path/pubspec.yaml'),
-    ...Directory('examples')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where(
-          (f) =>
-              f.uri.pathSegments.last == 'pubspec.yaml' &&
-              !f.path.contains('/build/') &&
-              !f.path.contains('/.dart_tool/'),
-        ),
+    for (final dir in ['examples', 'plugins', 'contract/app'])
+      ...Directory(dir)
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where(
+            (f) =>
+                f.uri.pathSegments.last == 'pubspec.yaml' &&
+                !f.path.contains('/build/') &&
+                !f.path.contains('/.dart_tool/'),
+          ),
   ];
   for (final pubspec in pubspecs) {
     _bumpPubspec(pubspec, version, packages.keys);
