@@ -1,0 +1,15 @@
+name: devpul_plugin_secure_storage
+description: Analyzes the secure_storage plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0-dev.1
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ">=9.0.0 <12.0.0"

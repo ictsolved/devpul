@@ -1,0 +1,15 @@
+{
+  "id": "secure_storage",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": ">=1.0.0-dev.1 <2.0.0",
+  "description": "The app's flutter_secure_storage keys in a Secure storage tab: values hidden until revealed, add, edit and delete.",
+  "tags": ["storage", "secrets"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulSecureStorage.install();"],
+  "requires": { "flutter_secure_storage": ">=9.0.0 <12.0.0" },
+  "source": "secure_storage.js",
+  "dart": "secure_storage.dart",
+  "files": ["icon.svg", "secure_storage.dart", "secure_storage.js"]
+}
