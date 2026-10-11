@@ -2,11 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { pluginPages, renderReadme, type Registry } from './plugins.ts';
 
-const site = { url: 'https://example.com/', repo: 'https://example.com/repo' };
-const json = readFileSync(new URL('../../../contract/registry.json', import.meta.url), 'utf8');
 const registry: Registry = {
-  json,
-  plugins: JSON.parse(json).plugins,
+  plugins: JSON.parse(readFileSync(new URL('../../../contract/registry.json', import.meta.url), 'utf8')).plugins,
   readmes: { cart: '# Cart\n\nShows the cart.\n\n## Usage\n' },
 };
 
@@ -39,11 +36,11 @@ describe('renderReadme', () => {
 });
 
 describe('pluginPages', () => {
-  const pages = pluginPages(registry, site, "default-src 'self'");
+  const pages = pluginPages(registry);
 
   it('writes the index and a page per plugin', () => {
-    expect(pages.map((p) => p.path)).toEqual(['plugins/', 'plugins/cart/', 'plugins/flags/']);
-    expect(pages[0]?.html).toContain('<a href="cart/">');
+    expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags']);
+    expect(pages[0]?.html).toContain('<a href="/plugins/cart/">');
   });
 
   it('shows icons as masks and the README', () => {
@@ -51,7 +48,8 @@ describe('pluginPages', () => {
     expect(cart).toContain('mask-image: url(&quot;data:image/svg+xml;base64,');
     expect(cart).not.toContain('cx="8" cy="21"');
     expect(cart).toContain('<code>devpul add cart</code>');
+    expect(cart).toContain('data-copy="devpul add cart"');
     expect(cart).toContain('<p>Shows the cart.</p>\n<h3>Usage</h3>');
-    expect(pages[2]?.html).not.toContain('class="readme"');
+    expect(pages[2]?.html).not.toContain('<h3>');
   });
 });

@@ -627,7 +627,7 @@ export function App() {
               {settingsButton}
               <Tip content="Help opens in a new tab. Press ? for shortcuts.">
                 <Button asChild variant="ghost" size="sm">
-                  <a href={pageUrl('help/')} target="_blank" rel="noopener">
+                  <a href={pageUrl('docs/help/')} target="_blank" rel="noopener">
                     <CircleHelp />
                     <span className={LABEL}>Help</span>
                   </a>

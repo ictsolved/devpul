@@ -9,7 +9,7 @@ import { join } from 'node:path';
 const root = join(import.meta.dirname, '..');
 const out = join(root, 'packages/devpul/extension/devtools/build');
 const stamp = join(out, 'source.sha256');
-const SITE_ONLY = ['CNAME', 'robots.txt', 'sitemap.xml', 'llms.txt', 'sw.js', 'og.png'];
+const SITE_ONLY = ['sw.js', 'og.png'];
 
 function sourceHash() {
   const files = execFileSync(

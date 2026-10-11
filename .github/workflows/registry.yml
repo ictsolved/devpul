@@ -3,9 +3,25 @@ name: Registry
 on:
   push:
     branches: [main]
-    paths: [registry/**, plugins/**, tool/build_registry.dart, .github/workflows/registry.yml]
+    paths:
+      [
+        registry/**,
+        plugins/**,
+        tool/build_registry.dart,
+        tool/build-site.mjs,
+        apps/docs/src/plugins.ts,
+        .github/workflows/registry.yml,
+      ]
   pull_request:
-    paths: [registry/**, plugins/**, tool/build_registry.dart, .github/workflows/registry.yml]
+    paths:
+      [
+        registry/**,
+        plugins/**,
+        tool/build_registry.dart,
+        tool/build-site.mjs,
+        apps/docs/src/plugins.ts,
+        .github/workflows/registry.yml,
+      ]
 
 permissions:
   contents: read
@@ -28,4 +44,4 @@ jobs:
       - run: flutter pub get
       - run: npm ci
       - run: npm run build:registry
-      - run: DEVPUL_REGISTRY=../../build/registry npm run build -w apps/ui
+      - run: DEVPUL_REGISTRY=build/registry npm run build:site

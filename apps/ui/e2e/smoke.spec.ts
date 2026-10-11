@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PAGES } from '../pages/render.ts';
 import { connect, expect, test } from './fixtures.ts';
 import { fixtureEvents, PLUGIN } from './vm.ts';
+
+const site = JSON.parse(readFileSync(join(import.meta.dirname, '../../../site.json'), 'utf8')) as {
+  url: string;
+  registry: string;
+};
 
 test('connects from a #connect= link and shows the fixture events in each tab', async ({ page, vm }) => {
   await connect(page, vm);
@@ -242,9 +246,7 @@ test.describe('with two plugins and a limit', () => {
 });
 
 test('checks plugin updates against the registry only on click', async ({ page, vm }) => {
-  const { registry } = JSON.parse(readFileSync(join(import.meta.dirname, '../../../site.json'), 'utf8')) as {
-    registry: string;
-  };
+  const { registry } = site;
   const external: string[] = [];
   page.on('request', (r) => {
     if (!['127.0.0.1', 'localhost'].includes(new URL(r.url()).hostname)) external.push(r.url());
@@ -328,12 +330,12 @@ test.describe('under flutter run', () => {
 
 test('runs as a DevTools extension', async ({ page, vm }) => {
   // DevTools serves extensions from its own origin and frames them.
-  await page.goto('./help/');
+  await page.goto('./docs/');
   await page.evaluate(
     (uri) => {
       const frame = document.createElement('iframe');
       frame.src = `../index.html?uri=${encodeURIComponent(uri)}&theme=dark&dtdUri=ws%3A%2F%2F127.0.0.1%3A1%2Fx`;
-      frame.style.cssText = 'width: 1200px; height: 700px';
+      frame.style.cssText = 'position: fixed; inset: 0; z-index: 1000; width: 1200px; height: 700px';
       document.body.append(frame);
       window.addEventListener('message', (e) => document.body.append(`|${JSON.stringify(e.data)}`));
     },
@@ -344,6 +346,7 @@ test('runs as a DevTools extension', async ({ page, vm }) => {
   await expect(ext.getByRole('textbox', { name: 'VM service URL' })).toHaveCount(0);
   await expect(ext.getByRole('button', { name: /^Theme/ })).toHaveCount(0);
   await expect(ext.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(ext.getByRole('link', { name: 'Help' })).toHaveAttribute('href', `${site.url}docs/help/`);
 
   await page.evaluate(() => {
     const target = document.querySelector('iframe')?.contentWindow;
@@ -359,9 +362,23 @@ test('runs as a DevTools extension', async ({ page, vm }) => {
   await expect(ext.getByRole('button', { name: 'Copied' })).toBeVisible();
 });
 
-test('static pages load under the CSP', async ({ page }) => {
-  for (const { path } of PAGES) {
+test('site pages load under their CSP', async ({ page }) => {
+  for (const path of ['docs/', 'docs/help/', 'plugins/', 'plugins/cart/']) {
     await page.goto(`./${path}`);
     await expect(page.locator('h1')).toBeVisible();
   }
+  await page.goto('./help/');
+  await expect(page).toHaveURL(/\/docs\/help\/$/);
+});
+
+test('copies a plugin install command', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('./plugins/cart/');
+  await page.getByRole('button', { name: 'Copy devpul add cart' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('devpul add cart');
+});
+
+test('links the docs next to the app', async ({ page }) => {
+  await page.goto('./');
+  await expect(page.getByRole('link', { name: 'Help' })).toHaveAttribute('href', './docs/help/');
 });

@@ -13,11 +13,13 @@
     "check:web": "prettier --check . && npm run check -w apps/ui && npm run check -w apps/docs",
     "check:release": "dart run tool/release_check.dart",
     "format": "prettier --write .",
-    "deploy": "npm run build:registry && npm run deploy -w apps/ui",
+    "deploy": "npm run build:registry && DEVPUL_REGISTRY=build/registry npm run build:site && gh-pages -d dist --dotfiles",
     "build:registry": "dart run tool/build_registry.dart build/registry",
+    "build:site": "node tool/build-site.mjs",
     "build:extension": "node tool/build_extension.mjs"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "prettier": "^3.9.9"
   }
 }

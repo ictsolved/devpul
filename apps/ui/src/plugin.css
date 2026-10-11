@@ -1,4 +1,4 @@
-/* Plugins build plain DOM in .plugin-view. pages/plugins.md documents the code class.
+/* Plugins build plain DOM in .plugin-view. The /docs/plugins/ page documents the code class.
    Elements from context.ui carry Tailwind classes, so the control rules skip classed ones. */
 
 .plugin-view h1,

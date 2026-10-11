@@ -1,6 +1,7 @@
 // Network first so a new deploy shows up at once; the cache covers offline.
-const CACHE = 'devpul-v1';
+const CACHE = 'devpul-v2';
 const SHELL = ['./', './theme.js', './favicon.svg', './manifest.webmanifest'];
+const APP = /^(index\.html|theme\.js|favicon\.svg|manifest\.webmanifest|[\w-]+\.png|assets\/.+)?$/;
 
 // The page loaded its hashed JS and CSS before this worker took over, so cache them here.
 async function install() {
@@ -28,8 +29,9 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-  // Update checks need the registry as deployed, never a cached copy.
-  if (url.pathname.endsWith('/plugins/registry.json')) return;
+  // Only the app's own files. Docs, plugin pages, the registry and crawler files are left to the network.
+  const path = url.pathname.slice(new URL(self.registration.scope).pathname.length);
+  if (!APP.test(path)) return;
   event.respondWith(
     fetch(request)
       .then((response) => {

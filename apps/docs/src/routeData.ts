@@ -20,6 +20,8 @@ function faq(body: string) {
 
 export const onRequest = defineRouteMiddleware(({ locals }) => {
   const route = locals.starlightRoute;
+  // The site root is the app.
+  route.siteTitleHref = '/docs/';
   const questions = faq(route.entry.body ?? '');
   if (!questions.length) return;
   route.head.push({

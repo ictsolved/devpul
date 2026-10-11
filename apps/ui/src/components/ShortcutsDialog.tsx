@@ -66,7 +66,7 @@ export function ShortcutsDialog({ open, onClose }: Props) {
             Paste a VM service URL anywhere outside a text field to connect. Drop a session file on the page to open it.
           </p>
           <p>
-            <a className="text-primary" href={pageUrl('help/')} target="_blank" rel="noopener">
+            <a className="text-primary" href={pageUrl('docs/help/')} target="_blank" rel="noopener">
               Help and troubleshooting
             </a>{' '}
             ·{' '}

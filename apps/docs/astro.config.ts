@@ -10,6 +10,7 @@ import { defineMdastPlugin } from 'satteri';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import site from '../../site.json' with { type: 'json' };
+import { readRegistry } from './src/plugins.ts';
 
 // Site and repo URLs live only in site.json.
 const fill = (s: string) => s.replaceAll('%SITE_URL%', site.url).replaceAll('%REPO_URL%', site.repo);
@@ -62,11 +63,15 @@ function csp(): AstroIntegration {
   };
 }
 
+const registry = process.env.DEVPUL_REGISTRY ? readRegistry(process.env.DEVPUL_REGISTRY) : null;
+
+// Docs at /docs/ and the marketplace at /plugins/ share one build, search and sidebar.
+// tool/build-site.mjs adds the app at /.
 export default defineConfig({
   site: site.url,
-  base: '/docs/',
-  outDir: '../../dist/docs',
+  outDir: '../../dist',
   trailingSlash: 'always',
+  redirects: { '/help': '/docs/help/' },
   markdown: { processor: satteri({ mdastPlugins: [placeholders], features: { smartPunctuation: false } }) },
   integrations: [
     csp(),
@@ -84,20 +89,45 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: site.repo }],
       customCss: ['../ui/src/tokens.css', './src/styles/theme.css'],
       components: {
+        MarkdownContent: './src/components/MarkdownContent.astro',
         SocialIcons: './src/components/SocialIcons.astro',
         ThemeProvider: './src/components/ThemeProvider.astro',
         ThemeSelect: './src/components/ThemeSelect.astro',
       },
       sidebar: [
-        { label: 'Start', items: ['', 'connecting', 'ui'] },
-        { label: 'Packages', items: ['api', 'dio', 'http', 'flutter'] },
-        { label: 'Extend', items: ['extend', 'plugins/install', 'plugins', 'plugins/format', 'adapters', 'events'] },
-        { label: 'Help', items: ['help'] },
+        { label: 'Start', items: ['docs', 'docs/connecting', 'docs/ui'] },
+        { label: 'Packages', items: ['docs/api', 'docs/dio', 'docs/http', 'docs/flutter'] },
+        {
+          label: 'Extend',
+          items: [
+            'docs/extend',
+            'docs/plugins/install',
+            'docs/plugins',
+            'docs/plugins/format',
+            'docs/adapters',
+            'docs/events',
+          ],
+        },
+        { label: 'Help', items: ['docs/help'] },
+        ...(registry
+          ? [
+              {
+                label: 'Plugins',
+                collapsed: true,
+                items: [{ slug: 'plugins', label: 'All plugins' }, ...registry.plugins.map((p) => `plugins/${p.id}`)],
+              },
+            ]
+          : []),
       ],
       plugins: [
-        // The app at / and the marketplace at /plugins/ are built outside this site.
+        // The app at / is built outside this site, the marketplace only with DEVPUL_REGISTRY.
         starlightLinksValidator({ exclude: ['/', '/plugins/', '/plugins/**'] }),
-        starlightLlmsTxt({ projectName: 'DevPul' }),
+        // exclude applies to llms-small.txt only; llms-full.txt keeps these after the docs.
+        starlightLlmsTxt({
+          projectName: 'DevPul',
+          exclude: ['404', 'plugins', 'plugins/**'],
+          demote: ['plugins', 'plugins/**', '404'],
+        }),
       ],
     }),
   ],

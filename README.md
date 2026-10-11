@@ -11,7 +11,7 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
 
-**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/help/).** The same pages are in [apps/ui/pages](apps/ui/pages).
+**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [connecting](https://devpul.saradgajurel.com.np/docs/connecting/), [using the UI](https://devpul.saradgajurel.com.np/docs/ui/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).** Sources in [apps/docs](apps/docs).
 
 ## How it works
 
@@ -82,6 +82,7 @@ The [example app](examples/devpul_example) uses every package.
 ```sh
 npm install
 npm run dev          # UI on http://localhost:5173
+npm run dev -w apps/docs   # docs on http://localhost:4321/docs/
 npm run check        # everything below
 npm run check:dart   # dart format, analyze, tests (Chrome for the web tests)
 npm run check:web    # prettier, oxlint, vitest, tsc, build
@@ -89,7 +90,7 @@ npm run format       # prettier --write
 dart run tool/release.dart 1.2.3   # bump versions, check changelogs, print publish commands
 ```
 
-The site URL and repository link live in `site.json`. Docs are markdown in `apps/ui/pages`, rendered to static pages by the build and by the dev server. `npm run deploy` builds the UI and publishes `apps/ui/dist` to the `gh-pages` branch.
+The site URL and repository link live in `site.json`. Docs are a Starlight site in `apps/docs`. `npm run build:site` builds the whole site into `dist/`: the app at `/`, docs at `/docs/` and, with `DEVPUL_REGISTRY` set to the output of `npm run build:registry`, plugin pages at `/plugins/`. `npm run deploy` builds it with the registry and publishes `dist` to the `gh-pages` branch.
 
 ## License
 

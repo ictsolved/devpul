@@ -44,3 +44,94 @@
 .pagination-links .link-title {
   font-size: var(--sl-text-lg);
 }
+
+/* The marketplace, from src/plugins.ts. */
+.plugin-cards {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.plugin-cards li {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.875rem;
+}
+
+.plugin-cards li > a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.plugin-cards li p {
+  margin: 0.375rem 0 0;
+  font-size: var(--sl-text-sm);
+}
+
+.plugin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plugin-meta .plugin-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.plugin-icon {
+  display: inline-block;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.plugin-version {
+  font-size: var(--sl-text-sm);
+  color: var(--muted-foreground);
+}
+
+.plugin-tag {
+  display: inline-block;
+  font-size: var(--sl-text-xs);
+  background: var(--secondary);
+  border-radius: 0.25rem;
+  padding: 0 0.375rem;
+  margin-right: 0.25rem;
+}
+
+.copy-button {
+  display: inline-flex;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.copy-button svg:last-child,
+.copy-button[data-copied] svg:first-child {
+  display: none;
+}
+
+.copy-button[data-copied] svg:last-child {
+  display: block;
+  color: var(--primary);
+}

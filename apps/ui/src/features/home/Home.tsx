@@ -45,7 +45,7 @@ export function Home({ icon, connect, tools, waiting, onOpenFile, onOpenPlugins 
         <button type="button" className={`${NAV_LINK} cursor-pointer`} onClick={onOpenPlugins}>
           Plugins
         </button>
-        <a className={NAV_LINK} href={pageUrl('help/')}>
+        <a className={NAV_LINK} href={pageUrl('docs/help/')}>
           Help
         </a>
         <a className={NAV_LINK} href={repoUrl}>

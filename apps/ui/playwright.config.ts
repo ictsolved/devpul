@@ -13,7 +13,7 @@ export default defineConfig({
     { name: 'budget', testMatch: 'budget.spec.ts', dependencies: ['smoke'] },
   ],
   webServer: {
-    command: `vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
+    command: `vite preview --outDir ../../dist --host 127.0.0.1 --port ${PORT} --strictPort`,
     url: `http://127.0.0.1:${PORT}/`,
     reuseExistingServer: !process.env.CI,
   },
