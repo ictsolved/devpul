@@ -173,11 +173,18 @@ interface BarProps {
   onDismiss: (offer: Offer) => void;
 }
 
+/** One offer at a time unless expanded; each plugin is allowed on its own. */
 export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
-  return offers.map((o) => (
-    <div key={o.key} className="flex items-center gap-2.5 border-b bg-secondary px-3 py-1.5 text-xs" role="alert">
-      <Puzzle size={14} className="flex-none" />
-      <span className="min-w-0 flex-1">
+  const [expanded, setExpanded] = useState(false);
+  const more = offers.length - 1;
+  return (expanded ? offers : offers.slice(0, 1)).map((o, i) => (
+    <div
+      key={o.key}
+      className="flex items-center gap-2.5 border-b bg-secondary px-3 py-1.5 text-xs max-[560px]:flex-wrap"
+      role="alert"
+    >
+      <Puzzle size={14} className="flex-none max-[560px]:hidden" />
+      <span className="min-w-0 flex-1 max-[560px]:basis-full">
         {o.app} offers the plugin <strong>{o.id}</strong>
         {o.version && ` ${o.version}`} ({formatBytes(o.size)}, sha256 <code>{o.hash.slice(0, 12)}</code>). It runs in
         this page with access to every event from every app.
@@ -188,6 +195,11 @@ export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
       <Button type="button" variant="outline" size="xs" onClick={() => onDismiss(o)}>
         Not now
       </Button>
+      {i === 0 && !expanded && more > 0 && (
+        <Button type="button" variant="ghost" size="xs" onClick={() => setExpanded(true)}>
+          +{more} more
+        </Button>
+      )}
     </div>
   ));
 }
