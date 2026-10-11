@@ -40,7 +40,7 @@ Use `--enable-vm-service`, not `--observe`. `--observe` pauses isolates on exit,
 
 ### A plugin does not load
 
-Its error shows under the plugin URLs in Settings. The module must be served with CORS headers and a JavaScript content type, and export a plugin as its default export.
+Its error shows in the status bar and the Plugins tab. The module must be served with CORS headers and a JavaScript content type, and export a plugin as its default export.
 
 ## Privacy and security
 

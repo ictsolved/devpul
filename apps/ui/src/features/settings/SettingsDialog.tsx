@@ -1,15 +1,13 @@
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Chip } from '../../components/list';
 import { formatBytes } from '../../core/json';
 import type { Settings } from '../../lib/storage';
 import type { AppCall } from '../plugins/PluginTab';
 import { type LimitApp, Limits } from './Limits';
 import { NumberField } from './NumberField';
-import { PluginTable } from './PluginTable';
 
 interface Props {
   open: boolean;
@@ -17,36 +15,11 @@ interface Props {
   sessionKeys: string[];
   memory: { count: number; bytes: number; dropped: number };
   usage: { count: number; bytes: number } | null;
-  pluginErrors: Record<string, string>;
   limitApps: LimitApp[];
   call: AppCall;
   onChange: (next: Settings) => void;
   onClear: () => void;
   onClose: () => void;
-}
-
-/** Mounts with the dialog content, so each open starts from the saved list. */
-function PluginUrls(props: { urls: string[]; onCommit: (urls: string[]) => void }) {
-  const { urls, onCommit } = props;
-  const [text, setText] = useState(urls.join('\n'));
-  return (
-    <Textarea
-      className="font-mono text-xs"
-      rows={3}
-      value={text}
-      spellCheck={false}
-      placeholder="https://example.com/devpul-plugin.js"
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() =>
-        onCommit(
-          text
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        )
-      }
-    />
-  );
 }
 
 const LABEL = 'my-1.5 flex max-w-[420px] flex-col gap-1';
@@ -65,8 +38,7 @@ function Check(props: { checked: boolean; onChange: (checked: boolean) => void; 
 }
 
 export function SettingsDialog(props: Props) {
-  const { open, settings, sessionKeys, memory, usage, pluginErrors, limitApps, call, onChange, onClear, onClose } =
-    props;
+  const { open, settings, sessionKeys, memory, usage, limitApps, call, onChange, onClear, onClose } = props;
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => onChange({ ...settings, [key]: value });
 
@@ -149,26 +121,6 @@ export function SettingsDialog(props: Props) {
               ))}
             </div>
           )}
-
-          <Heading>Plugins</Heading>
-          {settings.plugins.length > 0 && (
-            <>
-              <p>
-                Allowed from apps, one source hash per plugin id; a changed plugin asks again. Off keeps the approval
-                without loading the plugin.
-              </p>
-              <PluginTable approvals={settings.plugins} onChange={(plugins) => set('plugins', plugins)} />
-            </>
-          )}
-          <label className={LABEL}>
-            Module URLs, one per line. They run with full access to this page.
-            <PluginUrls urls={settings.pluginUrls} onCommit={(urls) => set('pluginUrls', urls)} />
-          </label>
-          {Object.entries(pluginErrors).map(([url, err]) => (
-            <p key={url} className="text-xs text-destructive">
-              {url}: {err}
-            </p>
-          ))}
         </div>
       </DialogContent>
     </Dialog>

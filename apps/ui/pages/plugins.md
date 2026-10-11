@@ -51,7 +51,7 @@ void installCartTab() => Devpul.plugin(
 );
 ```
 
-The first argument is the plugin id. `origin` says where the plugin comes from, such as a package name or git URL, and `description` what it shows, in one line. When an app offers a plugin, DevPul shows the id, size and SHA-256 of the source and runs it only after you allow it. An approval covers one id at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. Settings lists approvals with id, source, version and hash; switch one off to stop loading it, or remove it. Check for updates there fetches the registry's `registry.json`, only on that click, and shows the latest version of each plugin listed with the same id and source, with the `devpul upgrade` command. Other plugins show "Can't check"; `devpul outdated` in the app checks every source. Sources larger than 512 KB are refused.
+The first argument is the plugin id. `origin` says where the plugin comes from, such as a package name or git URL, and `description` what it shows, in one line. When an app offers a plugin, DevPul shows the id, version, description and size of the source in the Plugins tab and above the other tabs, and runs it only after you allow it. An approval covers one id at one hash, so a changed plugin asks again. Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. The Plugins tab lists approvals with icon, id, version, description and a link to an http(s) source; hovering shows the origin on the id and the hash on the version. Switch one off to stop loading it, or remove it. Check for updates there fetches the registry's `registry.json`, only on that click, and shows the latest version of each plugin listed with the same id and source, with the `devpul upgrade` command. Other plugins show "Can't check"; `devpul outdated` in the app checks every source. Sources larger than 512 KB are refused.
 
 The source is read only when the UI asks, and only in debug builds.
 
@@ -135,11 +135,11 @@ devpul --plugin . run example/main.dart
 
 `create` writes a [plugin folder](%ROOT%docs/plugins/format/) with a module, Dart for the app and an example app that sends events. `--js` or `--dart` writes one half; run again on the folder, it adds a half or writes missing files back. `devpul.d.ts` holds the plugin API types, which editors check the module against through its `// @ts-check` line. For TypeScript, compile to one file and point `source` at it.
 
-`--plugin` takes the folder, or a single module file. DevPul loads the module from the same origin and loads it again each time you save, and the example app hot reloads when you save the Dart. Load errors, and in a folder the problems `devpul check` reports, show in the status bar and in Settings.
+`--plugin` takes the folder, or a single module file. DevPul loads the module from the same origin and loads it again each time you save, and the example app hot reloads when you save the Dart. Load errors, and in a folder the problems `devpul check` reports, show in the status bar and the Plugins tab.
 
 `devpul check` validates the folder the way `devpul add` and the registry do. To try the Dart half in an app, run `devpul add ../my_plugin` there; `devpul sync` copies it again after edits.
 
-A plugin on any static server that sets CORS headers works too: add its URL in Settings > Plugins and reload DevPul after editing. A file or URL you add yourself runs without the approval prompt.
+A plugin on any static server that sets CORS headers works too: add its URL under Module URLs in the Plugins tab and reload DevPul after editing. A file or URL you add yourself runs without the approval prompt.
 
 ## Publishing
 

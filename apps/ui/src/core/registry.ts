@@ -41,3 +41,7 @@ export function checkUpdate(
   const flag = isBreaking(current, latest) ? ' --major-versions' : '';
   return { state: 'available', version: entry.version, command: `devpul upgrade ${plugin.id}${flag}` };
 }
+
+/** A browsable link for an http(s) origin; folders, package names and ssh URLs have none. */
+export const sourceHref = (origin: string | undefined): string | undefined =>
+  origin && /^https?:\/\//i.test(origin) ? origin.replace(/\.git$/, '') : undefined;

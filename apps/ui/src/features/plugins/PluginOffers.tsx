@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { type Approval, approvedAndCached, type Listed, toLoad } from '../../core/approvals';
 import type { DevEvent } from '../../core/events';
 import { parseInfo } from '../../core/info';
+import { sourceHref } from '../../core/registry';
 import { formatBytes } from '../../core/json';
 import { SourceCache } from '../../core/persist';
 import { type ConnState, isPaused } from '../../core/rpc';
@@ -17,13 +18,16 @@ export interface Offer {
   id: string;
   version?: string;
   origin?: string;
+  description?: string;
   size: number;
   hash: string;
   app: string;
+  /** Not now was clicked: out of the banner, still in the Plugins view. */
+  dismissed: boolean;
 }
 
 /** What a live run sent for one of its plugins. */
-type Fetched = Omit<Offer, 'key'>;
+type Fetched = Omit<Offer, 'key' | 'dismissed'>;
 
 interface Options {
   runs: ReadonlyMap<string, RunInfo>;
@@ -87,7 +91,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
       const state = states[run.conn];
       // Asked on resume.
       if (!info || state?.status !== 'open' || isPaused(state, info.isolateId)) continue;
-      for (const { id, version, origin, hash: reported } of parseInfo(info.data).plugins) {
+      for (const { id, version, origin, description, hash: reported } of parseInfo(info.data).plugins) {
         const once = `${run.run}|${id}`;
         if (asked.current.has(once) || approvedAndCached(approvals, id, reported, (h) => cache.has(h))) continue;
         asked.current.add(once);
@@ -97,7 +101,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
             sources.current.set(hash, source);
             setFetched((f) => ({
               ...f,
-              [once]: { id, version, origin, size: source.length, hash, app: appName(run) },
+              [once]: { id, version, origin, description, size: source.length, hash, app: appName(run) },
             }));
           },
           (err: unknown) => fail(id, err),
@@ -145,13 +149,19 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
   const offers: Offer[] = [];
   for (const f of Object.values(fetched)) {
     const key = `${f.id}@${f.hash}`;
-    if (dismissed.includes(key) || offers.some((o) => o.key === key)) continue;
+    if (offers.some((o) => o.key === key)) continue;
     if (approvals.some((a) => a.id === f.id && a.hash === f.hash)) continue;
-    offers.push({ key, ...f });
+    offers.push({ key, ...f, dismissed: dismissed.includes(key) });
   }
 
   const allow = (offer: Offer) =>
-    onApprove({ id: offer.id, hash: offer.hash, version: offer.version, origin: offer.origin });
+    onApprove({
+      id: offer.id,
+      hash: offer.hash,
+      version: offer.version,
+      origin: offer.origin,
+      description: offer.description,
+    });
   const dismiss = (offer: Offer) => setDismissed((d) => [...d, offer.key]);
 
   return { offers, errors, allow, dismiss };
@@ -174,8 +184,9 @@ interface BarProps {
 }
 
 /** One offer at a time unless expanded; each plugin is allowed on its own. */
-export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
+export function PluginOffers({ offers: all, onAllow, onDismiss }: BarProps) {
   const [expanded, setExpanded] = useState(false);
+  const offers = all.filter((o) => !o.dismissed);
   const more = offers.length - 1;
   return (expanded ? offers : offers.slice(0, 1)).map((o, i) => (
     <div
@@ -185,9 +196,8 @@ export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
     >
       <Puzzle size={14} className="flex-none max-[560px]:hidden" />
       <span className="min-w-0 flex-1 max-[560px]:basis-full">
-        {o.app} offers the plugin <strong>{o.id}</strong>
-        {o.version && ` ${o.version}`} ({formatBytes(o.size)}, sha256 <code>{o.hash.slice(0, 12)}</code>). It runs in
-        this page with access to every event from every app.
+        <OfferText offer={o} />.
+        {i === 0 && ' Allowed plugins run in this page with access to every event from every app.'}
       </span>
       <Button type="button" size="xs" onClick={() => onAllow(o)}>
         Allow
@@ -202,6 +212,23 @@ export function PluginOffers({ offers, onAllow, onDismiss }: BarProps) {
       )}
     </div>
   ));
+}
+
+export function OfferText({ offer: o }: { offer: Offer }) {
+  const href = sourceHref(o.origin);
+  return (
+    <>
+      {o.app} offers the plugin{' '}
+      {href ? (
+        <a className="font-bold text-primary hover:underline" href={href} target="_blank" rel="noopener noreferrer">
+          {o.id}
+        </a>
+      ) : (
+        <strong>{o.id}</strong>
+      )}
+      {o.version && ` ${o.version}`} ({formatBytes(o.size)})
+    </>
+  );
 }
 
 /** The `app.info` event of the latest run that offers plugin [origin]. */

@@ -70,7 +70,7 @@ devpul cache clean              # drop the git mirrors in the user cache
 
 `remove` deletes the copy and the lock entry and rewrites `plugins.dart`; the wiring line in `main` is yours to remove. With no plugins left, `DevpulPlugins.install()` stays and does nothing.
 
-Nothing checks for updates outside these commands. DevPul's Settings has a [Check for updates](%ROOT%docs/plugins/#shipping-a-plugin) button for listed plugins.
+Nothing checks for updates outside these commands. DevPul's Plugins tab has a [Check for updates](%ROOT%docs/plugins/#shipping-a-plugin) button for listed plugins.
 
 ## Edited copies
 

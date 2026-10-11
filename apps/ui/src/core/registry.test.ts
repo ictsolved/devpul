@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkUpdate, type RegistryPlugin } from './registry';
+import { checkUpdate, type RegistryPlugin, sourceHref } from './registry';
 
 const registry: RegistryPlugin[] = [
   { id: 'cart', version: '1.3.0', url: 'https://example.com/plugins.git', path: 'cart' },
@@ -37,5 +37,14 @@ describe('checkUpdate', () => {
     ]) {
       expect(checkUpdate(plugin, registry)).toEqual({ state: 'unlisted' });
     }
+  });
+
+  it('links http(s) origins only', () => {
+    expect(sourceHref('https://example.com/plugins.git')).toBe('https://example.com/plugins');
+    expect(sourceHref('http://127.0.0.1:7171/cart.js')).toBe('http://127.0.0.1:7171/cart.js');
+    expect(sourceHref('git@example.com:plugins.git')).toBeUndefined();
+    expect(sourceHref('../../plugins/cart')).toBeUndefined();
+    expect(sourceHref('devpul_flutter')).toBeUndefined();
+    expect(sourceHref(undefined)).toBeUndefined();
   });
 });

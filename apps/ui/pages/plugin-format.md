@@ -47,7 +47,7 @@ cart/
 | `version`     | yes           | A semantic version, such as `1.2.0` or `2.0.0-dev.1`.                                                                       |
 | `api`         | with `source` | `1`, the [plugin API](%ROOT%docs/plugins/#api) the module is written for.                                                   |
 | `devpul`      | yes           | A pub version constraint on the `devpul` package the app uses.                                                              |
-| `description` | yes           | One line, up to 160 characters: what the plugin shows.                                                                      |
+| `description` | yes           | One line, up to 160 characters: what the plugin shows. In the marketplace and the UI's Plugins tab.                         |
 | `tags`        |               | Up to 5, each up to 20 lowercase letters, digits or `-`.                                                                    |
 | `icon`        |               | An SVG file in `files`, shown as the tab icon. Only with `source`.                                                          |
 | `readme`      |               | A file in the folder, shown in the registry. Not copied unless it is in `files`.                                            |
@@ -183,7 +183,7 @@ The file is written whole from `devpul.lock` and the copied files, so it is neve
 
 ## registry.json
 
-Served at `%SITE_URL%plugins/registry.json`, next to the [plugins page](%ROOT%plugins/). One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it. Check for updates in the UI's Settings matches an entry by `id` and by `url` against the handshake `origin`.
+Served at `%SITE_URL%plugins/registry.json`, next to the [plugins page](%ROOT%plugins/). One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it. Check for updates in the UI's Plugins tab matches an entry by `id` and by `url` against the handshake `origin`.
 
 The registry is built from the `<id>-v<version>` tags of the plugins in the DevPul repository and the entries in its `registry/third-party.json`, each fetched as `devpul add <id>` would fetch it and checked as `devpul check` checks a folder. A third-party entry is an `id` and an https `url`: a git repository with `<id>-v<version>` tags, plus `path` for the plugin folder in it, or a `plugin.json` URL. The README is shown on the plugin's page as markdown without HTML; images show as links.
 

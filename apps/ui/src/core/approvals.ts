@@ -5,6 +5,9 @@ export interface Approval {
   version?: string;
   /** The handshake `origin`, such as a git URL. */
   origin?: string;
+  description?: string;
+  /** The tab icon the plugin registered, kept from its last load. */
+  icon?: string;
   /** Kept but not loaded. */
   off?: boolean;
 }

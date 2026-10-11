@@ -26,13 +26,14 @@ interface Props {
   limited: Limited[];
   pluginErrors: Record<string, string>;
   onOpenSettings: () => void;
+  onOpenPlugins: () => void;
 }
 
 const ITEM = 'flex flex-none items-center gap-1.5 whitespace-nowrap';
 const BUTTON = cn(ITEM, 'cursor-pointer rounded-sm px-1 hover:bg-secondary hover:text-foreground');
 
 export function StatusBar(props: Props) {
-  const { session, fields, states, runs, notice, memory, limited, pluginErrors, onOpenSettings } = props;
+  const { session, fields, states, runs, notice, memory, limited, pluginErrors, onOpenSettings, onOpenPlugins } = props;
   const errors = Object.entries(pluginErrors);
   const muted = limited.filter((l) => l.perSecond === 0).length;
   return (
@@ -61,7 +62,7 @@ export function StatusBar(props: Props) {
       )}
       {errors.length > 0 && (
         <Tip content={errors.map(([origin, err]) => `${origin}: ${err}`).join('\n')} side="top" align="end">
-          <button type="button" className={cn(BUTTON, 'text-destructive')} onClick={onOpenSettings}>
+          <button type="button" className={cn(BUTTON, 'text-destructive')} onClick={onOpenPlugins}>
             <Puzzle size={12} />
             {errors.length === 1 ? '1 plugin error' : `${errors.length} plugin errors`}
           </button>

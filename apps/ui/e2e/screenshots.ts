@@ -61,6 +61,7 @@ const views: [string, (page: Page) => Promise<void>][] = [
       await page.getByRole('row').first().click();
     },
   ],
+  ['plugins', (page) => page.getByRole('tab', { name: /^Plugins/ }).click()],
   ['settings', (page) => page.getByRole('button', { name: 'Settings' }).click()],
 ];
 

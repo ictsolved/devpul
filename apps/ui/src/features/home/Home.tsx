@@ -9,6 +9,7 @@ interface Props {
   tools: ReactNode;
   waiting: boolean;
   onOpenFile: () => void;
+  onOpenPlugins: () => void;
 }
 
 // index.html repeats these for the page before the script runs.
@@ -34,16 +35,16 @@ const MAIN = `void main() {
 const NAV_LINK = 'text-muted-foreground hover:text-foreground';
 const SNIPPET = `${codeClass} mt-1.5 overflow-x-auto whitespace-pre`;
 
-export function Home({ icon, connect, tools, waiting, onOpenFile }: Props) {
+export function Home({ icon, connect, tools, waiting, onOpenFile, onOpenPlugins }: Props) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-end gap-3.5 px-4 py-2.5">
         <a className={NAV_LINK} href={pageUrl('docs/')}>
           Docs
         </a>
-        <a className={NAV_LINK} href={pageUrl('docs/plugins/')}>
+        <button type="button" className={`${NAV_LINK} cursor-pointer`} onClick={onOpenPlugins}>
           Plugins
-        </a>
+        </button>
         <a className={NAV_LINK} href={pageUrl('help/')}>
           Help
         </a>

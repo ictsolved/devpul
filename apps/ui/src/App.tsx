@@ -26,6 +26,7 @@ import { Home } from './features/home/Home';
 import { HttpTab } from './features/http/HttpTab';
 import { LogsTab } from './features/logs/LogsTab';
 import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOffers';
+import { PluginsView } from './features/plugins/PluginsView';
 import { type AppCall, PluginTab } from './features/plugins/PluginTab';
 import { matches, registry } from './features/plugins/plugins';
 import { SettingsDialog } from './features/settings/SettingsDialog';
@@ -73,6 +74,8 @@ export function App() {
   const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [seenData, setSeenData] = useState(false);
+  // The Plugins view opened from Home, with no events to show.
+  const [browsing, setBrowsing] = useState(false);
   const [cliPlugins, setCliPlugins] = useState<string[]>([]);
   // Re-renders on every store change; children read from the store directly.
   useSyncExternalStore(store.subscribe, store.getVersion);
@@ -384,6 +387,19 @@ export function App() {
     onApprove: (a) => setSettings({ ...settings, plugins: approve(settings.plugins, a) }),
   });
 
+  // The icon is in the plugin source, so the Plugins view only learns it once the plugin loads.
+  useEffect(() => {
+    const now = latest.current.settings;
+    let changed = false;
+    const next = now.plugins.map((a) => {
+      const icon = plugins.find((p) => p.origin === a.id && typeof p.plugin.icon === 'string')?.plugin.icon;
+      if (icon === undefined || icon === a.icon) return a;
+      changed = true;
+      return { ...a, icon };
+    });
+    if (changed) setSettings({ ...now, plugins: next });
+  }, [plugins]);
+
   const actions = useMemo(() => appActions(runs, states), [runs, states]);
   const limitApps = latestRuns(runs).flatMap((run) =>
     run.info && states[run.conn]?.status === 'open'
@@ -412,7 +428,14 @@ export function App() {
     [allOther, plugins],
   );
   const latestSession = store.latestSession();
-  const tabs: { id: string; label: string; icon?: string; count: number; alert?: boolean }[] = [
+  type TabInfo = { id: string; label: string; icon?: string; count: number; alert?: boolean };
+  // Pinned to the right edge, outside the scrolling tabs.
+  const pluginsTab: TabInfo = {
+    id: 'plugins',
+    label: 'Plugins',
+    count: pluginOffers.offers.filter((o) => !o.dismissed).length,
+  };
+  const tabs: TabInfo[] = [
     { id: 'http', label: 'HTTP', count: store.httpRows.length },
     { id: 'errors', label: 'Errors', count: errors.length, alert: errors.length > 0 },
     ...(logs.length || tab === 'logs' ? [{ id: 'logs', label: 'Logs', count: logs.length }] : []),
@@ -423,6 +446,7 @@ export function App() {
       icon: p.icon,
       count: pluginEvents[p.id]?.length ?? 0,
     })),
+    pluginsTab,
   ];
   const activeLoaded = plugins.find(({ plugin: p }) => `plugin:${p.id}` === tab);
   const activePlugin = activeLoaded?.plugin;
@@ -430,6 +454,36 @@ export function App() {
   const pluginFallback = activeLoaded ? offeredBy(runs, activeLoaded.origin) : undefined;
   const activeTab = tabs.some((t) => t.id === tab) ? tab : 'http';
   const tabIds = tabs.map((t) => t.id).join('|');
+  const tabTrigger = (t: TabInfo, className?: string) => (
+    <TabsTrigger
+      key={t.id}
+      value={t.id}
+      // Radix keeps the tab stop on the last focused tab, which digit keys do not move.
+      tabIndex={t.id === activeTab ? 0 : -1}
+      // The default focus ring and border crowd the dense strip.
+      className={cn(
+        "flex-none px-2.5 text-[13px] font-normal text-muted-foreground group-data-[orientation=horizontal]/tabs:after:bottom-0 after:bg-primary focus-visible:border-transparent focus-visible:ring-0 [&_svg:not([class*='size-'])]:size-3.5",
+        className,
+      )}
+    >
+      {t.icon && <span className="inline-flex" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />}
+      {t.id.startsWith('plugin:') ? (
+        <Tip content={t.label} whenCut>
+          <span className="max-w-40 truncate">{t.label}</span>
+        </Tip>
+      ) : (
+        t.label
+      )}
+      {t.count > 0 && (
+        <Badge
+          variant={t.alert ? 'destructive' : 'secondary'}
+          className={cn('font-normal', !t.alert && 'text-muted-foreground')}
+        >
+          {t.count}
+        </Badge>
+      )}
+    </TabsTrigger>
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -458,7 +512,7 @@ export function App() {
     if (hasData) setSeenData(true);
     else if (!connections.length) setSeenData(false);
   }, [hasData, connections.length]);
-  const showMain = hasData || (seenData && connections.length > 0);
+  const showMain = hasData || (seenData && connections.length > 0) || browsing;
 
   useEffect(() => {
     document.body.classList.toggle('has-data', showMain);
@@ -549,6 +603,10 @@ export function App() {
           tools={tools}
           waiting={devtools || connections.some((c) => states[c.id]?.status === 'open')}
           onOpenFile={() => fileRef.current?.click()}
+          onOpenPlugins={() => {
+            setTab('plugins');
+            setBrowsing(true);
+          }}
         />
       ) : (
         <>
@@ -577,39 +635,20 @@ export function App() {
           </header>
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
             <div className="flex min-h-9 items-center border-b bg-card px-3">
-              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto p-0 [scrollbar-width:none]">
-                {tabs.map((t) => (
-                  <TabsTrigger
-                    key={t.id}
-                    value={t.id}
-                    // Radix keeps the tab stop on the last focused tab, which digit keys do not move.
-                    tabIndex={t.id === activeTab ? 0 : -1}
-                    // The default focus ring and border crowd the dense strip.
-                    className="flex-none px-2.5 text-[13px] font-normal text-muted-foreground group-data-[orientation=horizontal]/tabs:after:bottom-0 after:bg-primary focus-visible:border-transparent focus-visible:ring-0 [&_svg:not([class*='size-'])]:size-3.5"
-                  >
-                    {t.icon && (
-                      <span className="inline-flex" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />
-                    )}
-                    {t.id.startsWith('plugin:') ? (
-                      <Tip content={t.label} whenCut>
-                        <span className="max-w-40 truncate">{t.label}</span>
-                      </Tip>
-                    ) : (
-                      t.label
-                    )}
-                    {t.count > 0 && (
-                      <Badge
-                        variant={t.alert ? 'destructive' : 'secondary'}
-                        className={cn('font-normal', !t.alert && 'text-muted-foreground')}
-                      >
-                        {t.count}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                ))}
+              <TabsList variant="line" className="w-full justify-start p-0">
+                <div className="flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
+                  {tabs.filter((t) => t !== pluginsTab).map((t) => tabTrigger(t))}
+                </div>
+                {tabTrigger(pluginsTab, 'ml-auto')}
               </TabsList>
             </div>
-            <PluginOffers offers={pluginOffers.offers} onAllow={pluginOffers.allow} onDismiss={pluginOffers.dismiss} />
+            {activeTab !== 'plugins' && (
+              <PluginOffers
+                offers={pluginOffers.offers}
+                onAllow={pluginOffers.allow}
+                onDismiss={pluginOffers.dismiss}
+              />
+            )}
             <main className="flex min-h-0 flex-1">
               <TabsContent value={activeTab} className="flex min-h-0 min-w-0">
                 {activeTab === 'http' && (
@@ -641,6 +680,19 @@ export function App() {
                 {activeTab === 'events' && (
                   <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} {...selection('events')} />
                 )}
+                {activeTab === 'plugins' && (
+                  <PluginsView
+                    offers={pluginOffers.offers}
+                    approvals={settings.plugins}
+                    urls={settings.pluginUrls}
+                    served={cliPlugins}
+                    errors={pluginOffers.errors}
+                    onAllow={pluginOffers.allow}
+                    onDismiss={pluginOffers.dismiss}
+                    onApprovals={(approvals) => setSettings({ ...latest.current.settings, plugins: approvals })}
+                    onUrls={(urls) => setSettings({ ...latest.current.settings, pluginUrls: urls })}
+                  />
+                )}
                 {activePlugin && (
                   <PluginTab
                     {...selection(activeTab)}
@@ -665,6 +717,7 @@ export function App() {
             limited={limited}
             pluginErrors={pluginOffers.errors}
             onOpenSettings={openSettings}
+            onOpenPlugins={() => setTab('plugins')}
           />
         </>
       )}
@@ -695,7 +748,6 @@ export function App() {
         sessionKeys={sessionFields(latestSession).map(([k]) => k)}
         memory={{ count: store.size, bytes: store.bytes, dropped: store.dropped }}
         usage={usage}
-        pluginErrors={pluginOffers.errors}
         limitApps={limitApps}
         call={callApp}
         onChange={setSettings}

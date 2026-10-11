@@ -124,6 +124,27 @@ test('offers the app plugin and loads it once allowed', async ({ page, vm }) => 
   expect(vm.callsTo('ext.devpul.plugin')).toHaveLength(1);
 });
 
+test('lists offers and approvals in the Plugins view, with no app connected too', async ({ page, vm }) => {
+  await connect(page, vm);
+  await page.getByRole('alert').getByRole('button', { name: 'Not now' }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await page.getByRole('tab', { name: /^Plugins/ }).click();
+  const view = page.getByRole('region', { name: 'Plugins' });
+  await expect(view).toContainText('Shop offers the plugin my_plugin 1.0.0');
+  await expect(view.getByRole('button', { name: 'Not now' })).toHaveCount(0);
+  await view.getByRole('button', { name: 'Allow' }).click();
+  await expect(view.getByRole('listitem').filter({ hasText: 'my_plugin' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /^Cart/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /^Remove (ws|http)/ }).click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page.getByRole('button', { name: 'Plugins', exact: true }).click();
+  const item = page.getByRole('region', { name: 'Plugins' }).getByRole('listitem').filter({ hasText: 'my_plugin' });
+  await item.getByRole('switch', { name: 'Enable my_plugin' }).click();
+  await expect(item).toContainText('Disabled');
+});
+
 test.describe('with two plugins and a limit', () => {
   const info = {
     ...(JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract/info.json'), 'utf8')) as object),
@@ -154,7 +175,8 @@ test.describe('with two plugins and a limit', () => {
     await expect(status.getByLabel('Session')).toContainText('name Shop');
     await expect(status.getByRole('button', { name: '1 muted' })).toBeVisible();
     await status.getByRole('button', { name: '1 plugin error' }).click();
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toContainText(
+    await expect(page.getByRole('tab', { name: /^Plugins/ })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('region', { name: 'Plugins' })).toContainText(
       'The label of long has 33 characters; the limit is 32.',
     );
   });
@@ -177,15 +199,17 @@ test('checks plugin updates against the registry only on click', async ({ page, 
 
   await connect(page, vm);
   await page.getByRole('alert').getByRole('button', { name: 'Allow' }).click();
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Settings' });
-  const row = dialog.getByRole('row', { name: /my_plugin/ });
-  await expect(row).toContainText('https://example.com/my_plugin.git');
+  await page.getByRole('tab', { name: /^Plugins/ }).click();
+  const view = page.getByRole('region', { name: 'Plugins' });
+  const item = view.getByRole('listitem').filter({ hasText: 'my_plugin' });
+  await expect(item).toContainText('Cart contents and totals in a Cart tab.');
+  await expect(item.locator('svg circle')).toHaveCount(1);
+  await expect(item.getByRole('link', { name: 'Source' })).toHaveAttribute('href', 'https://example.com/my_plugin');
   expect(external).toEqual([]);
 
-  await dialog.getByRole('button', { name: 'Check for updates' }).click();
-  await expect(row.getByRole('cell').nth(3)).toHaveText('2.0.0');
-  await expect(dialog).toContainText('devpul upgrade my_plugin --major-versions');
+  await view.getByRole('button', { name: 'Check for updates' }).click();
+  await expect(item).toContainText('2.0.0 available');
+  await expect(view).toContainText('devpul upgrade my_plugin --major-versions');
   expect(external).toEqual([registry]);
 });
 
