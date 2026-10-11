@@ -1,0 +1,15 @@
+{
+  "id": "files",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": ">=0.2.0 <2.0.0",
+  "description": "The app's path_provider directories in a Files tab: sizes, preview, download and delete.",
+  "tags": ["files", "storage"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulFiles.install();"],
+  "requires": { "path_provider": "^2.1.0" },
+  "source": "files.js",
+  "dart": "files.dart",
+  "files": ["files.dart", "files.js", "icon.svg"]
+}

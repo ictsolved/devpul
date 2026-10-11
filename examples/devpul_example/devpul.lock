@@ -6,6 +6,11 @@
       "version": "0.1.0",
       "hash": "e972d6d6e4dafefb02ff73cff2c95bf7cf0ce06792263eb9b3279bf213b900f2"
     },
+    "files": {
+      "url": "../../plugins/files",
+      "version": "0.1.0",
+      "hash": "e2670e7231b2ffc849f3e6c8abedc6fdf9a9cac811a514ca3c6c39f6dbdd7a08"
+    },
     "riverpod": {
       "url": "../../plugins/riverpod",
       "version": "0.1.0",

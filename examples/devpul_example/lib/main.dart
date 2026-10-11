@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
@@ -11,6 +14,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'devpul/plugins.dart';
 
@@ -48,6 +52,7 @@ void main() {
     ],
   );
   DevpulBloc.install();
+  DevpulFiles.install();
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
@@ -100,6 +105,34 @@ final dio = Dio(
 )..interceptors.add(DevpulDioInterceptor());
 
 final client = DevpulClient();
+
+// Something to look at in the Files tab.
+Future<void> _writeFiles() async {
+  final dir = (await getApplicationSupportDirectory()).path;
+  await Directory('$dir/logs').create(recursive: true);
+  await File(
+    '$dir/notes.txt',
+  ).writeAsString('Shopping list\n- milk\n- bread\n');
+  await File('$dir/cart.json').writeAsString(
+    jsonEncode({
+      'items': ['sku-1', 'sku-2'],
+      'total': 19.0,
+    }),
+  );
+  await File(
+    '$dir/logs/app.log',
+  ).writeAsString('${DateTime.now()} files written\n', mode: FileMode.append);
+  await File(
+    '$dir/blob.bin',
+  ).writeAsBytes(List.generate(2048, (i) => i * 7 % 256));
+  final recorder = ui.PictureRecorder();
+  Canvas(
+    recorder,
+  ).drawCircle(const Offset(32, 32), 28, Paint()..color = Colors.teal);
+  final image = await recorder.endRecording().toImage(64, 64);
+  final png = await image.toByteData(format: ui.ImageByteFormat.png);
+  await File('$dir/dot.png').writeAsBytes(png!.buffer.asUint8List());
+}
 
 class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key});
@@ -240,6 +273,7 @@ class _HomePageState extends State<HomePage> {
         () => throw const FormatException('Bad payload from sync job'),
       ),
     ),
+    if (!kIsWeb) ('Write files', _writeFiles),
     if (!kIsWeb)
       (
         'Background isolate',
