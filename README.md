@@ -96,7 +96,7 @@ npm run format       # prettier --write
 dart run tool/release.dart 1.2.3   # bump versions, check changelogs, print publish commands
 ```
 
-The site URL and repository link live in `site.json`. Docs are a Starlight site in `apps/docs`. `npm run build:site` builds the whole site into `dist/`: the app at `/`, docs at `/docs/` and, with `DEVPUL_REGISTRY` set to the output of `npm run build:registry`, plugin pages at `/plugins/`. `npm run deploy` builds it with the registry and publishes `dist` to the `gh-pages` branch.
+The site URL and repository link live in `site.json`. Docs are a Starlight site in `apps/docs`. `npm run build:site` builds the whole site into `dist/`: the app at `/`, docs at `/docs/` and, with `DEVPUL_REGISTRY` set to the output of `npm run build:registry`, plugin pages at `/plugins/`. The Pages workflow deploys `npm run build:pages`: app and docs from the highest `v*` tag, the registry from main. It runs on `v*` and `<id>-v*` tags, registry changes on main and by hand.
 
 ## License
 

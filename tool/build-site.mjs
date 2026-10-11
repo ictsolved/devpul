@@ -35,6 +35,3 @@ write(
   `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[`${site.url}sitemap-root.xml`, ...astro].map((loc) => `  <sitemap><loc>${loc}</loc></sitemap>`).join('\n')}\n</sitemapindex>\n`,
 );
 write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${site.url}sitemap.xml\n`);
-write('CNAME', `${new URL(site.url).host}\n`);
-// GitHub Pages runs Jekyll otherwise, which drops Astro's _astro/.
-write('.nojekyll', '');
