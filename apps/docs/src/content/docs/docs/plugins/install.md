@@ -29,9 +29,19 @@ void main() {
 }
 ```
 
-The next time DevPul connects, it offers the plugin's tab. Allow it once; see [approvals](/docs/plugins/#shipping-a-plugin).
+The next time DevPul connects, it offers the plugin's tab. Allow it once; see [Approvals](#approvals).
 
 Before writing anything, `add` checks the plugin's `devpul` range against the app's `devpul` version and its `requires` against the app's packages. A missing package or a version outside the constraint stops it with the `dart pub add` or `flutter pub add` command; in a terminal it asks to run it, and `--yes` runs it. Run `pub get` first, since `add` reads the resolved packages.
+
+## Approvals
+
+When an app offers a plugin, DevPul shows its id, version, description and source size in the Plugins tab and above the other tabs, and runs it only after you allow it. An approval covers one id at one SHA-256, so a changed plugin asks again. Approvals are kept per browser origin; see [Limits](/docs/limits/#one-store-per-origin).
+
+Approved sources are kept in the browser, so a plugin loads before the app is asked for anything, and with stored or opened sessions when the app is gone. The handshake carries each source's SHA-256; when it matches an approved source DevPul keeps, the app is not asked for the source at all. That hash only picks among sources you already allowed for the id; a source the app sends is hashed by DevPul itself. Sources larger than 512 KB are refused.
+
+The Plugins tab lists approvals with icon, id, version, description and a link to an http(s) source; hovering shows the origin on the id and the hash on the version. Switch one off to stop loading it, or remove it.
+
+**Check for updates** there fetches the registry's `registry.json`, only on that click, and shows the latest version of each plugin listed with the same id and source, with the `devpul upgrade` command. Other plugins show "Can't check"; `devpul outdated` in the app checks every source.
 
 ## Sources
 
@@ -68,7 +78,7 @@ devpul cache clean              # drop the git mirrors in the user cache
 
 `remove` deletes the copy and the lock entry and rewrites `plugins.dart`; the wiring line in `main` is yours to remove. With no plugins left, `DevpulPlugins.install()` stays and does nothing.
 
-Nothing checks for updates outside these commands. DevPul's Plugins tab has a [Check for updates](/docs/plugins/#shipping-a-plugin) button for listed plugins.
+Nothing checks for updates outside these commands. DevPul's Plugins tab has a [Check for updates](#approvals) button for listed plugins.
 
 ## Edited copies
 

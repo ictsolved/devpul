@@ -7,7 +7,7 @@ description: Troubleshooting DevPul connections and missing events, how your dat
 
 ### The connection chip stays grey
 
-The URL is from an earlier run; the token changes on every full restart. Paste the new URL and it replaces the old one. For a URL that survives restarts, use a [fixed port](/docs/connecting/#fixed-port-optional).
+The URL is from an earlier run; the port and token change on every full restart. Click the new [printed link](/docs/connecting/#the-printed-link) or paste the new URL, and it replaces the old one. `devpul run` hands each new run to the open tab.
 
 ### The browser asks to access apps on this device
 
@@ -15,7 +15,13 @@ Chrome and Firefox ask before a hosted page connects to `127.0.0.1`. Allow it on
 
 ### Safari does not connect
 
-Safari blocks hosted pages from reaching `127.0.0.1`. Run [`devpul`](/docs/connecting/#command-line) instead; it works in Safari.
+Safari blocks hosted pages from reaching `127.0.0.1`. Run [`devpul`](/docs/cli/#devpul) instead; it works in Safari.
+
+### No link is printed
+
+- In Flutter, the link appears once a tool is attached through DDS, a moment after startup; see [the printed link](/docs/connecting/#the-printed-link).
+- It appears after the app's first DevPul call, such as `Devpul.session`.
+- `uiUrl: null` or `console: ConsoleMode.off` turn it off, and Flutter web prints none.
 
 ### Connected, but nothing shows
 
@@ -42,21 +48,13 @@ Its error shows in the status bar and the Plugins tab. The module must be served
 
 ## Privacy and security
 
-- **DevPul runs only in your browser.** The page reads events straight from your app over `127.0.0.1`. There is no DevPul server, account or analytics; the hosted site only serves the page itself.
-- Events contain whatever the app sends, including tokens and personal data in headers and bodies. Use [redaction](/docs/api/#redaction) when that matters, for example before sharing a screen or an export.
-- History is stored in your browser (IndexedDB). Turn it off or clear it in Settings.
-- The VM service URL token is the only access check. With `--disable-service-auth-codes`, any local process and any web page open in your browser can connect while the app runs.
-- `#connect=` links connect only to apps on this machine. A URL you paste can point anywhere.
-- Every page sets a Content Security Policy: scripts come only from DevPul itself and the plugins you allowed, with no `eval`.
-- Plugins run with full access to the page. Load only code you trust. `devpul add` copies a plugin's code into the app's repository, where it shows up in diffs, and DevPul asks before running each plugin, once per id and SHA-256.
-- Allow writes in the Plugins tab gates plugin calls that change the app. It is off each time DevPul loads and guards against slips; an allowed plugin can reach anything the VM service can.
-- Release builds never emit. Profile builds emit only when built with `DEVPUL_PROFILE`.
+DevPul runs only in your browser and sends nothing anywhere you did not ask for. A connected DevPul can run code in the app, as any debugger can, and so can the plugins you allow. [Security and privacy](/docs/security/) has the details.
 
 ## Questions
 
 ### How do I see Flutter network requests in the browser?
 
-Add the devpul package and an HTTP adapter (devpul_dio for Dio, devpul_http for package:http), run the app in debug mode and paste the VM service URL that `flutter run` prints into DevPul. Requests, responses and errors appear live.
+Add the devpul package and an HTTP adapter (devpul_dio for Dio, devpul_http for package:http), then run the app with `devpul run`, or click the DevPul link it prints in a debug run. Requests, responses and errors appear live.
 
 ### Does DevPul send my data anywhere?
 
@@ -72,7 +70,7 @@ No. Release builds have no VM service and DevPul never emits in them, so there i
 
 ### How is DevPul different from the Flutter DevTools network tab?
 
-DevPul works with any HTTP client through adapters, including on Flutter web, shows errors, logs and custom events next to requests, filters by tags, fields and app runs, watches several apps at once, keeps history across reloads, exports HAR and takes plugins.
+DevPul works with any HTTP client through adapters, including on Flutter web, shows errors, logs and custom events next to requests, filters by tags, fields and app runs, watches several apps at once, keeps history across reloads, exports HAR and takes plugins. DevTools sees `dart:io` traffic with no code change. See [DevPul, DevTools and talker](/docs/compare/).
 
 ### Can I share what I see with a teammate?
 
@@ -84,4 +82,4 @@ Yes. A short `ProviderObserver` or `BlocObserver` sends every state change as an
 
 ### Can I trigger things in the app from DevPul?
 
-Yes. Register actions with `Devpul.action` and they show in the Actions menu. Plugins call handlers the app registers with `Devpul.handle`; those that change the app wait for Allow writes in the Plugins tab.
+Yes. Register [actions](/docs/actions/) with `Devpul.action` and they show in the Actions menu. Plugins call handlers the app registers with `Devpul.handle`; those that change the app wait for Allow writes in the Plugins tab.

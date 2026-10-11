@@ -3,23 +3,26 @@ title: package:http
 description: DevpulClient wraps any package:http client and shows its requests, responses and errors in DevPul.
 ---
 
+[devpul_http](https://pub.dev/packages/devpul_http) reports `package:http` calls.
+
 ```yaml
 dependencies:
-  devpul: ^0.2.0
-  devpul_http: ^0.2.0
+  devpul: ^1.0.0-dev.1
+  devpul_http: ^1.0.0-dev.1
 ```
 
 ```dart
 import 'package:devpul_http/devpul_http.dart';
 
 final client = DevpulClient();
-final res = await client.get(Uri.parse('https://example.com/items'));
+
+Future<String> items() => client.read(Uri.parse('https://example.com/items'));
 ```
 
 `DevpulClient` wraps another `Client`, `Client()` by default, so it works with `IOClient`, `BrowserClient`, `cupertino_http`, `cronet_http` and anything else that implements `Client`:
 
 ```dart
-final client = DevpulClient(CronetClient.defaultCronetEngine());
+final client = DevpulClient(RetryClient(Client()));
 ```
 
 Pass it wherever your code or a package takes a `Client`.

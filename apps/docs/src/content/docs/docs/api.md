@@ -3,13 +3,18 @@ title: Core API
 description: Devpul.session, tags, emit, log, error, action and DevpulConfig in the devpul Dart package, with redaction and ignore rules.
 ---
 
-Everything here is in `package:devpul/devpul.dart`. Calls are no-ops in release builds, in profile builds unless they [opt in](#profile-builds), and when `enabled` is false, and they never throw into your app.
+Everything here is in `package:devpul/devpul.dart`, from [devpul](https://pub.dev/packages/devpul). Calls are no-ops in release builds, in profile builds unless they [opt in](#profile-builds), and when `enabled` is false, and they never throw into your app.
 
 ## Session
 
 ```dart
 Devpul.session(
-  {'name': 'Shop', 'version': '2.3.1', 'env': 'staging', 'baseUrl': 'https://api.example.com'},
+  {
+    'name': 'Shop',
+    'version': '2.3.1',
+    'env': 'staging',
+    'baseUrl': 'https://api.example.com',
+  },
   tags: {'env': 'staging'},
 );
 ```
@@ -43,13 +48,15 @@ Devpul.log('Sync failed', level: 'error', name: 'sync', error: e, stack: s);
 `level` is free-form; `debug`, `info`, `warn` and `error` get colors. To forward `package:logging`:
 
 ```dart
-Logger.root.onRecord.listen((r) => Devpul.log(
-      r.message,
-      level: r.level.name.toLowerCase(),
-      name: r.loggerName,
-      error: r.error,
-      stack: r.stackTrace,
-    ));
+Logger.root.onRecord.listen(
+  (r) => Devpul.log(
+    r.message,
+    level: r.level.name.toLowerCase(),
+    name: r.loggerName,
+    error: r.error,
+    stack: r.stackTrace,
+  ),
+);
 ```
 
 In Flutter, `DevpulFlutter.captureDebugPrint()` sends `debugPrint` output too.
@@ -69,25 +76,10 @@ try {
 ## Actions
 
 ```dart
-Devpul.action('Clear cache', (_) async {
-  final n = await cache.clear();
-  return 'removed $n entries';
-});
-Devpul.action(
-  'Seed cart',
-  (args) => cart.seed(args['items']! as num, clear: args['clear']! as bool),
-  params: const [
-    DevpulParam.number('items', initial: 3),
-    DevpulParam.flag('clear'),
-  ],
-);
+Devpul.action('Clear cache', (_) => cache.clear());
 ```
 
-Each action becomes an item in the UI's **Actions** menu. It runs in the app when clicked, and the return value, if any, shows as text. Exceptions show as the failure message. Registering a name again replaces it.
-
-Params open a form first. `DevpulParam.text`, `number`, `flag` and `choice` give a `String`, `num`, `bool` and one of the choice's options; `args` holds every param by name.
-
-Actions are debug tools: keep them to things that are safe to trigger at any time.
+Each action becomes an item in the UI's **Actions** menu and runs in the app when clicked. Params open a form first. See [Actions](/docs/actions/).
 
 ## Handlers
 
@@ -107,8 +99,8 @@ A `writes: true` handler refuses unless Allow writes is on in the UI's Plugins t
 ## Limits
 
 ```dart
-Devpul.limit('frame', 0);    // mute
-Devpul.limit('route', 20);   // at most 20 per second
+Devpul.limit('frame', 0); // mute
+Devpul.limit('route', 20); // at most 20 per second
 Devpul.limit('route', null); // no cap
 ```
 
@@ -117,26 +109,28 @@ A limit covers the kind and its dotted children: `http` covers `http.request`. E
 ## Configuration
 
 ```dart
-Devpul.configure(DevpulConfig(
-  console: ConsoleMode.verbose,
-  ignoreUrls: [RegExp(r'/health$'), 'analytics.example.com'],
-  ignoreMethods: {'OPTIONS'},
-));
+Devpul.configure(
+  DevpulConfig(
+    console: ConsoleMode.verbose,
+    ignoreUrls: [RegExp(r'/health$'), 'analytics.example.com'],
+    ignoreMethods: {'OPTIONS'},
+  ),
+);
 ```
 
-| Option                        | Default   |                                                                                                                          |
-| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `enabled`                     | `true`    | Builds without `Devpul.included` never emit either way.                                                                  |
-| `console`                     | `summary` | `off`, `summary` (one line per call, `#12 < 200 GET https://example.com/items 143ms`) or `verbose` (headers and bodies). |
-| `ansiColors`                  | `true`    | Colored console lines.                                                                                                   |
-| `uiUrl`                       | this site | The app prints `<uiUrl>#connect=<VM service URL>` at startup. `null` prints nothing; so does `console: off`.             |
-| `maxValueLength`              | 1 MB      | Longer event fields become a truncation marker with a preview.                                                           |
-| `backlogSize`                 | 16 MB     | Events kept in app memory per isolate and served to the UI on connect.                                                   |
-| `ignoreUrls`, `ignoreMethods` | none      | Calls that are not reported. A string matches as a substring.                                                            |
-| `redactHeaders`, `redactBody` | none      | See below.                                                                                                               |
-| `idGenerator`                 | counter   | Request ids.                                                                                                             |
+| Option                        | Default   |                                                                                                                                                                                                 |
+| ----------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                     | `true`    | Builds without `Devpul.included` never emit either way.                                                                                                                                         |
+| `console`                     | `summary` | `off`, `summary` (one line per call, `#12 < 200 GET https://example.com/items 143ms`) or `verbose` (headers and bodies).                                                                        |
+| `ansiColors`                  | `true`    | Colored console lines.                                                                                                                                                                          |
+| `uiUrl`                       | this site | The app prints `<uiUrl>#connect=<VM service URL>`; see [the printed link](/docs/connecting/#the-printed-link). `null` prints nothing; so does `console: off`. `devpul run` sets its own server. |
+| `maxValueLength`              | 1048576   | Characters of JSON per event field. Longer fields become a truncation marker with a preview.                                                                                                    |
+| `backlogSize`                 | 16777216  | Characters of JSON kept in app memory per isolate, oldest dropped first, and served to the UI on connect.                                                                                       |
+| `ignoreUrls`, `ignoreMethods` | none      | Calls that are not reported. A string matches as a substring.                                                                                                                                   |
+| `redactHeaders`, `redactBody` | none      | See below.                                                                                                                                                                                      |
+| `idGenerator`                 | counter   | Request ids. The default counts per isolate.                                                                                                                                                    |
 
-Configuration is per isolate. Set it again in a long-lived background isolate if you need the same rules there.
+Configuration is per isolate. Set it again in a long-lived background isolate if you need the same rules there; see [Limits](/docs/limits/#one-isolate-at-a-time).
 
 ## Profile builds
 
@@ -153,13 +147,16 @@ if (Devpul.included) Bloc.observer = MyObserver();
 Redaction is opt-in: by default you see what is sent and received. Redactors apply to events, curl commands and console output.
 
 ```dart
-Devpul.configure(DevpulConfig(
-  redactHeaders: (url, headers) => {
-    for (final e in headers.entries)
-      e.key: e.key.toLowerCase() == 'authorization' ? '***' : e.value,
-  },
-  redactBody: (url, body) => url.path.endsWith('/login') ? '<hidden>' : body,
-));
+Devpul.configure(
+  DevpulConfig(
+    redactHeaders: (url, headers) => {
+      for (final e in headers.entries)
+        e.key: e.key.toLowerCase() == 'authorization' ? '***' : e.value,
+    },
+    redactBody: (url, body) =>
+        url.path.endsWith('/login') ? '<hidden>' : body,
+  ),
+);
 ```
 
 ## HTTP adapters

@@ -3,10 +3,12 @@ title: Flutter
 description: devpul_flutter reports Flutter errors with diagnostics, captures debugPrint and records navigation in DevPul.
 ---
 
+[devpul_flutter](https://pub.dev/packages/devpul_flutter) reports Flutter errors, `debugPrint` output and route changes.
+
 ```yaml
 dependencies:
-  devpul: ^0.2.0
-  devpul_flutter: ^0.2.0
+  devpul: ^1.0.0-dev.1
+  devpul_flutter: ^1.0.0-dev.1
 ```
 
 ## Errors
@@ -23,7 +25,10 @@ Reports `FlutterError`s and uncaught platform errors with stack traces. Flutter'
 Flutter web does not call `PlatformDispatcher.onError` ([flutter#100277](https://github.com/flutter/flutter/issues/100277)). To see uncaught async errors there:
 
 ```dart
-runZonedGuarded(() => runApp(const MyApp()), (e, s) => Devpul.error(e, s, source: 'zone'));
+runZonedGuarded(
+  () => runApp(const MyApp()),
+  (e, s) => Devpul.error(e, s, source: 'zone'),
+);
 ```
 
 ## debugPrint
@@ -37,9 +42,7 @@ Every `debugPrint` line also goes to the Logs tab at level `debug`. Console outp
 ## Routes
 
 ```dart
-MaterialApp(
-  navigatorObservers: [DevpulNavigatorObserver()],
-)
+final app = MaterialApp(navigatorObservers: [DevpulNavigatorObserver()]);
 ```
 
 Each push, pop, replace and remove becomes a `route` event with `action`, `route`, `previous` and `arguments`. Routes without a name show their type. The observer also offers a Routes tab with the navigation stack at each step; allow it when DevPul asks. With `go_router`, pass the observer in `GoRouter(observers: [...])`.

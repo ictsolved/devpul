@@ -33,7 +33,7 @@ call?.error(
   errorType: 'connectionTimeout',
   message: e.toString(),
   status: response?.statusCode,
-  headers: response?.headers ?? const {},
+  headers: response?.headers.map ?? const {},
   body: response?.data,
 );
 ```
@@ -52,6 +52,8 @@ Headers may be `Map<String, String>` or `Map<String, List<String>>`; single valu
 
 ## A complete adapter
 
+A wrapper that sends `package:http` requests through another client, `inner`:
+
 ```dart
 Future<Response> send(Request request) async {
   final call = DevpulHttp.request(
@@ -61,7 +63,7 @@ Future<Response> send(Request request) async {
     body: request.body,
   );
   try {
-    final response = await inner.send(request);
+    final response = await Response.fromStream(await inner.send(request));
     call?.response(
       status: response.statusCode,
       headers: response.headers,

@@ -63,7 +63,7 @@ In Errors, **Group repeats** folds identical errors into one row with a count, a
 
 ## Actions
 
-Code the app registers with `Devpul.action` shows in the **Actions** menu. Clicking one runs it in the app and shows the result. Actions are disabled while the app is paused in the debugger. See [Core API](/docs/api/#actions).
+Code the app registers with `Devpul.action` shows in the **Actions** menu. Clicking one runs it in the app and shows the result. Actions are disabled while the app is paused in the debugger. See [Actions](/docs/actions/).
 
 ## Hot reload
 

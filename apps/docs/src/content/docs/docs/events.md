@@ -57,13 +57,14 @@ HTTP events pair on `session` + `id`. A response may arrive before its request; 
 
 Each isolate registers these with its first event, `ext.devpul.info` last:
 
-| Method               | Params              | Returns                                                                                                                          |
-| -------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `ext.devpul.info`    | none                | The handshake, below.                                                                                                            |
-| `ext.devpul.backlog` | none                | `{"events": [{"kind": "devpul.log", "data": {...}}, ...]}`: recent events up to `backlogSize`, plus the latest session and info. |
-| `ext.devpul.action`  | `name`, `args`      | `{"result": ...}` from the action. `args` is a JSON object of param values; missing ones take their initial value.               |
-| `ext.devpul.plugin`  | `id`                | `{"source": "..."}`: the plugin's ES module.                                                                                     |
-| `ext.devpul.limit`   | `kind`, `perSecond` | The handshake after the change. `0` mutes; no `perSecond` removes the cap.                                                       |
+| Method               | Params                   | Returns                                                                                                                                                                     |
+| -------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ext.devpul.info`    | none                     | The handshake, below.                                                                                                                                                       |
+| `ext.devpul.backlog` | none                     | `{"events": [{"kind": "devpul.log", "data": {...}}, ...]}`: recent events up to `backlogSize`, plus the latest session and info.                                            |
+| `ext.devpul.action`  | `name`, `args`           | `{"result": ...}` from the action. `args` is a JSON object of param values; missing ones take their initial value.                                                          |
+| `ext.devpul.call`    | `name`, `args`, `writes` | `{"result": ...}` from the [handler](/docs/api/#handlers). `args` is a JSON object; `writes` is `true` while Allow writes is on, and a `writes` handler refuses without it. |
+| `ext.devpul.plugin`  | `id`                     | `{"source": "..."}`: the plugin's ES module.                                                                                                                                |
+| `ext.devpul.limit`   | `kind`, `perSecond`      | The handshake after the change. `0` mutes; no `perSecond` removes the cap.                                                                                                  |
 
 Failures, such as an unknown action or an invalid argument, are extension errors with the exception text.
 

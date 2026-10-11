@@ -3,14 +3,17 @@ title: Dio
 description: DevpulDioInterceptor shows Dio requests, responses, redirects and errors in DevPul with curl commands.
 ---
 
+[devpul_dio](https://pub.dev/packages/devpul_dio) reports Dio calls.
+
 ```yaml
 dependencies:
-  devpul: ^0.2.0
-  devpul_dio: ^0.2.0
+  devpul: ^1.0.0-dev.1
+  devpul_dio: ^1.0.0-dev.1
 ```
 
 ```dart
 import 'package:devpul_dio/devpul_dio.dart';
+import 'package:dio/dio.dart';
 
 final dio = Dio()..interceptors.add(DevpulDioInterceptor());
 ```

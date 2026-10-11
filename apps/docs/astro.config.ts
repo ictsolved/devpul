@@ -63,6 +63,14 @@ function csp(): AstroIntegration {
   };
 }
 
+const docs = [
+  { label: 'Start', items: ['docs', 'docs/ide', 'docs/connecting', 'docs/ui'] },
+  { label: 'Packages', items: ['docs/api', 'docs/dio', 'docs/http', 'docs/flutter'] },
+  { label: 'Extend', items: ['docs/extend', 'docs/actions', 'docs/plugins/install', 'docs/plugins', 'docs/adapters'] },
+  { label: 'Reference', items: ['docs/cli', 'docs/events', 'docs/plugins/api', 'docs/plugins/format'] },
+  { label: 'Help', items: ['docs/security', 'docs/limits', 'docs/compare', 'docs/help'] },
+];
+
 const registry = process.env.DEVPUL_REGISTRY ? readRegistry(process.env.DEVPUL_REGISTRY) : null;
 
 // Docs at /docs/ and the marketplace at /plugins/ share one build, search and sidebar.
@@ -95,20 +103,7 @@ export default defineConfig({
         ThemeSelect: './src/components/ThemeSelect.astro',
       },
       sidebar: [
-        { label: 'Start', items: ['docs', 'docs/connecting', 'docs/ui'] },
-        { label: 'Packages', items: ['docs/api', 'docs/dio', 'docs/http', 'docs/flutter'] },
-        {
-          label: 'Extend',
-          items: [
-            'docs/extend',
-            'docs/plugins/install',
-            'docs/plugins',
-            'docs/plugins/format',
-            'docs/adapters',
-            'docs/events',
-          ],
-        },
-        { label: 'Help', items: ['docs/help'] },
+        ...docs,
         ...(registry
           ? [
               {
@@ -125,7 +120,11 @@ export default defineConfig({
         // exclude applies to llms-small.txt only; llms-full.txt keeps these after the docs.
         starlightLlmsTxt({
           projectName: 'DevPul',
+          // Heading anchors read as "Section titled ..." lines.
+          customSelectors: { all: ['.sl-anchor-link'] },
           exclude: ['404', 'plugins', 'plugins/**'],
+          // Sidebar order.
+          promote: docs.flatMap((group) => group.items),
           demote: ['plugins', 'plugins/**', '404'],
         }),
       ],

@@ -43,7 +43,7 @@ cart/
 | ------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `id`          | yes           | A lowercase letter, then up to 31 lowercase letters, digits or `_`.                                                         |
 | `version`     | yes           | A semantic version, such as `1.2.0` or `2.0.0-dev.1`.                                                                       |
-| `api`         | with `source` | `1`, the [plugin API](/docs/plugins/#api) the module is written for.                                                        |
+| `api`         | with `source` | `1`, the [plugin API](/docs/plugins/api/) the module is written for.                                                        |
 | `devpul`      | yes           | A pub version constraint on the `devpul` package the app uses.                                                              |
 | `description` | yes           | One line, up to 160 characters: what the plugin shows. In the marketplace and the UI's Plugins tab.                         |
 | `tags`        |               | Up to 5, each up to 20 lowercase letters, digits or `-`.                                                                    |
@@ -61,7 +61,7 @@ The id names the folder, the `Devpul.plugin` id the UI keeps approvals for, and 
 
 ### Module
 
-The module follows the [plugin API](/docs/plugins/#api): one file with a default export and no imports. It does not export a name `icon`: the generated file appends `export const icon = "<svg ...>"` with the icon file, and the UI uses it for each tab that sets no icon.
+The module follows the [plugin API](/docs/plugins/api/): one file with a default export and no imports. It does not export a name `icon`: the generated file appends `export const icon = "<svg ...>"` with the icon file, and the UI uses it for each tab that sets no icon.
 
 ### Dart
 

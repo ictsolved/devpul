@@ -9,7 +9,7 @@ DevPul shows anything the app sends, not only HTTP. Extending it takes up to thr
 | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Send  | App     | `Devpul.emit(kind, data)` from wherever the data appears: an observer, a listener, a wrapper.                                         |
 | Show  | Browser | Events land in the Events tab with kind chips, filters and a JSON tree. A [plugin](/docs/plugins/) gives them their own tab and view. |
-| Act   | Both    | [`Devpul.action`](/docs/api/#actions) adds an item to the Actions menu. A plugin can call any service extension the app registers.    |
+| Act   | Both    | [`Devpul.action`](/docs/actions/) adds an item to the Actions menu. A plugin calls handlers the app registers with `Devpul.handle`.   |
 
 [HTTP adapters](/docs/adapters/) are for HTTP clients only: they feed the HTTP tab. State, analytics, database calls and everything else go through `Devpul.emit`.
 
@@ -46,8 +46,12 @@ final class DevpulProviderObserver extends ProviderObserver {
     Object error,
     StackTrace stackTrace,
   ) {
-    Devpul.error(error, stackTrace,
-        source: 'riverpod', context: _name(context));
+    Devpul.error(
+      error,
+      stackTrace,
+      source: 'riverpod',
+      context: _name(context),
+    );
   }
 
   String _name(ProviderObserverContext context) =>
@@ -56,10 +60,9 @@ final class DevpulProviderObserver extends ProviderObserver {
 ```
 
 ```dart
-runApp(ProviderScope(
-  observers: [DevpulProviderObserver()],
-  child: const MyApp(),
-));
+runApp(
+  ProviderScope(observers: [DevpulProviderObserver()], child: const MyApp()),
+);
 ```
 
 Generated providers carry their name; give others a `name:` so events say which provider changed.
@@ -91,8 +94,12 @@ class DevpulBlocObserver extends BlocObserver {
 
   @override
   void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
-    Devpul.error(error, stackTrace,
-        source: 'bloc', context: '${bloc.runtimeType}');
+    Devpul.error(
+      error,
+      stackTrace,
+      source: 'bloc',
+      context: '${bloc.runtimeType}',
+    );
     super.onError(bloc, error, stackTrace);
   }
 }
@@ -130,12 +137,4 @@ A package that sends events can also offer a tab for them with [`Devpul.plugin`]
 
 ## Acting on the app
 
-Actions need a handle on what they change. With Riverpod, create the container yourself:
-
-```dart
-final container = ProviderContainer(observers: [DevpulProviderObserver()]);
-Devpul.action('Reset cart', (_) => container.invalidate(cartProvider));
-runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
-```
-
-For controls inside a plugin tab, such as editing a value in place, register a handler with `Devpul.handle` and call it with `context.request`. See [Talking to the app](/docs/plugins/#talking-to-the-app).
+[Actions](/docs/actions/) put buttons and small forms in the Actions menu, with examples for Riverpod and Bloc. For controls inside a plugin tab, such as editing a value in place, register a handler with `Devpul.handle` and call it with `context.request`. See [Talking to the app](/docs/plugins/#talking-to-the-app).

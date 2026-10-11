@@ -1,9 +1,9 @@
 ---
 title: Getting started
-description: Add DevPul to a Dart or Flutter app and see its HTTP calls, errors, logs and events live in your browser.
+description: Add DevPul to a Dart or Flutter app, run it with devpul run or open the link it prints, and see its HTTP calls, errors, logs and events live in your browser.
 ---
 
-DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls with headers and bodies, errors with stack traces, logs, route changes and your own events. The app posts them on the VM service that every debug run already has, and this page reads them over `127.0.0.1`.
+DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls with headers and bodies, errors with stack traces, logs, route changes and your own events. The app posts them on the VM service that every debug run already has, and the browser reads them over `127.0.0.1`.
 
 > Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab and are never sent to a server. History is kept in the browser's own storage, and you can turn that off.
 
@@ -11,13 +11,13 @@ DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls wit
 
 ```yaml
 dependencies:
-  devpul: ^0.2.0
-  devpul_dio: ^0.2.0 # if you use Dio
-  devpul_http: ^0.2.0 # if you use package:http
-  devpul_flutter: ^0.2.0 # Flutter errors, debugPrint and routes
+  devpul: ^1.0.0-dev.1
+  devpul_dio: ^1.0.0-dev.1 # if you use Dio
+  devpul_http: ^1.0.0-dev.1 # if you use package:http
+  devpul_flutter: ^1.0.0-dev.1 # Flutter errors, debugPrint and routes
 ```
 
-Only `devpul` is required. It is pure Dart and works on every platform, including the web.
+Only [devpul](https://pub.dev/packages/devpul) is required. It is pure Dart and works on every platform, including the web. The others are [devpul_dio](https://pub.dev/packages/devpul_dio), [devpul_http](https://pub.dev/packages/devpul_http) and [devpul_flutter](https://pub.dev/packages/devpul_flutter); the command line is [devpul_cli](https://pub.dev/packages/devpul_cli).
 
 ## 2. Hook them up
 
@@ -25,32 +25,45 @@ Only `devpul` is required. It is pure Dart and works on every platform, includin
 import 'package:devpul/devpul.dart';
 import 'package:devpul_dio/devpul_dio.dart';
 import 'package:devpul_flutter/devpul_flutter.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+
+final dio = Dio()..interceptors.add(DevpulDioInterceptor());
 
 void main() {
   DevpulFlutter.install();
   Devpul.session({'name': 'My app', 'version': '1.0.0', 'env': 'dev'});
-  dio.interceptors.add(DevpulDioInterceptor());
-  runApp(MaterialApp(
-    navigatorObservers: [DevpulNavigatorObserver()],
-    home: const HomePage(),
-  ));
+  runApp(
+    MaterialApp(
+      navigatorObservers: [DevpulNavigatorObserver()],
+      home: const HomePage(),
+    ),
+  );
 }
 ```
 
 With `package:http`, use `DevpulClient()` wherever you pass a `Client`. See [package:http](/docs/http/).
 
-## 3. Run and connect
+## 3. Run
 
 Install the command line once, then run the app with it in place of `flutter run`:
 
 ```sh
 dart pub global activate devpul_cli
-devpul run            # takes the flutter run arguments; dart run outside a Flutter project
+devpul run -d macos
 ```
 
-It opens DevPul on `http://127.0.0.1:7171`, connected to the app.
+`devpul run` takes the `flutter run` arguments, or runs `dart run` outside a Flutter project. It opens DevPul on `http://127.0.0.1:7171`, connected to the app. See [Command line](/docs/cli/).
 
-Any other run works too: the app prints a `DevPul ...#connect=...` link at startup that opens DevPul connected to it, and IDEs show DevPul as a DevTools extension. [Connecting](/docs/connecting/) covers IDEs, pasted URLs, `flutter attach` and the web.
+## Or open the printed link
+
+Every debug run prints a link once the tool is attached, from the terminal, VS Code or Android Studio:
+
+```text
+DevPul %SITE_URL%#connect=http%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2F
+```
+
+Click it and DevPul opens connected to the app. In an IDE, DevPul is also a tab in DevTools; see [IDE setup](/docs/ide/). [Connecting](/docs/connecting/) covers pasted URLs, `flutter attach`, the web and plain Dart.
 
 ## What you get
 
@@ -58,7 +71,7 @@ Any other run works too: the app prints a `DevPul ...#connect=...` link at start
 - **Errors**: Flutter and uncaught errors with stack traces and Flutter's diagnostics, grouped by repeat, with the requests made just before.
 - **Logs**: `Devpul.log` and `debugPrint` output with level and logger filters.
 - **Events**: anything you send with `Devpul.emit`, such as state changes from Riverpod or Bloc. See [Extending DevPul](/docs/extend/).
-- **Actions**: buttons that run code in the app, such as clearing a cache or signing out.
-- **Plugins**: your own tabs for your own events. See [Plugins](/docs/plugins/).
+- **Actions**: buttons that run code in the app, such as clearing a cache or signing out. See [Actions](/docs/actions/).
+- **Plugins**: tabs for your own events and for parts of the app, such as its files. See [Installing plugins](/docs/plugins/install/).
 
-Release builds have no VM service, and DevPul never emits in them, so nothing needs to be removed before shipping. Profile builds leave DevPul out unless they [opt in](/docs/api/#profile-builds).
+Release builds have no VM service, and DevPul never emits in them, so nothing needs to be removed before shipping. Profile builds leave DevPul out unless they [opt in](/docs/api/#profile-builds). [Limits](/docs/limits/) lists what DevPul does not do.
