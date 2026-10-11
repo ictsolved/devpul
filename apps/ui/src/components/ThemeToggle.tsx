@@ -9,7 +9,7 @@ type Theme = 'system' | 'light' | 'dark';
 const NEXT: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' };
 
 // index.html applies the saved theme before first paint.
-export function ThemeToggle() {
+export function ThemeToggle({ variant }: { variant: 'outline' | 'ghost' }) {
   const [theme, setTheme] = useState<Theme>(() => load<Theme>('theme', 'system'));
   const change = () => {
     const next = NEXT[theme];
@@ -21,7 +21,7 @@ export function ThemeToggle() {
   const Icon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor;
   return (
     <Tip content={`Theme: ${theme}`}>
-      <Button type="button" variant="outline" size="icon-sm" onClick={change} aria-label={`Theme: ${theme}`}>
+      <Button type="button" variant={variant} size="icon-sm" onClick={change} aria-label={`Theme: ${theme}`}>
         <Icon />
       </Button>
     </Tip>

@@ -533,10 +533,12 @@ export function App() {
     setSettingsOpen(true);
   };
 
+  // Ghost in the header, so the session controls under it carry the weight.
+  const navVariant = showMain ? 'ghost' : 'outline';
   const settingsButton = (
     <Button
       type="button"
-      variant="outline"
+      variant={navVariant}
       size={showMain ? 'sm' : 'icon-sm'}
       onClick={openSettings}
       aria-label="Settings"
@@ -548,7 +550,7 @@ export function App() {
   const tools = (
     <>
       {showMain ? settingsButton : <Tip content="Settings">{settingsButton}</Tip>}
-      {!devtools && <ThemeToggle />}
+      {!devtools && <ThemeToggle variant={navVariant} />}
     </>
   );
 
@@ -624,7 +626,7 @@ export function App() {
             <nav className="col-start-3 row-start-1 flex gap-1.5 max-[860px]:col-start-2">
               {tools}
               <Tip content="Help opens in a new tab. Press ? for shortcuts.">
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant={navVariant} size="sm">
                   <a href={pageUrl('help/')} target="_blank" rel="noopener">
                     <CircleHelp />
                     <span className={LABEL}>Help</span>
