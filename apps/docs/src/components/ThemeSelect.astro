@@ -1,0 +1,16 @@
+---
+import Default from '@astrojs/starlight/components/ThemeSelect.astro';
+---
+
+<Default />
+
+<script>
+  for (const select of document.querySelectorAll('starlight-theme-select select')) {
+    select.addEventListener('change', (e) => {
+      const value = (e.currentTarget as HTMLSelectElement).value;
+      try {
+        localStorage.setItem('devpul:theme', JSON.stringify(value === 'light' || value === 'dark' ? value : 'system'));
+      } catch {}
+    });
+  }
+</script>

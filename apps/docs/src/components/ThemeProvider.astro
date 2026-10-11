@@ -1,0 +1,12 @@
+---
+import Default from '@astrojs/starlight/components/ThemeProvider.astro';
+---
+
+{/* The UI's devpul:theme is the stored choice; Starlight's key follows it. */}
+<script is:inline>
+  try {
+    const t = JSON.parse(localStorage.getItem('devpul:theme'));
+    localStorage.setItem('starlight-theme', t === 'light' || t === 'dark' ? t : '');
+  } catch {}
+</script>
+<Default />

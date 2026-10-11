@@ -1,0 +1,42 @@
+/* UI tokens from tokens.css on Starlight's palette. light-dark() follows data-theme through color-scheme. */
+:root,
+:root[data-theme='light'] {
+  --sl-font: var(--sans);
+  --sl-font-mono: var(--mono);
+  --sl-color-white: var(--foreground);
+  --sl-color-gray-1: color-mix(in oklab, var(--foreground) 88%, var(--background));
+  --sl-color-gray-2: color-mix(in oklab, var(--foreground) 76%, var(--background));
+  --sl-color-gray-3: var(--muted-foreground);
+  --sl-color-gray-4: color-mix(in oklab, var(--muted-foreground) 60%, var(--background));
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-6: var(--secondary);
+  --sl-color-gray-7: var(--card);
+  --sl-color-black: var(--background);
+  --sl-color-accent-low: var(--primary-soft);
+  --sl-color-accent: var(--primary);
+  --sl-color-accent-high: light-dark(#134e4a, #ccfbf1);
+  --sl-color-text-accent: var(--primary);
+  --sl-color-text-invert: var(--primary-foreground);
+  --sl-color-bg-nav: var(--card);
+  --sl-color-bg-sidebar: var(--background);
+  --sl-color-bg-inline-code: var(--secondary);
+  --sl-color-bg-accent: var(--primary);
+  --sl-color-hairline-light: var(--border);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-shade: var(--border);
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+  text-decoration: none;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):is(:hover, :focus-visible) {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* The current page as the UI marks a selected row. */
+.sidebar-content a[aria-current='page'] {
+  color: var(--foreground);
+  background-color: var(--primary-soft);
+}

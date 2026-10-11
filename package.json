@@ -2,14 +2,15 @@
   "name": "devpul-monorepo",
   "private": true,
   "workspaces": [
-    "apps/ui"
+    "apps/ui",
+    "apps/docs"
   ],
   "scripts": {
     "dev": "npm run dev -w apps/ui",
     "build": "npm run build -w apps/ui",
     "check": "npm run check:dart && npm run check:web",
     "check:dart": "tool/check_dart.sh",
-    "check:web": "prettier --check . && npm run check -w apps/ui",
+    "check:web": "prettier --check . && npm run check -w apps/ui && npm run check -w apps/docs",
     "check:release": "dart run tool/release_check.dart",
     "format": "prettier --write .",
     "deploy": "npm run build:registry && npm run deploy -w apps/ui",
