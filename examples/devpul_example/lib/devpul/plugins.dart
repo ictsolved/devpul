@@ -821,7 +821,7 @@ function button(text, onclick, css) {
 }
 
 function textarea(value) {
-  const t = h('textarea', undefined, { width: '100%', minHeight: '64px', fontFamily: 'var(--font-mono)' });
+  const t = h('textarea', undefined, { width: '100%', minHeight: '64px', fontFamily: 'var(--mono)' });
   t.value = value;
   t.spellcheck = false;
   return t;

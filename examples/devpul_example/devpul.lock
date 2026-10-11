@@ -19,7 +19,7 @@
     "secure_storage": {
       "url": "../../plugins/secure_storage",
       "version": "0.1.0",
-      "hash": "d48597b6818979756281460027dc8388bff02d519417982d8d7c1d1d63e0633f"
+      "hash": "81a5569ad3df4eb26ef2537be220bf2e755a1719dbded6146c1ad960de3c2347"
     }
   }
 }
