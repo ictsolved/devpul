@@ -11,6 +11,11 @@
       "version": "0.1.0",
       "hash": "7f23865d549c4a6e5e0338419bb21ef53c70e62d168cbe6b0bb00a3d067fa868"
     },
+    "go_router": {
+      "url": "../../plugins/go_router",
+      "version": "0.1.0",
+      "hash": "fd9c28491d50a3a27cd8a601c464e726feb46bd1b8839529904510d09c3907f6"
+    },
     "riverpod": {
       "url": "../../plugins/riverpod",
       "version": "0.1.0",

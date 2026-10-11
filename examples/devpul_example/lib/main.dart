@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'
@@ -58,6 +59,7 @@ void main() {
   DevpulBloc.install();
   DevpulFiles.install();
   DevpulSecureStorage.install(storage: storage);
+  DevpulGoRouter.attach(router);
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
@@ -215,15 +217,35 @@ Map<String, Object?> _order(int i) => {
       : null,
 };
 
+final router = GoRouter(
+  observers: [DevpulNavigatorObserver()],
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (_, _) => const HomePage(),
+      routes: [
+        GoRoute(
+          path: 'details/:id',
+          name: 'details',
+          builder: (_, state) => Scaffold(
+            appBar: AppBar(
+              title: Text('Details ${state.pathParameters['id']}'),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ],
+);
+
 class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => MaterialApp.router(
     title: 'DevPul example',
     theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
-    navigatorObservers: [DevpulNavigatorObserver()],
-    home: const HomePage(),
+    routerConfig: router,
   );
 }
 
@@ -336,16 +358,7 @@ class _HomePageState extends State<HomePage> {
         debugPrint('debugPrint goes to Logs too');
       },
     ),
-    (
-      'Open page',
-      () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          settings: const RouteSettings(name: '/details', arguments: 42),
-          builder: (_) =>
-              Scaffold(appBar: AppBar(title: const Text('Details'))),
-        ),
-      ),
-    ),
+    ('Open page', () => context.go('/details/42?tab=info')),
     ('Flutter error', () => throw StateError('Button handler failed')),
     (
       'Async error',
