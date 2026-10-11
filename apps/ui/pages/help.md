@@ -21,7 +21,7 @@ Safari blocks hosted pages from reaching `127.0.0.1`. Run [`devpul`](%ROOT%docs/
 
 ### Connected, but nothing shows
 
-- The app must be a debug build. Release and profile builds never emit.
+- The app must be a debug build, or a profile build with `--dart-define=DEVPUL_PROFILE=true`. Release builds never emit.
 - The packages must be hooked up: `Devpul.session`, an HTTP adapter, `DevpulFlutter.install()`.
 - `DevpulConfig(enabled: false)` or an `ignoreUrls` rule may hide calls.
 - Check the filter box and chips; filters are remembered per tab.
@@ -52,7 +52,7 @@ Its error shows in the status bar and the Plugins tab. The module must be served
 - Every page sets a Content Security Policy: scripts come only from DevPul itself and the plugins you allowed, with no `eval`.
 - Plugins run with full access to the page. Load only code you trust. `devpul add` copies a plugin's code into the app's repository, where it shows up in diffs, and DevPul asks before running each plugin, once per id and SHA-256.
 - Allow writes in the Plugins tab gates plugin calls that change the app. It is off each time DevPul loads and guards against slips; an allowed plugin can reach anything the VM service can.
-- Release and profile builds never emit.
+- Release builds never emit. Profile builds emit only when built with `DEVPUL_PROFILE`.
 
 ## Questions
 
@@ -70,7 +70,7 @@ No. The app posts events with `dart:developer` `postEvent`, and the browser read
 
 ### Does DevPul run in release builds?
 
-No. Release and profile builds have no VM service and DevPul never emits in them, so there is nothing to strip before shipping.
+No. Release builds have no VM service and DevPul never emits in them, so there is nothing to strip before shipping. Profile builds run it only when [built for it](%ROOT%docs/api/#profile-builds).
 
 ### How is DevPul different from the Flutter DevTools network tab?
 

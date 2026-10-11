@@ -29,5 +29,5 @@ Existing `FlutterError.onError` and `PlatformDispatcher.onError` handlers keep r
 
 ## Limits
 
-- Debug builds only.
+- Debug builds, and profile builds built with `DEVPUL_PROFILE`.
 - Flutter web does not call `PlatformDispatcher.onError` ([flutter#100277](https://github.com/flutter/flutter/issues/100277)). To see uncaught async errors there, wrap `runApp` in `runZonedGuarded` and call `Devpul.error` from the handler.

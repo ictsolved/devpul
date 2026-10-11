@@ -15,7 +15,7 @@ Everything runs in your browser. Requests, headers and bodies go from your app t
 
 ## How it works
 
-The app posts events with `dart:developer` `postEvent`. They travel on the VM service Extension stream that every debug run already has. The browser connects to the Dart Development Service (DDS) websocket on `127.0.0.1` and reads them. Release and profile builds have no VM service, and DevPul never emits in them.
+The app posts events with `dart:developer` `postEvent`. They travel on the VM service Extension stream that every debug run already has. The browser connects to the Dart Development Service (DDS) websocket on `127.0.0.1` and reads them. Release builds have no VM service, and DevPul never emits in them. Profile builds leave DevPul out unless built with `--dart-define=DEVPUL_PROFILE=true`.
 
 Works with Flutter on Android, iOS, desktop and web, and with plain Dart programs. Any state management through [observers](https://devpul.saradgajurel.com.np/docs/extend/), any HTTP client through adapters.
 
@@ -72,7 +72,7 @@ The [example app](examples/devpul_example) uses every package.
 
 ## Limits
 
-- Debug builds only, by design.
+- Debug builds, and profile builds that opt in. Never release builds.
 - Events cross the VM service as JSON. Very large or very frequent events cost app memory and time; `maxValueLength`, `backlogSize` and `ignoreUrls` keep that bounded.
 - Configuration does not cross isolates.
 - No request replay or mocking.

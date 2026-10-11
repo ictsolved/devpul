@@ -16,6 +16,6 @@ void main() {
 }
 ```
 
-It does nothing in release and profile builds. Reads and deletes stay inside those directories; the directories themselves cannot be deleted. Folder sizes stop counting after 2 seconds and show as a lower bound. Web apps have no files.
+It does nothing unless `Devpul.included`. Reads and deletes stay inside those directories; the directories themselves cannot be deleted. Folder sizes stop counting after 2 seconds and show as a lower bound. Web apps have no files.
 
 Needs `path_provider` 2.1 or later.

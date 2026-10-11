@@ -35,5 +35,5 @@ Actions show in the UI's Actions menu and run in the app when clicked. `DevpulCo
 
 ## Limits
 
-- Debug builds only. Release and profile builds never emit.
+- Debug builds, and profile builds built with `--dart-define=DEVPUL_PROFILE=true`. Release builds never emit.
 - Configuration is per isolate.

@@ -5,7 +5,7 @@ description: Devpul.session, tags, emit, log, error, action and DevpulConfig in 
 
 # Core API
 
-Everything here is in `package:devpul/devpul.dart`. Calls are no-ops in release and profile builds and when `enabled` is false, and they never throw into your app.
+Everything here is in `package:devpul/devpul.dart`. Calls are no-ops in release builds, in profile builds unless they [opt in](#profile-builds), and when `enabled` is false, and they never throw into your app.
 
 ## Session
 
@@ -128,7 +128,7 @@ Devpul.configure(DevpulConfig(
 
 | Option                        | Default   |                                                                                                                          |
 | ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `enabled`                     | `true`    | Release and profile builds never emit either way.                                                                        |
+| `enabled`                     | `true`    | Builds without `Devpul.included` never emit either way.                                                                  |
 | `console`                     | `summary` | `off`, `summary` (one line per call, `#12 < 200 GET https://example.com/items 143ms`) or `verbose` (headers and bodies). |
 | `ansiColors`                  | `true`    | Colored console lines.                                                                                                   |
 | `uiUrl`                       | this site | The app prints `<uiUrl>#connect=<VM service URL>` at startup. `null` prints nothing; so does `console: off`.             |
@@ -139,6 +139,16 @@ Devpul.configure(DevpulConfig(
 | `idGenerator`                 | counter   | Request ids.                                                                                                             |
 
 Configuration is per isolate. Set it again in a long-lived background isolate if you need the same rules there.
+
+## Profile builds
+
+Profile builds leave DevPul out unless built with `--dart-define=DEVPUL_PROFILE=true`, which `devpul run --profile` adds. Core, adapters and plugins then run as in debug, over the profile build's VM service. Events are encoded on the app's isolate, about 0.1 ms for a 2 KB event in a Linux profile build, so mute busy kinds with [limits](#limits) while measuring. Web profile builds have no VM service.
+
+`Devpul.included` is the constant behind this: true in debug builds and in profile builds that opt in. Code behind it is left out of every other build:
+
+```dart
+if (Devpul.included) Bloc.observer = MyObserver();
+```
 
 ## Redaction
 

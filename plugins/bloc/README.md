@@ -16,6 +16,6 @@ void main() {
 }
 ```
 
-`DevpulBloc.install()` sets `Bloc.observer` and passes every callback on to the observer that was set before, so call it after setting your own. It does nothing in release and profile builds.
+`DevpulBloc.install()` sets `Bloc.observer` and passes every callback on to the observer that was set before, so call it after setting your own. It does nothing unless `Devpul.included`.
 
 Needs `bloc` 9.1 or later.

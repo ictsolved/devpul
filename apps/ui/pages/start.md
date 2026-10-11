@@ -63,4 +63,4 @@ Any other run works too: the app prints a `DevPul ...#connect=...` link at start
 - **Actions**: buttons that run code in the app, such as clearing a cache or signing out.
 - **Plugins**: your own tabs for your own events. See [Plugins](%ROOT%docs/plugins/).
 
-Release and profile builds have no VM service, and DevPul never emits in them, so nothing needs to be removed before shipping.
+Release builds have no VM service, and DevPul never emits in them, so nothing needs to be removed before shipping. Profile builds leave DevPul out unless they [opt in](%ROOT%docs/api/#profile-builds).

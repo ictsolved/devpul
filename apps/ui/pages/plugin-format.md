@@ -71,7 +71,7 @@ The generated file exports every plugin's `dart` library into one namespace, so 
 
 A plugin with only Dart adds no tab. It sends events to the built-in tabs, as an adapter for another HTTP client would for Network, and its events show in Events.
 
-Code the app calls in every build, such as an observer in `main`, does nothing in release builds behind a constant such as `kDebugMode`, so the compiler drops the plugin there.
+Code the app calls in every build, such as an observer in `main`, does nothing unless [`Devpul.included`](%ROOT%docs/api/#profile-builds), a constant, so the compiler drops the plugin from release builds and from profile builds that do not opt in.
 
 ## In the app
 
@@ -154,13 +154,9 @@ import 'package:devpul/devpul.dart';
 
 export 'cart/cart.dart';
 
-const _debug =
-    !bool.fromEnvironment('dart.vm.product') &&
-    !bool.fromEnvironment('dart.vm.profile');
-
 abstract final class DevpulPlugins {
   static void install() {
-    if (!_debug) return;
+    if (!Devpul.included) return;
     Devpul.plugin(
       'cart',
       () => r'''
@@ -179,7 +175,7 @@ The file is written whole from `devpul.lock` and the copied files, so it is neve
 
 - Not named `.g.dart`, so ignore rules for build_runner output leave it committed.
 - `// dart format off` keeps it the same under any formatter settings.
-- `dart.vm.product` and `dart.vm.profile` are the constants behind Flutter's `kReleaseMode` and `kProfileMode`, so release and profile builds drop every plugin on every platform, and so does `dart compile exe`. `dart compile js` sets neither; pass `-Ddart.vm.product=true`.
+- `Devpul.included` is false when `dart.vm.product` is set, and when `dart.vm.profile` is set without `DEVPUL_PROFILE`. Those are the constants behind Flutter's `kReleaseMode` and `kProfileMode`, so release builds and profile builds that do not opt in drop every plugin on every platform, and so does `dart compile exe`. `dart compile js` sets neither; pass `-Ddart.vm.product=true`.
 
 ## registry.json
 

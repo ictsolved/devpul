@@ -15,7 +15,7 @@ void main() {
 }
 ```
 
-`devpulRiverpodObservers` returns no observers in release and profile builds. Keep busy providers out with `exclude`, or list the ones to show with `include`; both take providers and families. `filter` decides for the rest:
+`devpulRiverpodObservers` returns no observers unless `Devpul.included`. Keep busy providers out with `exclude`, or list the ones to show with `include`; both take providers and families. `filter` decides for the rest:
 
 ```dart
 devpulRiverpodObservers(exclude: [clockProvider], filter: (p) => p.name != null)

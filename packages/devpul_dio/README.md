@@ -24,4 +24,4 @@ Ignore rules, redaction, size limits and console output come from `Devpul.config
 
 ## Limits
 
-Debug builds only. Streamed request and response bodies show as `<stream>`.
+Debug builds, and profile builds built with `DEVPUL_PROFILE`. Streamed request and response bodies show as `<stream>`.

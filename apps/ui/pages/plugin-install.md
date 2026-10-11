@@ -88,7 +88,7 @@ devpul outdated --exit-code     # exit 1 when a plugin or devpul_cli is behind
 
 ## Release builds
 
-`DevpulPlugins.install()` returns at once in release and profile builds behind a constant, so the compiler drops every plugin's source and Dart. DevPul's own CI builds an app for release and checks that no plugin source and no `ext.devpul` service extension is left in the output.
+`DevpulPlugins.install()` returns at once unless [`Devpul.included`](%ROOT%docs/api/#profile-builds), a constant, so the compiler drops every plugin's source and Dart from release builds and from profile builds that do not opt in. DevPul's own CI builds an app for release and checks that no plugin source and no `ext.devpul` service extension is left in the output.
 
 ## Security
 

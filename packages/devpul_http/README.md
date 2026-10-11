@@ -25,4 +25,4 @@ Ignore rules, redaction, size limits and console output come from `Devpul.config
 
 ## Limits
 
-Debug builds only. Response bodies are read in full before your code gets them, which is fine for API calls; `text/event-stream` responses pass through untouched and show as `<stream>`. `StreamedRequest` bodies show as `<stream>`.
+Debug builds, and profile builds built with `DEVPUL_PROFILE`. Response bodies are read in full before your code gets them, which is fine for API calls; `text/event-stream` responses pass through untouched and show as `<stream>`. `StreamedRequest` bodies show as `<stream>`.
