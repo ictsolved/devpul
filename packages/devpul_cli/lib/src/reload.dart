@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
+import 'package:watcher/watcher.dart';
+
+import 'watch.dart';
 
 /// Hot reloads a `dart run` app through its VM service when a `.dart` file
 /// under [root] is saved. [vmUrl] is set once the app is up and again when
@@ -14,50 +16,30 @@ final class HotReload {
   final void Function(String line) log;
   String? vmUrl;
 
-  final _watches = <String, StreamSubscription<FileSystemEvent>>{};
+  StreamSubscription<WatchEvent>? _watch;
   Timer? _debounce;
   Future<void> _reloading = Future.value();
 
-  // Recursive watches report nothing for nested folders on some Linux
-  // systems, so each folder gets its own.
-  void start() => _watchTree(root);
+  /// Completes once saves are watched.
+  Future<void> start() {
+    final watcher = DirectoryWatcher(root);
+    _watch = watcher.events.listen(
+      _changed,
+      onError: (Object e) => log('Hot reload on save failed: $e'),
+    );
+    return watcher.ready;
+  }
 
   Future<void> stop() async {
     _debounce?.cancel();
-    for (final watch in _watches.values) {
-      await watch.cancel();
-    }
-    _watches.clear();
+    await _watch?.cancel();
     await _reloading;
   }
 
-  void _watchTree(String dir) {
-    if (_watches.containsKey(dir) || _skipped(dir)) return;
-    try {
-      _watches[dir] = Directory(dir).watch().listen(_changed);
-      for (final entry in Directory(dir).listSync()) {
-        if (entry is Directory) _watchTree(entry.path);
-      }
-    } on FileSystemException {
-      // Gone, or not readable.
-    }
-  }
-
-  bool _skipped(String dir) {
-    final name = p.basename(dir);
-    return dir != root && (name.startsWith('.') || name == 'build');
-  }
-
-  void _changed(FileSystemEvent event) {
-    if (event.isDirectory) {
-      if (event is FileSystemCreateEvent) _watchTree(event.path);
+  void _changed(WatchEvent event) {
+    if (!event.path.endsWith('.dart') || inToolOutput(root, event.path)) {
       return;
     }
-    final paths = [
-      event.path,
-      if (event is FileSystemMoveEvent) ?event.destination,
-    ];
-    if (!paths.any((path) => path.endsWith('.dart'))) return;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 200), () {
       _reloading = _reloading.then((_) => reload());

@@ -5,9 +5,11 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
+import 'package:watcher/watcher.dart';
 
 import 'plugins/check.dart';
 import 'plugins/render.dart';
+import 'watch.dart';
 
 const _types = {
   'html': 'text/html; charset=utf-8',
@@ -223,7 +225,7 @@ final class _Plugin {
   final String path;
   final bool folder;
   int revision = 0;
-  final _watches = <StreamSubscription<FileSystemEvent>>[];
+  StreamSubscription<WatchEvent>? _watch;
   Timer? _debounce;
 
   String get name => folder ? '${p.basename(path)}.js' : p.basename(path);
@@ -242,41 +244,23 @@ final class _Plugin {
     return utf8.encode('throw new Error(${jsonEncode(message)});\n');
   }
 
-  // Editors often save by writing a new file and renaming it over the old
-  // one, which ends a watch on the file itself. A folder plugin reloads on
-  // any change next to its plugin.json or the files it lists.
+  // FileWatcher follows a file that editors save by renaming a new one over
+  // it.
   void watch(void Function() changed) {
-    final manifest = folder ? checkFolder(path).manifest : null;
-    final dirs = folder
-        ? {
-            path,
-            for (final file in manifest?.files ?? const <String>[])
-              p.dirname(p.joinAll([path, ...p.posix.split(file)])),
-          }
-        : {p.dirname(path)};
-    for (final dir in dirs) {
-      if (!Directory(dir).existsSync()) continue;
-      _watches.add(
-        Directory(dir).watch().listen((event) {
-          final paths = [
-            event.path,
-            if (event is FileSystemMoveEvent) ?event.destination,
-          ];
-          if (!folder && !paths.any((e) => p.absolute(e) == path)) return;
-          _debounce?.cancel();
-          _debounce = Timer(const Duration(milliseconds: 100), () {
-            revision++;
-            changed();
-          });
-        }),
-      );
-    }
+    if (!folder && !File(path).existsSync()) return;
+    final watcher = folder ? DirectoryWatcher(path) : FileWatcher(path);
+    _watch = watcher.events.listen((event) {
+      if (folder && inToolOutput(path, event.path)) return;
+      _debounce?.cancel();
+      _debounce = Timer(const Duration(milliseconds: 100), () {
+        revision++;
+        changed();
+      });
+    });
   }
 
   Future<void> cancel() async {
     _debounce?.cancel();
-    for (final watch in _watches) {
-      await watch.cancel();
-    }
+    await _watch?.cancel();
   }
 }

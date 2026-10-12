@@ -50,8 +50,9 @@ Future<int> runApp(
     final url = readServiceInfo(info);
     if (url == null || url == last) return;
     if (reload != null && last == null) {
-      reload.start();
-      stdout.writeln('Hot reload on save.');
+      unawaited(
+        reload.start().then((_) => stdout.writeln('Hot reload on save.')),
+      );
     }
     last = url;
     reload?.vmUrl = url;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -157,13 +158,18 @@ Future<void> main() async {
             .transform(utf8.decoder)
             .transform(const LineSplitter())) {
       out.writeln(line);
-      // The connect link follows the VM URL that reloads go to.
-      if (line.contains('#connect=')) {
-        lib.writeAsStringSync("String value() => 'two';\n");
+      if (line == 'Hot reload on save.') {
+        // Made again, as a branch switch does, then saved.
+        lib.parent.deleteSync(recursive: true);
+        lib
+          ..createSync(recursive: true)
+          ..writeAsStringSync("String value() => 'one';\n");
+        Timer(const Duration(seconds: 1), () {
+          lib.writeAsStringSync("String value() => 'two';\n");
+        });
       }
     }
     expect(await process.exitCode, 0, reason: '$out');
-    expect('$out', contains('Hot reload on save.'));
     expect('$out', contains('Hot reloaded.'));
   }, timeout: const Timeout(Duration(minutes: 1)));
 
