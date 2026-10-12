@@ -9,6 +9,7 @@ import {
   type VmExtensionEvent,
 } from './events';
 import { fromLogging } from './logging';
+import { GET_PROFILE, HttpProfiler, type ProfileLookup } from './profile';
 
 export type ConnStatus = 'connecting' | 'open' | 'closed';
 
@@ -21,6 +22,8 @@ export interface ConnState {
   paused: string[];
   /** Methods other clients registered, such as `reloadSources` from `flutter run`, by service name. */
   services: Record<string, string>;
+  /** Some isolate offers dart:io's HTTP profile. */
+  httpProfile: boolean;
 }
 
 interface Pending {
@@ -46,7 +49,7 @@ export function rpcMessage(err: unknown): string {
 }
 
 export class Connection {
-  state: ConnState = { status: 'closed', everOpened: false, paused: [], services: {} };
+  state: ConnState = { status: 'closed', everOpened: false, paused: [], services: {}, httpProfile: false };
 
   private ws: WebSocket | null = null;
   private nextId = 1;
@@ -58,6 +61,7 @@ export class Connection {
   private reattach = new Set<string>();
   // The run of each isolate's DevPul events, for Logging records on web, where isolates have no group.
   private runs = new Map<string, string>();
+  private readonly profiler: HttpProfiler;
 
   constructor(
     readonly id: string,
@@ -65,7 +69,15 @@ export class Connection {
     private readonly onEvents: (events: DevEvent[]) => void,
     private readonly onState: () => void,
     private readonly nextN: () => number,
-  ) {}
+    lookup?: ProfileLookup,
+  ) {
+    this.profiler = new HttpProfiler(
+      (method, params) => this.call(method, params),
+      onEvents,
+      { conn: id, run: (iso) => this.runOf(iso), n: nextN },
+      lookup,
+    );
+  }
 
   start(): void {
     if (!this.stopped) return;
@@ -77,6 +89,7 @@ export class Connection {
     this.stopped = true;
     if (this.retry) clearTimeout(this.retry);
     this.retry = null;
+    this.profiler.release();
     this.ws?.close();
     this.ws = null;
   }
@@ -105,6 +118,11 @@ export class Connection {
       this.pending.set(id, { resolve, reject, timer });
       ws.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }));
     });
+  }
+
+  /** Reads requests from dart:io's HTTP profile, for apps with no adapter. */
+  setHttpProfile(on: boolean): void {
+    this.profiler.setOn(on);
   }
 
   /** Calls a method another client registered, on the first isolate. */
@@ -166,13 +184,24 @@ export class Connection {
     }
   }
 
+  // The isolate group's run on native; on web that of the isolate's DevPul events.
+  private runOf(iso: IsolateRef, group = iso.isolateGroupId): string {
+    const known = iso.id ? this.runs.get(iso.id) : undefined;
+    return group ? `${this.id}|${group}` : (known ?? `${this.id}|${iso.id ?? ''}`);
+  }
+
   private log(event: JsonObject): void {
     const iso = isObject(event.isolate) ? (event.isolate as IsolateRef) : {};
     const group = (isObject(event.isolateGroup) && str(event.isolateGroup.id)) || iso.isolateGroupId;
-    const known = iso.id ? this.runs.get(iso.id) : undefined;
-    const run = group ? `${this.id}|${group}` : (known ?? `${this.id}|${iso.id ?? ''}`);
-    const e = fromLogging(event, { conn: this.id, run, n: this.nextN() });
+    const e = fromLogging(event, { conn: this.id, run: this.runOf(iso, group), n: this.nextN() });
     if (e) this.onEvents([e]);
+  }
+
+  private offersProfile(iso: IsolateRef): void {
+    this.profiler.add(iso);
+    if (this.state.httpProfile) return;
+    this.state = { ...this.state, httpProfile: true };
+    this.onState();
   }
 
   private open(): void {
@@ -200,7 +229,8 @@ export class Connection {
       this.pending.clear();
       this.paused.clear();
       this.reattach.clear();
-      this.state = { ...this.state, paused: [], services: {} };
+      this.profiler.reset();
+      this.state = { ...this.state, paused: [], services: {}, httpProfile: false };
       this.setStatus('closed');
       this.scheduleRetry();
     };
@@ -231,15 +261,19 @@ export class Connection {
       const isolates = isObject(vm) && Array.isArray(vm.isolates) ? vm.isolates : [];
       for (const iso of isolates) {
         if (!isObject(iso) || typeof iso.id !== 'string') continue;
+        let profile = false;
         try {
           const full = await this.call('getIsolate', { isolateId: iso.id });
           if (isObject(full) && isObject(full.pauseEvent)) {
             this.debugEvent({ id: iso.id }, full.pauseEvent.kind);
           }
+          profile = isObject(full) && Array.isArray(full.extensionRPCs) && full.extensionRPCs.includes(GET_PROFILE);
         } catch {
           // Taken as running.
         }
         await this.attach(iso as IsolateRef);
+        // After the backlog, so requests an adapter sent are known.
+        if (profile) this.offersProfile(iso as IsolateRef);
       }
     } catch {
       // The live stream still works.
@@ -356,8 +390,14 @@ export class Connection {
       this.setPaused(event.isolate.id, false);
       this.reattach.delete(event.isolate.id);
       this.runs.delete(event.isolate.id);
-    } else if (streamId === 'Isolate' && event.kind === 'ServiceExtensionAdded' && event.extensionRPC === INFO) {
-      void this.attach(iso);
+      this.profiler.remove(event.isolate.id);
+      if (this.state.httpProfile && !this.profiler.offered) {
+        this.state = { ...this.state, httpProfile: false };
+        this.onState();
+      }
+    } else if (streamId === 'Isolate' && event.kind === 'ServiceExtensionAdded') {
+      if (event.extensionRPC === INFO) void this.attach(iso);
+      else if (event.extensionRPC === GET_PROFILE) this.offersProfile(iso);
     }
   }
 }

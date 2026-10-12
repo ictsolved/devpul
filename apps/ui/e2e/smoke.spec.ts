@@ -86,6 +86,61 @@ test('opens HTTP detail', async ({ page, vm }) => {
   await expect(detail.getByRole('button', { name: 'curl' })).toBeVisible();
 });
 
+test('reads requests from the dart:io HTTP profile only while its toggle is on', async ({ page, vm }) => {
+  await connect(page, vm);
+  const toggle = page.getByRole('button', { name: 'HTTP without an adapter' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  const polls = () => vm.callsTo('ext.dart.io.getHttpProfile').length;
+  await page.waitForTimeout(1500);
+  expect(vm.callsTo('ext.dart.io.httpEnableTimelineLogging')).toEqual([]);
+  expect(polls()).toBe(0);
+  // dart:io records nothing with logging off.
+  vm.profile();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => vm.httpLogging).toBe(true);
+  vm.profile();
+  const requests = page.getByRole('grid', { name: 'Requests' });
+  const local = requests.getByRole('row', { name: /127\.0\.0\.1/ });
+  // The redirect hop is not a row of its own.
+  await expect(local).toHaveCount(4);
+  await requests.getByRole('row', { name: /\/old/ }).click();
+  const detail = page.getByRole('complementary', { name: 'Request detail' });
+  await expect(detail).toContainText('dart:io');
+  await expect(detail).toContainText('redirected to http://127.0.0.1:8080/items');
+  await expect(detail).toContainText('{ "ok": true }');
+  await requests.getByRole('row', { name: /8081\/down/ }).click();
+  await expect(detail).toContainText('SocketException: Connection refused');
+
+  // Kept per VM service origin; the whole profile comes back, its bodies are not read again.
+  await page.waitForTimeout(700);
+  const reads = vm.callsTo('ext.dart.io.getHttpProfileRequest').length;
+  await page.reload();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  const before = polls();
+  await expect.poll(polls).toBeGreaterThan(before);
+  await expect(local).toHaveCount(4);
+  expect(vm.callsTo('ext.dart.io.getHttpProfileRequest')).toHaveLength(reads);
+
+  await toggle.click();
+  await expect.poll(() => vm.httpLogging).toBe(false);
+  const after = polls();
+  await page.waitForTimeout(2500);
+  expect(polls()).toBe(after);
+  await expect(local).toHaveCount(4);
+});
+
+test.describe('on web', () => {
+  test.use({ vmOptions: { web: true } });
+
+  test('offers no HTTP profile', async ({ page, vm }) => {
+    await connect(page, vm);
+    await expect(page.getByRole('list', { name: 'Connections' }).getByLabel('open')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'HTTP without an adapter' })).toHaveCount(0);
+  });
+});
+
 test('opens a request from an error and goes back to the error', async ({ page, vm }) => {
   await connect(page, vm);
   await page.getByRole('tab', { name: /^Errors/ }).click();

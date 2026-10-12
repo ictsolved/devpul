@@ -110,11 +110,11 @@ export const HTTP_KEYS = ['status', 'method', 'host', 'ms', 'size', 'tag'] as co
 
 const searchCache = new WeakMap<HttpRow, string>();
 
-/** URL, ids and request/response bodies, lower case. */
+/** URL, ids, source and request/response bodies, lower case. */
 export function searchText(row: HttpRow): string {
   let text = searchCache.get(row);
   if (text === undefined) {
-    const parts = [`#${row.id}`, row.id, row.method, row.url, String(row.status ?? '')];
+    const parts = [`#${row.id}`, row.id, row.source ?? '', row.method, row.url, String(row.status ?? '')];
     for (const e of [row.request, row.response, row.error]) {
       if (!e) continue;
       const { body, message, errorType } = e.data;
@@ -225,7 +225,7 @@ const collator = new Intl.Collator(undefined, { numeric: true });
 function sortValue(row: HttpRow, key: SortKey): string | number | undefined {
   switch (key) {
     case 'id':
-      return row.id;
+      return row.source ?? row.id;
     case 'time':
       return row.ts;
     case 'method':

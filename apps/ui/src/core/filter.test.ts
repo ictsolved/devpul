@@ -27,7 +27,15 @@ function rows() {
       tags: { env: 'qa' },
     }),
     vmEvent('http.response', { session: 's', seq: 4, ts: 4, id: 2, status: 503 }),
-    vmEvent('http.request', { session: 's', seq: 5, ts: 5, id: 3, method: 'GET', url: 'https://example.com/health' }),
+    vmEvent('http.request', {
+      session: 's',
+      seq: 5,
+      ts: 5,
+      id: 3,
+      method: 'GET',
+      url: 'https://example.com/health',
+      source: 'dart:io',
+    }),
     vmEvent('http.request', {
       session: 's',
       seq: 6,
@@ -91,6 +99,7 @@ describe('filterRows', () => {
     expect(ids({ text: 'abc-1' })).toEqual(['2']);
     expect(ids({ text: '#3' })).toEqual(['3']);
     expect(ids({ text: 'timed' })).toEqual(['4']);
+    expect(ids({ text: 'dart:io' })).toEqual(['3']);
   });
 
   it('filters by status chips', () => {
@@ -147,7 +156,8 @@ describe('sortRows', () => {
   });
 
   it('compares ids and text naturally', () => {
-    expect(sorted('id', false)).toEqual(['1', '2', '3', '4']);
+    // The # column sorts by what it shows: dart:io after the numbers.
+    expect(sorted('id', false)).toEqual(['1', '2', '4', '3']);
     expect(sorted('method', false)).toEqual(['4', '3', '1', '2']);
   });
 });

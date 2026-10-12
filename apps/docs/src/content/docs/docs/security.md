@@ -15,6 +15,7 @@ DevPul talks to the app through the VM service, the same debug protocol IDEs and
 
 - The page reads events straight from the app over `127.0.0.1`. There is no DevPul server, account or analytics; the hosted site only serves the page.
 - Events contain whatever the app sends, including tokens and personal data in headers and bodies. Use [redaction](/docs/api/#redaction) when that matters, for example before sharing a screen or an export.
+- Rows from [HTTP without an adapter](/docs/ui/#http-without-an-adapter) hold what dart:io recorded; the app's redaction does not apply to them.
 - History is stored in the browser (IndexedDB). Turn it off or clear it in Settings.
 - Exports, HAR and session files, hold everything the app sent. Redact before sharing them.
 

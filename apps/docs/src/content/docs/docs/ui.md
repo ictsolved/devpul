@@ -5,14 +5,14 @@ description: Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR
 
 ## Tabs
 
-| Tab         | Shows                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------- |
-| HTTP        | Requests from the HTTP adapters, newest first, with live pending rows.                |
-| Errors      | `Devpul.error`, Flutter errors and uncaught platform errors.                          |
-| Logs        | `Devpul.log`, captured `debugPrint` and `developer.log`. Appears once there are logs. |
-| Events      | Everything else sent with `Devpul.emit`.                                              |
-| Plugin tabs | Events claimed by a [plugin](/docs/plugins/).                                         |
-| Plugins     | Offers, approvals, updates, load errors and Allow writes. At the right end.           |
+| Tab         | Shows                                                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP        | Requests from the HTTP adapters, and from [dart:io](#http-without-an-adapter) when turned on, newest first, with live pending rows. |
+| Errors      | `Devpul.error`, Flutter errors and uncaught platform errors.                                                                        |
+| Logs        | `Devpul.log`, captured `debugPrint` and `developer.log`. Appears once there are logs.                                               |
+| Events      | Everything else sent with `Devpul.emit`.                                                                                            |
+| Plugin tabs | Events claimed by a [plugin](/docs/plugins/).                                                                                       |
+| Plugins     | Offers, approvals, updates, load errors and Allow writes. At the right end.                                                         |
 
 <img class="dark:sl-hidden" src="/screenshots/http-light.webp" alt="The HTTP tab with a POST request open: URL, headers and JSON bodies" width="1440" height="900" loading="lazy" />
 <img class="light:sl-hidden" src="/screenshots/http-dark.webp" alt="The HTTP tab with a POST request open: URL, headers and JSON bodies" width="1440" height="900" loading="lazy" />
@@ -53,6 +53,17 @@ Select a row to see it on the right. Headers and params show as tables, bodies a
 <img class="light:sl-hidden" src="/screenshots/errors-dark.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and the requests made before it" width="1440" height="900" loading="lazy" />
 
 In Errors, **Group repeats** folds identical errors into one row with a count, and each error lists the requests made in the 10 seconds before it. Click one to open it in HTTP; **Back to error** returns.
+
+## HTTP without an adapter
+
+Calls through dart:io's `HttpClient` can show with no adapter: `package:http`'s `IOClient`, Dio's default adapter, `Image.network` and packages that make their own calls. Click the globe on a connection to turn it on. DevPul turns on dart:io's HTTP logging in each isolate, reads its HTTP profile every second, and turns logging back off when you click again, remove the connection or close the page. The choice is kept per VM service host and port.
+
+- These rows show `dart:io` in the `#` column and in the detail; type `dart:io` in the filter to list them.
+- A request an adapter reported shows once, from the adapter. A followed redirect is one row with the URL it ended at.
+- A request shows once its response headers arrive or it fails. Bodies that are not text show their size.
+- The app's ignore and redact rules do not apply.
+- Clients that record into `package:http_profile` show the same way.
+- Flutter web has no dart:io and shows no globe.
 
 **Pause** freezes which rows are listed; rows already shown still update. Resume shows how many arrived meanwhile.
 

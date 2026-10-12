@@ -28,6 +28,8 @@ export interface VmOptions {
   token?: string;
   /** `Devpul.handle` handlers by name, answered by `ext.devpul.call` before contract/call.json. */
   handlers?: Record<string, (args: JsonObject) => unknown>;
+  /** A web app: no dart:io, so no HTTP profile. */
+  web?: boolean;
 }
 
 const contract = (file: string): unknown =>
@@ -37,6 +39,12 @@ interface LoggingFixture {
   events: JsonObject[];
   getObject: { request: JsonObject; result: JsonObject };
   invoke: { request: JsonObject; result: JsonObject }[];
+}
+
+interface ProfileFixture {
+  logging: JsonObject;
+  profile: { requests: JsonObject[] };
+  requests: JsonObject[];
 }
 
 interface CallFixture {
@@ -109,6 +117,31 @@ const ISOLATE = {
   isolateGroupId: GROUP.id,
 };
 const EXTENSIONS = ['backlog', 'action', 'call', 'plugin', 'limit', 'info'].map((n) => `ext.devpul.${n}`);
+const DART_IO = ['httpEnableTimelineLogging', 'getHttpProfile', 'getHttpProfileRequest'].map((n) => `ext.dart.io.${n}`);
+
+/**
+ * contract/http_profile.json's requests [copies] times over, each copy with
+ * its own ids and times, as the profile and the bodies `getHttpProfileRequest` gives.
+ */
+export function profileRequests(copies = 1): { refs: JsonObject[]; full: JsonObject[] } {
+  const { profile, requests } = contract('http_profile.json') as ProfileFixture;
+  const count = profile.requests.length;
+  const copy = (r: JsonObject, i: number): JsonObject =>
+    JSON.parse(
+      JSON.stringify(r, (key, value: unknown) =>
+        key === 'id' && typeof value === 'string' && !value.includes('/')
+          ? String(Number(value) + i * count)
+          : (key === 'startTime' || key === 'endTime') && typeof value === 'number'
+            ? value + i * 100_000
+            : value,
+      ),
+    ) as JsonObject;
+  const all = Array.from({ length: copies }, (_, i) => i);
+  return {
+    refs: all.flatMap((i) => profile.requests.map((r) => copy(r, i))),
+    full: all.flatMap((i) => requests.map((r) => copy(r, i))),
+  };
+}
 
 class RpcError extends Error {
   readonly code: number;
@@ -132,6 +165,7 @@ export class FakeVm {
   private readonly plugins: Record<string, string>;
   private readonly flutterRun: boolean;
   private readonly handlers: Record<string, (args: JsonObject) => unknown>;
+  private readonly web: boolean;
   private readonly server: WebSocketServer;
   private readonly streams = new Map<WebSocket, Set<string>>();
   private paused = false;
@@ -139,6 +173,10 @@ export class FakeVm {
   private readonly logged: JsonObject[] = [];
   // A paused isolate runs service extensions on resume.
   private queued: (() => void)[] = [];
+  // dart:io's HTTP profile: entries with the time they last changed, in microseconds.
+  private logging = false;
+  private readonly profiled: { ref: JsonObject; at: number }[] = [];
+  private readonly bodies = new Map<string, JsonObject>();
 
   private constructor(server: WebSocketServer, options: VmOptions) {
     this.server = server;
@@ -146,6 +184,7 @@ export class FakeVm {
     this.plugins = options.plugins ?? { my_plugin: PLUGIN };
     this.flutterRun = options.flutterRun ?? false;
     this.handlers = options.handlers ?? {};
+    this.web = options.web ?? false;
     this.info = this.hashed(options.info ?? (contract('info.json') as JsonObject));
     this.events = (options.events ?? fixtureEvents()).map((e) =>
       e.kind === 'devpul.app.info' ? { ...e, data: { ...e.data, data: this.hashed(e.data.data) } } : e,
@@ -211,6 +250,23 @@ export class FakeVm {
       this.logged.push(event);
       this.notify('Logging', event);
     }
+  }
+
+  /** Whether the UI turned dart:io's HTTP logging on. */
+  get httpLogging(): boolean {
+    return this.logging;
+  }
+
+  /**
+   * Makes the requests of contract/http_profile.json through dart:io, [copies]
+   * times over. The profile records them only while logging is on.
+   */
+  profile(copies = 1): void {
+    if (!this.logging) return;
+    const { refs, full } = profileRequests(copies);
+    const at = Date.now() * 1000;
+    for (const ref of refs) this.profiled.push({ ref, at });
+    for (const r of full) this.bodies.set(String(r.id), r);
   }
 
   pause(): void {
@@ -302,7 +358,7 @@ export class FakeVm {
           type: 'Isolate',
           runnable: true,
           pauseEvent: { type: 'Event', kind: this.paused ? 'PauseInterrupted' : 'Resume', isolate: ISOLATE },
-          extensionRPCs: EXTENSIONS,
+          extensionRPCs: this.web ? EXTENSIONS : [...EXTENSIONS, ...DART_IO],
         };
       // The objects of contract/logging.json; any other id has expired, as in a real VM.
       case 'getObject':
@@ -338,6 +394,26 @@ export class FakeVm {
         if (params.name !== request.name) throw new Error(`No handler named ${String(params.name)}.`);
         if (params.writes !== 'true') throw new RpcError(refused.code, refused.message, refused.data);
         return result;
+      }
+      case 'ext.dart.io.httpEnableTimelineLogging':
+        if (this.web) throw new RpcError(-32601, `Unknown method "${method}".`);
+        if (params.enabled !== undefined) this.logging = params.enabled === 'true';
+        return { ...(contract('http_profile.json') as ProfileFixture).logging, enabled: this.logging };
+      case 'ext.dart.io.getHttpProfile': {
+        const since = Number(params.updatedSince ?? -1);
+        return {
+          type: 'HttpProfile',
+          timestamp: Date.now() * 1000,
+          requests: this.profiled.filter((p) => p.at >= since).map((p) => p.ref),
+        };
+      }
+      case 'ext.dart.io.getHttpProfileRequest': {
+        const found = this.bodies.get(String(params.id));
+        if (!found)
+          throw new RpcError(-32602, 'Invalid params', {
+            details: `Unable to find request with id: '${String(params.id)}'`,
+          });
+        return found;
       }
       case 'ext.devpul.limit': {
         const kind = String(params.kind);

@@ -115,6 +115,16 @@ final dio = Dio(
 
 final client = DevpulClient();
 
+Future<String> _plainGet() async {
+  final http = HttpClient();
+  try {
+    final request = await http.getUrl(Uri.parse('$baseUrl/get?client=dart:io'));
+    return await utf8.decoder.bind(await request.close()).join();
+  } finally {
+    http.close();
+  }
+}
+
 const storage = FlutterSecureStorage();
 
 // Something to look at in the Secure storage tab.
@@ -295,6 +305,8 @@ class _HomePageState extends State<HomePage> {
       'package:http GET',
       () => _run(() => client.get(Uri.parse('$baseUrl/get?client=http'))),
     ),
+    // No adapter: shows with "HTTP without an adapter" on in the UI.
+    if (!kIsWeb) ('HttpClient GET', () => _run(_plainGet)),
     ('404', () => _run(() => dio.get<Object?>('/status/404'))),
     (
       'Redirect',

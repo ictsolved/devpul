@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { Plug, X } from 'lucide-react';
+import { Globe, Plug, X } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,12 +30,16 @@ interface Props {
   hero?: boolean;
   /** Shown on the right of the connection chips. */
   controls?: ReactNode;
+  /** Connections that read dart:io's HTTP profile. */
+  profiled: Record<string, boolean>;
   onAdd: (wsUrl: string) => void;
   onRemove: (id: string) => void;
+  onProfile: (id: string, on: boolean) => void;
 }
 
 export function ConnectionBar(props: Props) {
-  const { connections, states, names, localOrigin, managed, hero, controls, onAdd, onRemove } = props;
+  const { connections, states, names, localOrigin, managed, hero, controls, profiled, onAdd, onRemove, onProfile } =
+    props;
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -106,24 +110,52 @@ export function ConnectionBar(props: Props) {
               {connections.map((c) => {
                 const s = states[c.id];
                 const status = s?.status ?? 'closed';
+                const profile = profiled[c.id] === true;
                 return (
-                  <Tip key={c.id} content={c.url} code>
-                    <li className="inline-flex flex-none items-center gap-1.5 rounded-full border py-px pr-1 pl-[9px] text-xs whitespace-nowrap">
-                      <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
-                      <span>{names[c.id] ?? connectionLabel(c.url)}</span>
-                      {s?.paused.length ? <span className="text-warning">paused</span> : null}
-                      {!managed && (
+                  <li
+                    key={c.id}
+                    className="inline-flex flex-none items-center gap-1.5 rounded-full border py-px pr-1 pl-[9px] text-xs whitespace-nowrap"
+                  >
+                    <Tip content={c.url} code>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={cn('size-2 flex-none rounded-full', DOT[status])} aria-label={status} />
+                        <span>{names[c.id] ?? connectionLabel(c.url)}</span>
+                      </span>
+                    </Tip>
+                    {s?.paused.length ? <span className="text-warning">paused</span> : null}
+                    {(s?.httpProfile || profile) && (
+                      <Tip
+                        content={
+                          profile
+                            ? "Reading requests from dart:io's HTTP profile. Click to stop."
+                            : "HTTP without an adapter: read requests from dart:io's HTTP profile."
+                        }
+                      >
                         <button
                           type="button"
-                          className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
-                          onClick={() => onRemove(c.id)}
-                          aria-label={`Remove ${c.url}`}
+                          className={cn(
+                            'inline-flex cursor-pointer rounded-full p-0.5',
+                            profile ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                          )}
+                          onClick={() => onProfile(c.id, !profile)}
+                          aria-label="HTTP without an adapter"
+                          aria-pressed={profile}
                         >
-                          <X size={12} />
+                          <Globe size={12} />
                         </button>
-                      )}
-                    </li>
-                  </Tip>
+                      </Tip>
+                    )}
+                    {!managed && (
+                      <button
+                        type="button"
+                        className="inline-flex cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive"
+                        onClick={() => onRemove(c.id)}
+                        aria-label={`Remove ${c.url}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </li>
                 );
               })}
             </ul>

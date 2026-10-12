@@ -1,4 +1,5 @@
 import { type DevEvent, isObject, type JsonObject, num, str, TRUNCATED } from './events';
+import type { ProfileLookup } from './profile';
 
 export type HttpState = 'pending' | 'done' | 'error';
 
@@ -20,6 +21,8 @@ export interface HttpRow {
   /** Response body bytes, from content-length or the body itself. */
   size?: number;
   state: HttpState;
+  /** `dart:io` for a request read from the HTTP profile; adapters send none. */
+  source?: string;
 }
 
 export interface RunInfo {
@@ -46,6 +49,9 @@ const MAX_CLEARED = 100;
 // Three full app backlogs (16 MB each), or 10k typical events plus a 5 MB body with room to spare.
 export const DEFAULT_MAX_MB = 50;
 
+// An adapter posts its request before the client opens it; interceptors can sit in between.
+const ADAPTER_LEAD_MS = 30_000;
+
 // `app.*` events are small and carry a run's name, actions and plugins; the cap leaves them, as the app's limits do.
 export const evictable = (e: DevEvent): boolean => !e.kind.startsWith('app.');
 
@@ -61,7 +67,7 @@ export function latestRuns(runs: ReadonlyMap<string, RunInfo>): RunInfo[] {
   return [...best.values()];
 }
 
-export class Store {
+export class Store implements ProfileLookup {
   /** Cap on the summed `size` of kept events; oldest go first. */
   maxBytes: number;
   version = 0;
@@ -72,6 +78,8 @@ export class Store {
   private events = new Map<string, DevEvent>();
   private order: DevEvent[] = [];
   private http = new Map<string, HttpRow>();
+  // Start times of adapter requests by isolate, method and URL.
+  private sent = new Map<string, number[]>();
   private httpSorted: HttpRow[] | null = null;
   private errorList: DevEvent[] = [];
   private errorsSnapshot: DevEvent[] | null = null;
@@ -167,6 +175,15 @@ export class Store {
   sinceClear(events: DevEvent[]): DevEvent[] {
     if (!this.cleared.size) return events;
     return events.filter((e) => e.seq > (this.cleared.get(e.session) ?? -Infinity));
+  }
+
+  seen(session: string, seq: number): boolean {
+    return this.events.has(`${session}|${seq}`) || seq <= (this.cleared.get(session) ?? -Infinity);
+  }
+
+  sentByAdapter(isolateId: string, method: string, url: string, ms: number): boolean {
+    const times = this.sent.get(`${isolateId}|${method}|${url}`);
+    return times?.some((t) => t <= ms && t >= ms - ADAPTER_LEAD_MS) === true;
   }
 
   selected(tab: string): Selection | undefined {
@@ -293,6 +310,12 @@ export class Store {
       row.request = e;
       row.ts = e.ts;
       row.seq = e.seq;
+      if (e.isolateId && e.data.source === undefined) {
+        const sent = `${e.isolateId}|${str(e.data.method)}|${str(e.data.url)}`;
+        const times = this.sent.get(sent);
+        if (times) times.push(e.ts);
+        else this.sent.set(sent, [e.ts]);
+      }
     } else if (e.kind === 'http.response') {
       row.response = e;
     } else if (e.kind === 'http.error') {
@@ -304,6 +327,7 @@ export class Store {
     row.method = str(src?.data.method) ?? row.method;
     row.url = str(src?.data.url) ?? row.url;
     row.host = hostOf(row.url);
+    row.source = str(src?.data.source);
     const end = row.response ?? row.error;
     row.status = num(end?.data.status);
     row.durationMs = num(end?.data.durationMs);
@@ -338,6 +362,7 @@ export class Store {
 
   private reset(): void {
     this.http.clear();
+    this.sent.clear();
     this.httpSorted = null;
     this.errorList = [];
     this.errorsSnapshot = null;

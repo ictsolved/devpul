@@ -34,7 +34,7 @@ import { type Limited, StatusBar } from './features/status/StatusBar';
 import { cli, listenCli } from './lib/cli';
 import { devtools, hostUri, listenHost } from './lib/devtools';
 import { pageUrl } from './lib/links';
-import { defaultSettings, load, save, type Settings } from './lib/storage';
+import { defaultSettings, load, save, type Settings, useStored } from './lib/storage';
 
 const MB = 1024 * 1024;
 const store = new Store(load('settings', defaultSettings).maxMB * MB, load<[string, number][]>('cleared', []));
@@ -58,6 +58,14 @@ const HOT = {
   hotRestart: { label: 'Restart', done: 'Restarted', tip: 'Hot restart (R)' },
 } as const;
 type Hot = keyof typeof HOT;
+// The HTTP profile toggle is kept per VM service host and port.
+const origin = (url: string): string => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+};
 const hotTargets = (service: Hot, connections: ConnEntry[], states: Record<string, ConnState>) =>
   connections.filter((c) => states[c.id]?.status === 'open' && states[c.id]?.services[service]);
 
@@ -77,6 +85,7 @@ export function App() {
   // The Plugins view opened from Home, with no events to show.
   const [browsing, setBrowsing] = useState(false);
   const [cliPlugins, setCliPlugins] = useState<string[]>([]);
+  const [profiled, setProfiled] = useStored<string[]>('httpProfile', []);
   // Re-renders on every store change; children read from the store directly.
   useSyncExternalStore(store.subscribe, store.getVersion);
   const plugins = useSyncExternalStore(registry.subscribe, registry.getPlugins);
@@ -179,6 +188,7 @@ export function App() {
         (events) => onEvents(store.sinceClear(events)),
         () => setStates((s) => ({ ...s, [c.id]: conn.state })),
         nextN,
+        store,
       );
       map.set(c.id, conn);
       conn.start();
@@ -192,8 +202,23 @@ export function App() {
   }, [connections, ready, onEvents]);
 
   useEffect(() => {
+    for (const c of connections) live.current.get(c.id)?.setHttpProfile(profiled.includes(origin(c.url)));
+  }, [connections, ready, profiled]);
+
+  useEffect(() => {
     const map = live.current;
+    // Stopping sets dart:io's HTTP logging back; a page restored from the back-forward cache connects again.
+    const hide = () => {
+      for (const conn of map.values()) conn.stop();
+    };
+    const show = (e: PageTransitionEvent) => {
+      if (e.persisted) for (const conn of map.values()) conn.start();
+    };
+    addEventListener('pagehide', hide);
+    addEventListener('pageshow', show);
     return () => {
+      removeEventListener('pagehide', hide);
+      removeEventListener('pageshow', show);
       for (const conn of map.values()) conn.stop();
       map.clear();
     };
@@ -593,8 +618,15 @@ export function App() {
       managed={devtools}
       hero={hero}
       controls={hero ? undefined : controls}
+      profiled={Object.fromEntries(connections.map((c) => [c.id, profiled.includes(origin(c.url))]))}
       onAdd={addConnection}
       onRemove={removeConnection}
+      onProfile={(id, on) => {
+        const url = connections.find((c) => c.id === id)?.url;
+        if (!url) return;
+        const host = origin(url);
+        setProfiled([...profiled.filter((h) => h !== host), ...(on ? [host] : [])]);
+      }}
     />
   );
 

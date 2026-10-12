@@ -305,3 +305,57 @@ describe('Connection Logging', () => {
     expect(ws.sent[0]).toMatchObject({ method: 'setClientName', params: { name: 'DevPul' } });
   });
 });
+
+describe('Connection HTTP profile', () => {
+  const PROFILE = ['ext.dart.io.httpEnableTimelineLogging', 'ext.dart.io.getHttpProfile'];
+  /** A native app: its isolate offers dart:io's profile, which holds nothing. */
+  const native = (req: Sent): unknown => {
+    switch (req.method) {
+      case 'getIsolate':
+        return { id: ISO, pauseEvent: { kind: 'Resume' }, extensionRPCs: PROFILE };
+      case 'ext.dart.io.httpEnableTimelineLogging':
+        return { type: 'HttpTimelineLoggingState', enabled: false };
+      case 'ext.dart.io.getHttpProfile':
+        return { type: 'HttpProfile', timestamp: 1, requests: [] };
+      default:
+        return vm('Resume')(req);
+    }
+  };
+  const logging = (ws: FakeSocket) =>
+    ws.sent.filter((r) => r.method === PROFILE[0] && r.params.enabled !== undefined).map((r) => r.params.enabled);
+
+  it('offers the profile where an isolate has it, and only polls when on', async () => {
+    vi.useFakeTimers();
+    let ws = await connect(vm('Resume'));
+    expect(conn.state.httpProfile).toBe(false);
+    conn.stop();
+
+    ws = await connect(native);
+    expect(conn.state.httpProfile).toBe(true);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(ws.methods()).not.toContain('ext.dart.io.getHttpProfile');
+
+    conn.setHttpProfile(true);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(ws.methods()).toContain('ext.dart.io.getHttpProfile');
+    expect(logging(ws)).toEqual(['true']);
+
+    ws.notify('Isolate', { kind: 'IsolateExit', isolate: { id: ISO } });
+    expect(conn.state.httpProfile).toBe(false);
+    ws.notify('Isolate', {
+      kind: 'ServiceExtensionAdded',
+      extensionRPC: PROFILE[1],
+      isolate: { id: ISO, name: 'main' },
+    });
+    expect(conn.state.httpProfile).toBe(true);
+  });
+
+  it('sets logging back on stop', async () => {
+    vi.useFakeTimers();
+    const ws = await connect(native);
+    conn.setHttpProfile(true);
+    await vi.advanceTimersByTimeAsync(1000);
+    conn.stop();
+    expect(logging(ws)).toEqual(['true', 'false']);
+  });
+});

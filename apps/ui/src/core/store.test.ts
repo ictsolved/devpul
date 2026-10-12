@@ -304,3 +304,40 @@ describe('Store rows', () => {
     ]);
   });
 });
+
+const sent = (ts: number, extra: Record<string, string> = {}) =>
+  vmEvent('http.request', {
+    session: 's1',
+    seq: ts,
+    ts,
+    id: ts,
+    method: 'GET',
+    url: 'https://example.com/a',
+    ...extra,
+  });
+
+describe('Store profile lookup', () => {
+  it('knows adapter requests by isolate, method and URL, up to 30 s before dart:io starts them', () => {
+    const store = new Store();
+    store.add([sent(1000), sent(2000, { source: 'dart:io' })]);
+    expect(store.sentByAdapter('isolates/1', 'GET', 'https://example.com/a', 1000)).toBe(true);
+    expect(store.sentByAdapter('isolates/1', 'GET', 'https://example.com/a', 31_000)).toBe(true);
+    expect(store.sentByAdapter('isolates/1', 'GET', 'https://example.com/a', 31_001)).toBe(false);
+    expect(store.sentByAdapter('isolates/1', 'GET', 'https://example.com/a', 999)).toBe(false);
+    expect(store.sentByAdapter('isolates/2', 'GET', 'https://example.com/a', 1000)).toBe(false);
+    expect(store.sentByAdapter('isolates/1', 'POST', 'https://example.com/a', 1000)).toBe(false);
+    // Not an adapter's.
+    expect(store.sentByAdapter('isolates/1', 'GET', 'https://example.com/a', 32_000)).toBe(false);
+  });
+
+  it('has seen kept events and those a Clear went past', () => {
+    const store = new Store();
+    store.add([sent(5)]);
+    expect(store.seen('s1', 5)).toBe(true);
+    expect(store.seen('s1', 6)).toBe(false);
+    store.clear();
+    expect(store.seen('s1', 4)).toBe(true);
+    expect(store.seen('s1', 6)).toBe(false);
+    expect(store.sentByAdapter('isolates/1', 'GET', 'https://example.com/a', 5)).toBe(false);
+  });
+});

@@ -9,6 +9,7 @@ import { Section } from '../../components/Section';
 import { Tip } from '../../components/Tip';
 import { isObject, str } from '../../core/events';
 import { toFetch } from '../../core/fetch';
+import { DART_IO } from '../../core/profile';
 import { formatBytes, formatTime, pretty } from '../../core/json';
 import type { HttpRow } from '../../core/store';
 import { useStored } from '../../lib/storage';
@@ -55,7 +56,13 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
           <StatusBadge row={row} />
           {row.durationMs !== undefined && <span className="text-muted-foreground">{row.durationMs} ms</span>}
           {row.size !== undefined && <span className="text-muted-foreground">{formatBytes(row.size)}</span>}
-          <span className="text-muted-foreground">#{row.id}</span>
+          {row.source === DART_IO ? (
+            <Tip content="Read from dart:io's HTTP profile. The app's ignore and redact settings do not apply.">
+              <span className="text-muted-foreground">dart:io</span>
+            </Tip>
+          ) : (
+            <span className="text-muted-foreground">#{row.id}</span>
+          )}
           <span className="text-muted-foreground">{formatTime(row.ts)}</span>
           <span className="flex-1" />
           <Tip content="Switch between tree and raw JSON">

@@ -25,7 +25,7 @@ A logging and error handling package with a Flutter UI that runs inside the app.
 
 A browser UI for what a debug build sends, over the same VM service as DevTools.
 
-- HTTP from any client through adapters, including on Flutter web, next to errors, logs, routes and custom events, with one filter syntax across them.
+- HTTP from any client through adapters, including on Flutter web, or from dart:io with no code change, next to errors, logs, routes and custom events, with one filter syntax across them.
 - Several apps at once, history across reloads, HAR and session files.
 - Plugin tabs for your own events and for parts of the app, such as state or files, and [actions](/docs/actions/) that run code in the app.
 - Nothing in release builds and nothing inside the app's UI.
@@ -34,7 +34,7 @@ A browser UI for what a debug build sends, over the same VM service as DevTools.
 
 - **Release and QA builds**: DevPul does nothing there. Use talker, a crash reporter or your own logging.
 - **Performance, memory, layout**: use DevTools.
-- **Traffic from packages you cannot wrap**: DevPul sees only calls that go through an adapter. Use the DevTools Network tab, or a proxy.
+- **Traffic outside adapters and dart:io**: on Flutter web DevPul sees only calls through an adapter, and on native only clients that use dart:io or record into `package:http_profile`. Use the browser's network panel, or a proxy.
 - **Logs on a device away from your machine**: DevPul needs the VM service on `127.0.0.1`. talker shows them on the device.
 
 See [Limits](/docs/limits/) for the rest.

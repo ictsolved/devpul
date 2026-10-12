@@ -108,3 +108,31 @@ test('10k events and a 5 MB body stay within the frame and memory budget', async
   expect.soft(tabs.p95, 'tab switch frame p95, ms').toBeLessThan(50);
   expect.soft(tabs.max, 'tab switch frame max, ms').toBeLessThan(200);
 });
+
+test.describe('with no adapter', () => {
+  test.use({ vmOptions: {} });
+
+  test('a 2,500 request HTTP profile stays within the time budget', async ({ page, vm }) => {
+    await page.addInitScript(() => {
+      window.longTasks = [];
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) window.longTasks.push(e.duration);
+      }).observe({ type: 'longtask', buffered: true });
+    });
+    await connect(page, vm);
+    const grid = page.getByRole('grid', { name: 'Requests' });
+    const adapter = Number(await grid.getAttribute('aria-rowcount')) - 1;
+    await page.getByRole('button', { name: 'HTTP without an adapter' }).click();
+    await expect.poll(() => vm.httpLogging).toBe(true);
+    const started = Date.now();
+    // Five requests per copy, the redirect hop not shown.
+    vm.profile(500);
+    await expect(grid).toHaveAttribute('aria-rowcount', String(adapter + 2000 + 1), { timeout: 30_000 });
+    const profileMs = Date.now() - started;
+    const longestTask = round(Math.max(0, ...(await page.evaluate(() => window.longTasks))));
+    console.log(JSON.stringify({ profileMs, longestTask }));
+    // Measured on a laptop: 2900 ms with 1500 body reads, one at a time, 80 ms.
+    expect.soft(profileMs, 'profile on to all rows, ms').toBeLessThan(8000);
+    expect.soft(longestTask, 'longest task while reading the profile, ms').toBeLessThan(400);
+  });
+});

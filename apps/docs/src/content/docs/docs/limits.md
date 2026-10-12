@@ -32,11 +32,12 @@ Events are encoded as JSON on the app's isolate, about 0.1 ms for a 2 KB event i
 - DDS keeps only the last 10,000 events of the Extension stream, shared with Flutter's own per-frame events.
 - `developer.log` records sent before DevPul connects come from DDS, which keeps the last 10,000 for all isolates. Without DDS they are gone.
 - The VM cuts `developer.log` messages at 128 characters. The rest is read from the app when the row opens, so only while that run is alive and the VM still holds the string.
+- With [HTTP without an adapter](/docs/ui/#http-without-an-adapter) on, dart:io keeps every request and its bodies in the app's memory until the app restarts, and DevPul reads new ones every second.
 - Busy kinds can be muted or capped with [limits](/docs/api/#limits), in the app or from Settings.
 
 ## What it does not see
 
-- HTTP calls show only through an [adapter](/docs/adapters/): `devpul_dio`, `devpul_http` or your own. A package that makes its own `HttpClient` calls stays invisible.
+- HTTP calls show through an [adapter](/docs/adapters/), or from dart:io's `HttpClient` with [HTTP without an adapter](/docs/ui/#http-without-an-adapter) on. On Flutter web only adapters see them, and native clients outside dart:io only when they record into `package:http_profile`.
 - `print` output, platform logs and native crashes are not captured. `debugPrint` is, with `DevpulFlutter.captureDebugPrint()`.
 - Flutter web does not report uncaught async errors; see [Flutter](/docs/flutter/#errors).
 

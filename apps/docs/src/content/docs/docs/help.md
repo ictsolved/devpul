@@ -70,7 +70,7 @@ No. Release builds have no VM service and DevPul never emits in them, so there i
 
 ### How is DevPul different from the Flutter DevTools network tab?
 
-DevPul works with any HTTP client through adapters, including on Flutter web, shows errors, logs and custom events next to requests, filters by tags, fields and app runs, watches several apps at once, keeps history across reloads, exports HAR and takes plugins. DevTools sees `dart:io` traffic with no code change. See [DevPul, DevTools and talker](/docs/compare/).
+DevPul works with any HTTP client through adapters, including on Flutter web, shows errors, logs and custom events next to requests, filters by tags, fields and app runs, watches several apps at once, keeps history across reloads, exports HAR and takes plugins. Both read `dart:io` traffic with no code change; in DevPul, turn on [HTTP without an adapter](/docs/ui/#http-without-an-adapter). See [DevPul, DevTools and talker](/docs/compare/).
 
 ### Can I share what I see with a teammate?
 

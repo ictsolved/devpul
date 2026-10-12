@@ -229,8 +229,8 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
 const Cells = memo(function Cells({ row, slow }: { row: HttpRow; slow?: string }) {
   return (
     <>
-      <span role="gridcell" className="text-muted-foreground">
-        {row.id}
+      <span role="gridcell" className="truncate text-muted-foreground">
+        {row.source ?? row.id}
       </span>
       <span role="gridcell" className="text-muted-foreground">
         {formatTime(row.ts)}
