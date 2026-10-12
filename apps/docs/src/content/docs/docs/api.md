@@ -61,6 +61,8 @@ Logger.root.onRecord.listen(
 
 In Flutter, `DevpulFlutter.captureDebugPrint()` sends `debugPrint` output too.
 
+`developer.log` records show with no DevPul call, marked `developer.log` in the Source filter, with `package:logging`'s level names (`fine`, `info`, `warning`, `severe` and so on). The VM cuts messages at 128 characters; opening the row reads the full message, error and stack trace from the app.
+
 ## Errors
 
 ```dart

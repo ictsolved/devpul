@@ -680,7 +680,13 @@ export function App() {
                   />
                 )}
                 {activeTab === 'logs' && (
-                  <LogsTab logs={logs} runLabel={runLabel} filterRef={filterRef} {...selection('logs')} />
+                  <LogsTab
+                    logs={logs}
+                    runLabel={runLabel}
+                    filterRef={filterRef}
+                    call={callApp}
+                    {...selection('logs')}
+                  />
                 )}
                 {activeTab === 'events' && (
                   <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} {...selection('events')} />

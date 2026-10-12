@@ -33,6 +33,12 @@ export interface VmOptions {
 const contract = (file: string): unknown =>
   JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract', file), 'utf8'));
 
+interface LoggingFixture {
+  events: JsonObject[];
+  getObject: { request: JsonObject; result: JsonObject };
+  invoke: { request: JsonObject; result: JsonObject }[];
+}
+
 interface CallFixture {
   request: { name: string };
   result: JsonObject;
@@ -129,6 +135,8 @@ export class FakeVm {
   private readonly server: WebSocketServer;
   private readonly streams = new Map<WebSocket, Set<string>>();
   private paused = false;
+  // DDS's Logging buffer, replayed to each client that subscribes.
+  private readonly logged: JsonObject[] = [];
   // A paused isolate runs service extensions on resume.
   private queued: (() => void)[] = [];
 
@@ -197,6 +205,14 @@ export class FakeVm {
     });
   }
 
+  /** Sends the `developer.log` records of contract/logging.json over the Logging stream. */
+  log(): void {
+    for (const event of (contract('logging.json') as LoggingFixture).events) {
+      this.logged.push(event);
+      this.notify('Logging', event);
+    }
+  }
+
   pause(): void {
     this.paused = true;
     this.notify('Debug', { kind: 'PauseInterrupted', timestamp: Date.now() });
@@ -208,13 +224,13 @@ export class FakeVm {
     for (const run of this.queued.splice(0)) run();
   }
 
-  private notify(streamId: string, event: JsonObject): void {
+  private notify(streamId: string, event: JsonObject, only?: WebSocket): void {
     const text = JSON.stringify({
       jsonrpc: '2.0',
       method: 'streamNotify',
       params: { streamId, event: { type: 'Event', isolateGroup: GROUP, isolate: ISOLATE, ...event } },
     });
-    for (const [ws, streams] of this.streams) if (streams.has(streamId)) ws.send(text);
+    for (const [ws, streams] of this.streams) if (streams.has(streamId) && (!only || ws === only)) ws.send(text);
   }
 
   private handle(ws: WebSocket, text: string): void {
@@ -243,10 +259,17 @@ export class FakeVm {
     switch (method) {
       case 'getVersion':
         return { type: 'Version', major: 4, minor: 21 };
+      case 'setClientName':
+        return { type: 'Success' };
       case 'streamListen': {
         const streams = this.streams.get(ws)!;
         if (streams.has(String(params.streamId))) throw new RpcError(103, 'Stream already subscribed');
         streams.add(String(params.streamId));
+        if (params.streamId === 'Logging') {
+          queueMicrotask(() => {
+            for (const event of this.logged) this.notify('Logging', event, ws);
+          });
+        }
         if (params.streamId === 'Service' && this.flutterRun) {
           for (const service of ['reloadSources', 'hotRestart']) {
             const event = {
@@ -281,6 +304,16 @@ export class FakeVm {
           pauseEvent: { type: 'Event', kind: this.paused ? 'PauseInterrupted' : 'Resume', isolate: ISOLATE },
           extensionRPCs: EXTENSIONS,
         };
+      // The objects of contract/logging.json; any other id has expired, as in a real VM.
+      case 'getObject':
+      case 'invoke': {
+        const { getObject, invoke } = contract('logging.json') as LoggingFixture;
+        const { isolateId, ...request } = params;
+        if (isolateId !== ISOLATE.id) throw new RpcError(-32602, 'Invalid params');
+        const hit = method === 'getObject' ? [getObject] : invoke;
+        const found = hit.find((h) => JSON.stringify(h.request) === JSON.stringify(request));
+        return found?.result ?? { type: 'Sentinel', kind: 'Expired', valueAsString: '<expired>' };
+      }
       case 'ext.devpul.info':
         return this.info;
       case 'ext.devpul.backlog':

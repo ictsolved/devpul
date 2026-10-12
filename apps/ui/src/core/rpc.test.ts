@@ -65,6 +65,7 @@ const backlog = {
 function vm(pause: string) {
   return (req: Sent): unknown => {
     switch (req.method) {
+      case 'setClientName':
       case 'streamListen':
         return {};
       case 'getVM':
@@ -148,6 +149,7 @@ describe('Connection pause state', () => {
     const ws = await connect(vm('Resume'));
     expect(ws.sent.filter((r) => r.method === 'streamListen').map((r) => r.params.streamId)).toEqual([
       'Extension',
+      'Logging',
       'Isolate',
       'Debug',
       'Service',
@@ -246,5 +248,60 @@ describe('Connection services', () => {
     ws.notify('Service', registered('reloadSources', 's1.reloadSources'));
     ws.close();
     expect(conn.state.services).toEqual({});
+  });
+});
+
+const record = (message: string, time = 5) => ({
+  logRecord: { message: { kind: 'String', valueAsString: message }, level: 800, time, sequenceNumber: time },
+});
+
+describe('Connection Logging', () => {
+  it('adds developer.log records to the run of their isolate group', async () => {
+    const ws = await connect(vm('Resume'));
+    for (const [message, time] of [
+      ['a', 5],
+      ['b', 6],
+    ] as const) {
+      ws.notify('Logging', {
+        ...record(message, time),
+        isolate: { id: ISO, name: 'main', isolateGroupId: 'g1' },
+        isolateGroup: { id: 'g1' },
+      });
+    }
+    const logs = events.filter((e) => e.kind === 'log');
+    expect(logs.map((e) => [e.data.message, e.run, e.session, e.ts])).toEqual([
+      ['a', 'c1|g1', `log:${ISO}`, 5],
+      ['b', 'c1|g1', `log:${ISO}`, 6],
+    ]);
+    expect(new Set(logs.map((e) => e.key)).size).toBe(2);
+  });
+
+  it('takes the run of the isolate DevPul events came from where isolates have no group', async () => {
+    const ws = await connect(vm('Resume'));
+    // Web: DevPul events of an isolate without a group run by session.
+    ws.notify('Extension', {
+      extensionKind: 'devpul.custom',
+      extensionData: { v: 1, session: 'web', seq: 1, ts: 1, data: {} },
+      isolate: { id: 'isolates/2', name: 'main' },
+    });
+    ws.notify('Logging', { ...record('a'), isolate: { id: 'isolates/2', name: 'main' } });
+    ws.notify('Logging', { ...record('b'), isolate: { id: 'isolates/3', name: 'main' } });
+    expect(events.filter((e) => e.kind === 'log').map((e) => e.run)).toEqual(['web', 'c1|isolates/3']);
+  });
+
+  it('gives a record DDS replays to a new client the key it had', async () => {
+    const event = { ...record('a'), isolate: { id: ISO, name: 'main', isolateGroupId: 'g1' } };
+    let ws = await connect(vm('Resume'));
+    ws.notify('Logging', event);
+    const first = events.at(-1)?.key;
+    ws.close();
+    ws = await connect(vm('Resume'));
+    ws.notify('Logging', event);
+    expect(events.at(-1)?.key).toBe(first);
+  });
+
+  it('names itself to DDS', async () => {
+    const ws = await connect(vm('Resume'));
+    expect(ws.sent[0]).toMatchObject({ method: 'setClientName', params: { name: 'DevPul' } });
   });
 });

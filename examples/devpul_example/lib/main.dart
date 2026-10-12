@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
@@ -356,6 +357,10 @@ class _HomePageState extends State<HomePage> {
           error: const FormatException('x'),
         );
         debugPrint('debugPrint goes to Logs too');
+        final items = [
+          for (var i = 0; i < 8; i++) {'sku': 'sku-$i', 'qty': i + 1},
+        ];
+        developer.log('Cart loaded: ${jsonEncode(items)}', name: 'cart');
       },
     ),
     ('Open page', () => context.go('/details/42?tab=info')),

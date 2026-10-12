@@ -5,8 +5,10 @@ import {
   isObject,
   type JsonObject,
   PROTOCOL,
+  str,
   type VmExtensionEvent,
 } from './events';
+import { fromLogging } from './logging';
 
 export type ConnStatus = 'connecting' | 'open' | 'closed';
 
@@ -54,6 +56,8 @@ export class Connection {
   private paused = new Set<string>();
   // Isolates whose handshake or backlog a pause cut off; attached again on resume.
   private reattach = new Set<string>();
+  // The run of each isolate's DevPul events, for Logging records on web, where isolates have no group.
+  private runs = new Map<string, string>();
 
   constructor(
     readonly id: string,
@@ -154,8 +158,21 @@ export class Connection {
 
   private accept(raw: VmExtensionEvent, out: DevEvent[]): void {
     const e = fromVm(raw, this.id, this.nextN());
-    if (e === 'outdated') this.incompatible('app');
-    else if (e) out.push(e);
+    if (e === 'outdated') {
+      this.incompatible('app');
+    } else if (e) {
+      if (e.isolateId) this.runs.set(e.isolateId, e.run);
+      out.push(e);
+    }
+  }
+
+  private log(event: JsonObject): void {
+    const iso = isObject(event.isolate) ? (event.isolate as IsolateRef) : {};
+    const group = (isObject(event.isolateGroup) && str(event.isolateGroup.id)) || iso.isolateGroupId;
+    const known = iso.id ? this.runs.get(iso.id) : undefined;
+    const run = group ? `${this.id}|${group}` : (known ?? `${this.id}|${iso.id ?? ''}`);
+    const e = fromLogging(event, { conn: this.id, run, n: this.nextN() });
+    if (e) this.onEvents([e]);
   }
 
   private open(): void {
@@ -199,8 +216,10 @@ export class Connection {
   }
 
   private async subscribe(): Promise<void> {
-    // Subscribing to Service replays the registered services.
-    for (const streamId of ['Extension', 'Isolate', 'Debug', 'Service']) {
+    // Names this client in DDS. A plain VM service has no such method.
+    void this.call('setClientName', { name: 'DevPul' }).catch(() => {});
+    // Subscribing to Service replays the registered services, to Logging DDS's last 10k records.
+    for (const streamId of ['Extension', 'Logging', 'Isolate', 'Debug', 'Service']) {
       try {
         await this.call('streamListen', { streamId });
       } catch {
@@ -325,6 +344,10 @@ export class Connection {
       this.service(event);
       return;
     }
+    if (streamId === 'Logging') {
+      this.log(event);
+      return;
+    }
     if (!isObject(event.isolate) || typeof event.isolate.id !== 'string') return;
     const iso = event.isolate as IsolateRef;
     if (streamId === 'Debug') {
@@ -332,6 +355,7 @@ export class Connection {
     } else if (streamId === 'Isolate' && event.kind === 'IsolateExit') {
       this.setPaused(event.isolate.id, false);
       this.reattach.delete(event.isolate.id);
+      this.runs.delete(event.isolate.id);
     } else if (streamId === 'Isolate' && event.kind === 'ServiceExtensionAdded' && event.extensionRPC === INFO) {
       void this.attach(iso);
     }

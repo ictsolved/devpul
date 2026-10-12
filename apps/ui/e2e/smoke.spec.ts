@@ -35,6 +35,46 @@ test('connects from a #connect= link and shows the fixture events in each tab', 
   await expect(events.getByRole('row', { name: /route/ })).toHaveCount(4);
 });
 
+test('shows developer.log records and reads a cut message in full', async ({ page, vm }) => {
+  // Before the UI connects: DDS replays them on subscribe.
+  vm.log();
+  await connect(page, vm);
+  await page.getByRole('tab', { name: /^Logs/ }).click();
+  const logs = page.getByRole('grid', { name: 'Logs' });
+  await logs.getByRole('row', { name: /token refresh failed/ }).click();
+  const detail = page.getByRole('complementary', { name: 'Detail' });
+  await expect(detail).toContainText('warning');
+  await expect(detail).toContainText('Bad state: expired');
+  await expect(detail).toContainText('#0      main (file:///app/main.dart:5:3)');
+
+  await logs.getByRole('row', { name: /sku-1/ }).click();
+  const message = detail.locator('pre').first();
+  await expect(message).toHaveText(/\]\}$/);
+  expect((await message.textContent())?.length).toBe(371);
+
+  await page.getByRole('group', { name: 'Source' }).getByRole('button', { name: 'developer.log' }).click();
+  await expect(logs.getByRole('row')).toHaveCount(2);
+
+  // A reload loads the kept records and gets the same ones replayed; a later event shows the replay is in.
+  const subscribed = () => vm.callsTo('streamListen').filter((p) => p.streamId === 'Logging').length;
+  const reload = async (times: number, text: string) => {
+    // Kept events are written 500 ms after they arrive.
+    await page.waitForTimeout(700);
+    await page.reload();
+    await expect.poll(subscribed).toBe(times);
+    vm.emit('log', { level: 'info', message: text });
+    await expect(logs.getByRole('row', { name: new RegExp(text) })).toBeVisible();
+  };
+  await page.getByRole('group', { name: 'Source' }).getByRole('button', { name: 'developer.log' }).click();
+  await reload(2, 'After reload');
+  await expect(logs.getByRole('row')).toHaveCount(5);
+
+  // Replayed records stay cleared.
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await reload(3, 'After clear');
+  await expect(logs.getByRole('row')).toHaveCount(1);
+});
+
 test('opens HTTP detail', async ({ page, vm }) => {
   await connect(page, vm);
   await page.getByRole('row', { name: /example\.com\/items/ }).click();

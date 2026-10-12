@@ -30,6 +30,8 @@ Events are encoded as JSON on the app's isolate, about 0.1 ms for a 2 KB event i
 - Each event field is cut at [`maxValueLength`](/docs/api/#configuration), 1,048,576 characters of JSON by default.
 - The app keeps a backlog of up to [`backlogSize`](/docs/api/#configuration), 16,777,216 characters of JSON by default, per isolate, so DevPul can catch up when it connects late. Older events are gone.
 - DDS keeps only the last 10,000 events of the Extension stream, shared with Flutter's own per-frame events.
+- `developer.log` records sent before DevPul connects come from DDS, which keeps the last 10,000 for all isolates. Without DDS they are gone.
+- The VM cuts `developer.log` messages at 128 characters. The rest is read from the app when the row opens, so only while that run is alive and the VM still holds the string.
 - Busy kinds can be muted or capped with [limits](/docs/api/#limits), in the app or from Settings.
 
 ## What it does not see
