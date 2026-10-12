@@ -1,0 +1,493 @@
+{
+  "logging": {
+    "type": "HttpTimelineLoggingState",
+    "enabled": false
+  },
+  "profile": {
+    "type": "HttpProfile",
+    "timestamp": 1767225600034000,
+    "requests": [
+      {
+        "type": "@HttpProfileRequest",
+        "id": "1",
+        "isolateId": "isolates/1",
+        "method": "GET",
+        "uri": "http://127.0.0.1:8080/items?page=1",
+        "startTime": 1767225600000000,
+        "endTime": 1767225600003000,
+        "request": {
+          "headers": {
+            "user-agent": [
+              "Dart/3 (dart:io)"
+            ],
+            "accept-encoding": [
+              "gzip"
+            ],
+            "content-length": [
+              "0"
+            ],
+            "host": [
+              "127.0.0.1:8080"
+            ]
+          },
+          "method": "GET",
+          "uri": "http://127.0.0.1:8080/items?page=1"
+        },
+        "response": {
+          "startTime": 1767225600005000,
+          "headers": {
+            "content-type": [
+              "application/json; charset=utf-8"
+            ],
+            "transfer-encoding": [
+              "chunked"
+            ]
+          },
+          "isRedirect": false,
+          "reasonPhrase": "OK",
+          "redirects": [],
+          "statusCode": 200,
+          "endTime": 1767225600006000
+        }
+      },
+      {
+        "type": "@HttpProfileRequest",
+        "id": "2",
+        "isolateId": "isolates/1",
+        "method": "POST",
+        "uri": "http://127.0.0.1:8080/items",
+        "startTime": 1767225600008000,
+        "endTime": 1767225600011000,
+        "request": {
+          "headers": {
+            "user-agent": [
+              "Dart/3 (dart:io)"
+            ],
+            "content-type": [
+              "application/json; charset=utf-8"
+            ],
+            "transfer-encoding": [
+              "chunked"
+            ],
+            "accept-encoding": [
+              "gzip"
+            ],
+            "host": [
+              "127.0.0.1:8080"
+            ]
+          },
+          "method": "POST",
+          "uri": "http://127.0.0.1:8080/items"
+        },
+        "response": {
+          "startTime": 1767225600013000,
+          "headers": {
+            "content-type": [
+              "application/json; charset=utf-8"
+            ],
+            "transfer-encoding": [
+              "chunked"
+            ]
+          },
+          "isRedirect": false,
+          "reasonPhrase": "Created",
+          "redirects": [],
+          "statusCode": 201,
+          "endTime": 1767225600014000
+        }
+      },
+      {
+        "type": "@HttpProfileRequest",
+        "id": "3",
+        "isolateId": "isolates/1",
+        "method": "GET",
+        "uri": "http://127.0.0.1:8080/old",
+        "startTime": 1767225600016000,
+        "endTime": 1767225600019000,
+        "request": {
+          "headers": {
+            "user-agent": [
+              "Dart/3 (dart:io)"
+            ],
+            "accept-encoding": [
+              "gzip"
+            ],
+            "content-length": [
+              "0"
+            ],
+            "host": [
+              "127.0.0.1:8080"
+            ]
+          },
+          "method": "GET",
+          "uri": "http://127.0.0.1:8080/old"
+        },
+        "response": {
+          "startTime": 1767225600027000,
+          "headers": {
+            "content-type": [
+              "application/json; charset=utf-8"
+            ],
+            "transfer-encoding": [
+              "chunked"
+            ]
+          },
+          "isRedirect": false,
+          "reasonPhrase": "OK",
+          "redirects": [
+            {
+              "location": "/items",
+              "method": "GET",
+              "statusCode": 302
+            }
+          ],
+          "statusCode": 200,
+          "endTime": 1767225600030000
+        }
+      },
+      {
+        "type": "@HttpProfileRequest",
+        "id": "4",
+        "isolateId": "isolates/1",
+        "method": "GET",
+        "uri": "http://127.0.0.1:8080/items",
+        "startTime": 1767225600020000,
+        "endTime": 1767225600023000,
+        "request": {
+          "headers": {
+            "user-agent": [
+              "Dart/3 (dart:io)"
+            ],
+            "accept-encoding": [
+              "gzip"
+            ],
+            "content-length": [
+              "0"
+            ],
+            "host": [
+              "127.0.0.1:8080"
+            ]
+          },
+          "method": "GET",
+          "uri": "http://127.0.0.1:8080/items"
+        },
+        "response": {
+          "startTime": 1767225600025000,
+          "headers": {
+            "content-type": [
+              "application/json; charset=utf-8"
+            ],
+            "transfer-encoding": [
+              "chunked"
+            ]
+          },
+          "isRedirect": false,
+          "reasonPhrase": "OK",
+          "redirects": [
+            {
+              "location": "/items",
+              "method": "GET",
+              "statusCode": 302
+            }
+          ],
+          "statusCode": 200,
+          "endTime": 1767225600028000
+        }
+      },
+      {
+        "type": "@HttpProfileRequest",
+        "id": "5",
+        "isolateId": "isolates/1",
+        "method": "GET",
+        "uri": "http://127.0.0.1:8081/down",
+        "startTime": 1767225600032000,
+        "endTime": 1767225600033000,
+        "request": {
+          "error": "SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 50000"
+        }
+      }
+    ]
+  },
+  "requests": [
+    {
+      "type": "HttpProfileRequest",
+      "id": "1",
+      "isolateId": "isolates/1",
+      "method": "GET",
+      "uri": "http://127.0.0.1:8080/items?page=1",
+      "startTime": 1767225600000000,
+      "endTime": 1767225600003000,
+      "request": {
+        "headers": {
+          "user-agent": [
+            "Dart/3 (dart:io)"
+          ],
+          "accept-encoding": [
+            "gzip"
+          ],
+          "content-length": [
+            "0"
+          ],
+          "host": [
+            "127.0.0.1:8080"
+          ]
+        },
+        "method": "GET",
+        "uri": "http://127.0.0.1:8080/items?page=1"
+      },
+      "response": {
+        "startTime": 1767225600005000,
+        "headers": {
+          "content-type": [
+            "application/json; charset=utf-8"
+          ],
+          "transfer-encoding": [
+            "chunked"
+          ]
+        },
+        "isRedirect": false,
+        "reasonPhrase": "OK",
+        "redirects": [],
+        "statusCode": 200,
+        "endTime": 1767225600006000
+      },
+      "requestBody": [],
+      "responseBody": [
+        123,
+        34,
+        111,
+        107,
+        34,
+        58,
+        116,
+        114,
+        117,
+        101,
+        125
+      ]
+    },
+    {
+      "type": "HttpProfileRequest",
+      "id": "2",
+      "isolateId": "isolates/1",
+      "method": "POST",
+      "uri": "http://127.0.0.1:8080/items",
+      "startTime": 1767225600008000,
+      "endTime": 1767225600011000,
+      "request": {
+        "headers": {
+          "user-agent": [
+            "Dart/3 (dart:io)"
+          ],
+          "content-type": [
+            "application/json; charset=utf-8"
+          ],
+          "transfer-encoding": [
+            "chunked"
+          ],
+          "accept-encoding": [
+            "gzip"
+          ],
+          "host": [
+            "127.0.0.1:8080"
+          ]
+        },
+        "method": "POST",
+        "uri": "http://127.0.0.1:8080/items"
+      },
+      "response": {
+        "startTime": 1767225600013000,
+        "headers": {
+          "content-type": [
+            "application/json; charset=utf-8"
+          ],
+          "transfer-encoding": [
+            "chunked"
+          ]
+        },
+        "isRedirect": false,
+        "reasonPhrase": "Created",
+        "redirects": [],
+        "statusCode": 201,
+        "endTime": 1767225600014000
+      },
+      "requestBody": [
+        123,
+        34,
+        115,
+        107,
+        117,
+        34,
+        58,
+        34,
+        97,
+        98,
+        99,
+        45,
+        49,
+        34,
+        44,
+        34,
+        113,
+        116,
+        121,
+        34,
+        58,
+        50,
+        125
+      ],
+      "responseBody": [
+        123,
+        34,
+        115,
+        107,
+        117,
+        34,
+        58,
+        34,
+        97,
+        98,
+        99,
+        45,
+        49,
+        34,
+        44,
+        34,
+        113,
+        116,
+        121,
+        34,
+        58,
+        50,
+        125
+      ]
+    },
+    {
+      "type": "HttpProfileRequest",
+      "id": "3",
+      "isolateId": "isolates/1",
+      "method": "GET",
+      "uri": "http://127.0.0.1:8080/old",
+      "startTime": 1767225600016000,
+      "endTime": 1767225600019000,
+      "request": {
+        "headers": {
+          "user-agent": [
+            "Dart/3 (dart:io)"
+          ],
+          "accept-encoding": [
+            "gzip"
+          ],
+          "content-length": [
+            "0"
+          ],
+          "host": [
+            "127.0.0.1:8080"
+          ]
+        },
+        "method": "GET",
+        "uri": "http://127.0.0.1:8080/old"
+      },
+      "response": {
+        "startTime": 1767225600027000,
+        "headers": {
+          "content-type": [
+            "application/json; charset=utf-8"
+          ],
+          "transfer-encoding": [
+            "chunked"
+          ]
+        },
+        "isRedirect": false,
+        "reasonPhrase": "OK",
+        "redirects": [
+          {
+            "location": "/items",
+            "method": "GET",
+            "statusCode": 302
+          }
+        ],
+        "statusCode": 200,
+        "endTime": 1767225600030000
+      },
+      "requestBody": [],
+      "responseBody": []
+    },
+    {
+      "type": "HttpProfileRequest",
+      "id": "4",
+      "isolateId": "isolates/1",
+      "method": "GET",
+      "uri": "http://127.0.0.1:8080/items",
+      "startTime": 1767225600020000,
+      "endTime": 1767225600023000,
+      "request": {
+        "headers": {
+          "user-agent": [
+            "Dart/3 (dart:io)"
+          ],
+          "accept-encoding": [
+            "gzip"
+          ],
+          "content-length": [
+            "0"
+          ],
+          "host": [
+            "127.0.0.1:8080"
+          ]
+        },
+        "method": "GET",
+        "uri": "http://127.0.0.1:8080/items"
+      },
+      "response": {
+        "startTime": 1767225600025000,
+        "headers": {
+          "content-type": [
+            "application/json; charset=utf-8"
+          ],
+          "transfer-encoding": [
+            "chunked"
+          ]
+        },
+        "isRedirect": false,
+        "reasonPhrase": "OK",
+        "redirects": [
+          {
+            "location": "/items",
+            "method": "GET",
+            "statusCode": 302
+          }
+        ],
+        "statusCode": 200,
+        "endTime": 1767225600028000
+      },
+      "requestBody": [],
+      "responseBody": [
+        123,
+        34,
+        111,
+        107,
+        34,
+        58,
+        116,
+        114,
+        117,
+        101,
+        125
+      ]
+    },
+    {
+      "type": "HttpProfileRequest",
+      "id": "5",
+      "isolateId": "isolates/1",
+      "method": "GET",
+      "uri": "http://127.0.0.1:8081/down",
+      "startTime": 1767225600032000,
+      "endTime": 1767225600033000,
+      "request": {
+        "error": "SocketException: Connection refused (OS Error: Connection refused, errno = 111), address = 127.0.0.1, port = 50000"
+      },
+      "requestBody": []
+    }
+  ]
+}

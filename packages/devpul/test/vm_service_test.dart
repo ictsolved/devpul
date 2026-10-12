@@ -239,6 +239,77 @@ void main() {
     });
   });
 
+  test('records dart:io requests in the HTTP profile, matching '
+      'contract/http_profile.json', () async {
+    Future<Map<String, dynamic>> io(
+      String method, [
+      Map<String, String>? args,
+    ]) async => (await service.callServiceExtension(
+      'ext.dart.io.$method',
+      isolateId: isolateId,
+      args: args,
+    )).json!;
+
+    final before = await io('httpEnableTimelineLogging');
+    expect(before['enabled'], isFalse);
+    await io('httpEnableTimelineLogging', {'enabled': 'true'});
+    final fetched = await call('call', {'name': 'http.fetch'});
+    final ports = (fetched['result'] as Map).cast<String, int>();
+
+    late Map<String, dynamic> profile;
+    List<Map<String, dynamic>> requests() =>
+        (profile['requests'] as List).cast();
+    // A response ends after the client has read it.
+    bool done(Map<String, dynamic> r) =>
+        (r['request'] as Map?)?['error'] != null ||
+        (r['response'] as Map?)?['endTime'] != null;
+    while (true) {
+      profile = await io('getHttpProfile');
+      if (requests().length == 5 && requests().every(done)) break;
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    final since = await io('getHttpProfile', {
+      'updatedSince': '${profile['timestamp']}',
+    });
+    expect(since['requests'], isEmpty);
+    final full = [
+      for (final r in requests())
+        await io('getHttpProfileRequest', {'id': r['id'] as String}),
+    ];
+    await io('httpEnableTimelineLogging', {'enabled': 'false'});
+
+    expect(requests().map((r) => '${r['method']} ${r['uri']}'), [
+      'GET http://127.0.0.1:${ports['server']}/items?page=1',
+      'POST http://127.0.0.1:${ports['server']}/items',
+      'GET http://127.0.0.1:${ports['server']}/old',
+      'GET http://127.0.0.1:${ports['server']}/items',
+      'GET http://127.0.0.1:${ports['refused']}/down',
+    ]);
+    expect(requests().map((r) => (r['response'] as Map?)?['statusCode']), [
+      200,
+      201,
+      200,
+      200,
+      null,
+    ]);
+    expect(
+      (requests().last['request'] as Map)['error'],
+      contains('SocketException'),
+    );
+    expect(
+      utf8.decode((full[1]['requestBody'] as List).cast()),
+      '{"sku":"abc-1","qty":2}',
+    );
+
+    expectGolden(
+      'http_profile.json',
+      normalizeProfile(
+        {'logging': before, 'profile': profile, 'requests': full},
+        {ports['server']!: 8080, ports['refused']!: 8081},
+      ),
+    );
+  });
+
   test('serves plugin sources', () async {
     expect(
       (await call('plugin', {'id': 'e2e'}))['source'],
