@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:isolate';
 
 import 'package:devpul/devpul.dart';
@@ -18,6 +19,16 @@ void main() {
   final cart = <String, Object?>{};
   Devpul.handle('cart.set', (args) => cart..addAll(args), writes: true);
   Devpul.log('hello', level: 'warn');
+  developer.log(
+    'token refresh failed',
+    name: 'auth',
+    level: 900,
+    error: StateError('expired'),
+    stackTrace: StackTrace.fromString(
+      '#0      main (file:///app/main.dart:5:3)',
+    ),
+  );
+  developer.log('{"items": [${List.filled(40, '"sku-1"').join(', ')}]}');
   DevpulHttp.request(
     method: 'get',
     url: Uri.parse('https://example.com/items'),

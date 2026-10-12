@@ -18,6 +18,7 @@ void main() {
   late Uri serviceUri;
   final events = <String, Map<String, Object?>>{};
   final output = <String>[];
+  final logs = <Event>[];
 
   setUpAll(() async {
     final dir = await Directory.systemTemp.createTemp('devpul_e2e');
@@ -62,6 +63,8 @@ void main() {
       if (e.extensionKind == 'devpul.error') error.complete();
     });
     await service.streamListen(EventStreams.kExtension);
+    service.onLoggingEvent.listen(logs.add);
+    await service.streamListen(EventStreams.kLogging);
     await service.resume(isolateId);
     await error.future.timeout(const Duration(seconds: 10));
   });
@@ -87,6 +90,67 @@ void main() {
     expect(data('devpul.http.response'), containsPair('status', 200));
     expect(data('devpul.error'), containsPair('message', 'Bad state: boom'));
   });
+
+  test(
+    'streams developer.log records, matching contract/logging.json',
+    () async {
+      while (logs.length < 2) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      // Devpul.log goes over postEvent only, so the UI shows it once.
+      expect(logs.map((e) => e.logRecord!.message!.valueAsString), [
+        'token refresh failed',
+        startsWith('{"items": '),
+      ]);
+      final message = logs[1].logRecord!.message!;
+      expect(message.valueAsStringIsTruncated, isTrue);
+      final getObject = {
+        'objectId': message.id,
+        'offset': 0,
+        'count': message.length,
+      };
+      final full = await service.getObject(
+        isolateId,
+        message.id!,
+        offset: 0,
+        count: message.length,
+      );
+      final record = logs[0].logRecord!;
+      final invoke = [
+        for (final target in [record.error!, record.stackTrace!])
+          {
+            'request': {
+              'targetId': target.id,
+              'selector': 'toString',
+              'argumentIds': <String>[],
+            },
+            'result': (await service.invoke(
+              isolateId,
+              target.id!,
+              'toString',
+              [],
+            )).toJson(),
+          },
+      ];
+      expect((full as Instance).valueAsString, hasLength(message.length));
+      expect(invoke.map((i) => (i['result']! as Map)['valueAsString']), [
+        'Bad state: expired',
+        '#0      main (file:///app/main.dart:5:3)',
+      ]);
+      final ids = <String, String>{};
+      expectGolden('logging.json', {
+        'events': [
+          for (final (i, e) in logs.indexed)
+            normalizeVm(e.toJson(), ids, timestamp: 1767225600000 + i),
+        ],
+        'getObject': normalizeVm({
+          'request': getObject,
+          'result': full.toJson(),
+        }, ids),
+        'invoke': normalizeVm(invoke, ids),
+      });
+    },
+  );
 
   test('prints the connect link once', () async {
     final link =
