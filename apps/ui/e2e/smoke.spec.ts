@@ -20,7 +20,10 @@ test('connects from a #connect= link and shows the fixture events in each tab', 
   await page.getByRole('tab', { name: /^Errors/ }).click();
   const errors = page.getByRole('grid', { name: 'Errors' });
   await expect(errors.getByRole('row', { name: /Bad state: boom/ })).toBeVisible();
-  await expect(errors.getByRole('row', { name: /Bad state: layout/ })).toBeVisible();
+  await errors.getByRole('row', { name: /Bad state: layout/ }).click();
+  const widget = page.getByRole('complementary', { name: 'Detail' }).locator('section', { hasText: 'Widget' }).first();
+  await expect(widget).toContainText('Cart');
+  await expect(widget).toContainText(/contract_test\.dart:\d+:\d+/);
 
   await page.getByRole('tab', { name: /^Logs/ }).click();
   const logs = page.getByRole('grid', { name: 'Logs' });

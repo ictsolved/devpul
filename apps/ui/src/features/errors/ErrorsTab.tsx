@@ -6,6 +6,7 @@ import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
 import { type DevEvent, str } from '../../core/events';
 import { formatTime } from '../../core/json';
+import { locationText, readLocation, shortPath } from '../../core/location';
 import type { HttpRow } from '../../core/store';
 import { Method, StatusBadge } from '../http/DetailPanel';
 
@@ -37,11 +38,47 @@ function Source({ e }: { e: DevEvent }) {
   return <Badge className="rounded-sm bg-destructive-soft text-destructive">{sourceOf(e)}</Badge>;
 }
 
+function widgetText(e: DevEvent): string | undefined {
+  const widget = str(e.data.widget);
+  const location = readLocation(e.data.location);
+  if (!widget) return undefined;
+  return location ? `${widget} at ${locationText(location)}` : widget;
+}
+
 function report(e: DevEvent): string {
   const d = e.data;
-  return [`${typeOf(e)}: ${str(d.message) ?? ''}`, str(d.context), str(d.information), str(d.stack)]
+  const widget = widgetText(e);
+  return [
+    `${typeOf(e)}: ${str(d.message) ?? ''}`,
+    widget && `Widget: ${widget}`,
+    str(d.context),
+    str(d.information),
+    str(d.stack),
+  ]
     .filter(Boolean)
     .join('\n\n');
+}
+
+function Widget({ e }: { e: DevEvent }) {
+  const widget = str(e.data.widget);
+  const location = readLocation(e.data.location);
+  if (!widget) return null;
+  return (
+    <Section
+      id="err-widget"
+      title="Widget"
+      actions={location && <CopyButton text={() => locationText(location)} label="Copy location" />}
+    >
+      <div className="flex min-w-0 gap-2 font-mono text-xs">
+        <span className="font-semibold">{widget}</span>
+        {location && (
+          <span className="truncate text-muted-foreground" title={locationText(location)}>
+            {shortPath(location.file)}:{location.line}:{location.column}
+          </span>
+        )}
+      </div>
+    </Section>
+  );
 }
 
 export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest, selected, onSelect }: Props) {
@@ -118,6 +155,7 @@ export function ErrorsTab({ errors, requests, runLabel, filterRef, onOpenRequest
             <Section id="err-message" title="Message">
               <pre className={codeClass}>{str(d.message) ?? ''}</pre>
             </Section>
+            <Widget e={e} />
             {str(d.context) && (
               <Section id="err-context" title="Context">
                 <div>{str(d.context)}</div>

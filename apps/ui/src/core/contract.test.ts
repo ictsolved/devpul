@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type DevEvent, fromVm, type JsonObject } from './events';
 import { fromSession, toSession } from './export';
 import { parseInfo } from './info';
+import { readLocation } from './location';
 import { parseRegistry } from './registry';
 import { Store } from './store';
 
@@ -42,6 +43,8 @@ describe('contract', () => {
     ]);
     expect(store.httpRows[2]?.size).toBe(11);
     expect(store.errors.map((e) => e.data.source)).toEqual(['flutter', 'zone']);
+    expect(store.errors[0]?.data.widget).toBe('Cart');
+    expect(readLocation(store.errors[0]?.data.location)).toMatchObject({ file: 'file:///app/test/contract_test.dart' });
     expect(store.logs).toHaveLength(2);
     expect(store.other.map((e) => e.kind)).toEqual([
       'route',

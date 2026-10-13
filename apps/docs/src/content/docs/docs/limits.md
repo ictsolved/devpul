@@ -40,6 +40,7 @@ Events are encoded as JSON on the app's isolate, about 0.1 ms for a 2 KB event i
 - HTTP calls show through an [adapter](/docs/adapters/), or from dart:io's `HttpClient` with [HTTP without an adapter](/docs/ui/#http-without-an-adapter) on. On Flutter web only adapters see them, and native clients outside dart:io only when they record into `package:http_profile`.
 - `print` output, platform logs and native crashes are not captured. `debugPrint` is, with `DevpulFlutter.captureDebugPrint()`.
 - Flutter web does not report uncaught async errors; see [Flutter](/docs/flutter/#errors).
+- The widget behind a Flutter error and the screen widget of an unnamed route need widget creation tracking, which only debug builds have.
 
 ## Other limits
 
