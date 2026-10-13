@@ -35,6 +35,13 @@ void main() {
       origin: 'https://example.com/my_plugin.git',
       description: 'Cart contents and totals in a Cart tab.',
     );
+    Devpul.handle(
+      'my_plugin.items',
+      (_) => const <Object?>[],
+      description: 'Items in the cart.',
+    );
+    Devpul.handle('my_plugin.clear', (_) => null, writes: true);
+    Devpul.handle('my_plugin.token', (_) => null, sensitive: true);
     Devpul.limit('frame', 0);
     await pumpEventQueue();
 

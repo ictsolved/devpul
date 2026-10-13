@@ -94,17 +94,24 @@ Each action becomes an item in the UI's **Actions** menu and runs in the app whe
 ## Handlers
 
 ```dart
-Devpul.handle('cart.items', (_) => cart.items);
+Devpul.handle(
+  'cart.items',
+  (_) => cart.items,
+  description: 'Items in the cart.',
+);
 Devpul.handle(
   'cart.remove',
   (args) => cart.remove(args['sku']! as String),
   writes: true,
+  description: 'Removes an item. Args: sku.',
 );
 ```
 
 A handler answers `context.request(name, args)` from a [plugin](/docs/plugins/#talking-to-the-app). `args` holds the JSON object the plugin sent, empty when it sent none; the return value is converted like event data, and exceptions reach the plugin as the failure message. Name it `<plugin id>.<method>`. Registering a name again replaces it.
 
 A `writes: true` handler refuses unless Allow writes is on in the UI's Plugins tab. Give it to every handler that changes the app.
+
+Agents call handlers through [`devpul mcp`](/docs/mcp/#plugin-handlers), which lists them from the handshake. `description` tells an agent what the handler returns and which args it takes. `sensitive: true` marks a handler that returns secrets or acts on the app without changing stored data, such as revealing a stored token or navigating: the UI runs it without Allow writes, an agent only through `call_plugin_write`, as it does `writes` handlers.
 
 ## Limits
 

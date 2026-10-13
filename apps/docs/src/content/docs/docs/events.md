@@ -45,7 +45,7 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 | `http.response` | `id`, `method`, `url`, `status`, `statusMessage`, `finalUrl`, `durationMs`, `headers`, `body`                                                 |
 | `http.error`    | `id`, `method`, `url`, `status`, `errorType`, `message`, `durationMs`, `headers`, `body`                                                      |
 | `app.session`   | free-form                                                                                                                                     |
-| `app.info`      | the handshake, below; posted when actions, plugins or limits change                                                                           |
+| `app.info`      | the handshake, below; posted when actions, plugins, handlers or limits change                                                                 |
 | `error`         | `source`, `type`, `message`, `library`, `context`, `information`, `widget`, `location` (`file`, `line`, `column`), `route`, `silent`, `stack` |
 | `log`           | `level`, `message`, `name`, `error`, `stack`                                                                                                  |
 | `route`         | `action` (`push`, `pop`, `replace`, `remove`), `route`, `previous`, `arguments`                                                               |
@@ -86,6 +86,10 @@ The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, 
       "hash": "9aeb8d59b4d4..."
     }
   ],
+  "handlers": [
+    { "name": "cart.items", "description": "Items in the cart." },
+    { "name": "cart.clear", "writes": true }
+  ],
   "limits": { "frame": 0 },
   "dropped": { "frame": 1520 }
 }
@@ -98,6 +102,7 @@ The UI calls `ext.devpul.info` on connect and whenever an isolate registers it, 
 | `capabilities` | Features added after protocol 1, by name.                                                                         |
 | `actions`      | In registration order. Param `type` is `text`, `number`, `flag` or `choice`; choices carry `options`.             |
 | `plugins`      | Browser plugins from `Devpul.plugin`: id, optional version, origin and description, SHA-256 of the source in hex. |
+| `handlers`     | Handlers from `Devpul.handle`: name, optional description, `writes` and `sensitive` when true.                    |
 | `limits`       | Events per second by kind; `0` is muted.                                                                          |
 | `dropped`      | Events dropped by each limit so far.                                                                              |
 

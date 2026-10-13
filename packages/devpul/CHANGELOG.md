@@ -10,7 +10,7 @@
 - `Devpul.limit` mutes or rate-limits a kind; the UI can set limits through `ext.devpul.limit`.
 - `Devpul.plugin` offers a browser plugin to the UI under its plugin id; the handshake lists its origin, description and the SHA-256 of its source.
 - `Devpul.included`: true in debug builds and in native profile builds compiled with `--dart-define=DEVPUL_PROFILE=true`, false in every other build.
-- `Devpul.handle` answers plugin requests through `ext.devpul.call`. A `writes: true` handler runs only while Allow writes is on in the UI.
+- `Devpul.handle` answers plugin and agent requests through `ext.devpul.call`; the handshake lists handlers with their `description`. A `writes: true` handler runs only while Allow writes is on in the UI; agents reach `writes` and `sensitive: true` handlers only through `call_plugin_write`.
 - `Devpul.log` takes any object: a closure is called only when DevPul is enabled, other values log their `toString()`.
 - `DevpulConfig.ansiColors` is nullable; `null` follows `Devpul.ansiColorsByDefault`.
 

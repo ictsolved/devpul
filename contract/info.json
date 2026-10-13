@@ -46,6 +46,20 @@
       "hash": "9aeb8d59b4d483ca6298e9a450fbf37dfd2b4c63990135ab1d040d76314087ec"
     }
   ],
+  "handlers": [
+    {
+      "name": "my_plugin.items",
+      "description": "Items in the cart."
+    },
+    {
+      "name": "my_plugin.clear",
+      "writes": true
+    },
+    {
+      "name": "my_plugin.token",
+      "sensitive": true
+    }
+  ],
   "limits": {
     "frame": 0
   },

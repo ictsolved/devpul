@@ -59,11 +59,16 @@ void actions() {
 }
 
 void handlers() {
-  Devpul.handle('cart.items', (_) => cart.items);
+  Devpul.handle(
+    'cart.items',
+    (_) => cart.items,
+    description: 'Items in the cart.',
+  );
   Devpul.handle(
     'cart.remove',
     (args) => cart.remove(args['sku']! as String),
     writes: true,
+    description: 'Removes an item. Args: sku.',
   );
 }
 

@@ -49,6 +49,8 @@ typedef _Action = ({
 
 typedef _Handler = ({
   bool writes,
+  bool sensitive,
+  String? description,
   FutureOr<Object?> Function(Map<String, Object?> args) run,
 });
 
@@ -229,15 +231,26 @@ abstract final class Devpul {
 
   /// Answers `context.request(name, args)` from a plugin with what [run]
   /// returns, as JSON. Name it `<plugin id>.<method>`. A [writes] handler
-  /// runs only while Allow writes is on in the UI. Registering a name again
-  /// replaces it.
+  /// runs only while Allow writes is on in the UI. A [sensitive] handler
+  /// returns secrets or acts on the app without changing stored data, such
+  /// as navigating: the UI runs it on a click, agents only through
+  /// `call_plugin_write`. [description] is one line on what it returns and
+  /// its args, for agents. Registering a name again replaces it.
   static void handle(
     String name,
     FutureOr<Object?> Function(Map<String, Object?> args) run, {
     bool writes = false,
+    bool sensitive = false,
+    String? description,
   }) {
     if (!enabled) return;
-    _handlers[name] = (writes: writes, run: run);
+    _handlers[name] = (
+      writes: writes,
+      sensitive: sensitive,
+      description: description,
+      run: run,
+    );
+    _infoChanged();
   }
 
   /// Offers a browser plugin to the UI, which runs it after the user
@@ -322,6 +335,15 @@ abstract final class Devpul {
           'origin': ?value.origin,
           'description': ?value.description,
           'hash': value.hash,
+        },
+    ],
+    'handlers': [
+      for (final MapEntry(:key, :value) in _handlers.entries)
+        {
+          'name': key,
+          'description': ?value.description,
+          if (value.writes) 'writes': true,
+          if (value.sensitive) 'sensitive': true,
         },
     ],
     'limits': _limits.all,

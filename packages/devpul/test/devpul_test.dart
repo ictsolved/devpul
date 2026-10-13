@@ -248,6 +248,24 @@ void main() {
     expect(await debugRunCall('cart.clear', null, true), 1);
     Devpul.handle('cart.get', (_) => runs);
     expect(await debugRunCall('cart.get', null, true), 1);
+    Devpul.handle('cart.token', (_) => 'secret', sensitive: true);
+    expect(await debugRunCall('cart.token'), 'secret');
+  });
+
+  test('handshake lists handlers', () async {
+    Devpul.handle('menu.get', (_) => null, description: 'The menu.');
+    Devpul.handle('menu.clear', (_) => null, writes: true);
+    Devpul.handle('menu.token', (_) => null, sensitive: true);
+    await pumpEventQueue();
+    expect(events.last.$1, 'app.info');
+    expect(
+      debugInfo()['handlers'],
+      containsAllInOrder([
+        {'name': 'menu.get', 'description': 'The menu.'},
+        {'name': 'menu.clear', 'writes': true},
+        {'name': 'menu.token', 'sensitive': true},
+      ]),
+    );
   });
 
   test('limits mute a kind and its children, never app kinds', () async {
