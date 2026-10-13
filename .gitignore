@@ -13,3 +13,5 @@ test-results/
 *.iml
 pubspec.lock
 .astro/
+# DevTools writes its extension choices here, per user.
+devtools_options.yaml
