@@ -71,7 +71,7 @@ Click it and DevPul opens connected to the app. In an IDE, DevPul is also a tab 
 ## What you get
 
 - **HTTP**: every call through an adapter, or through dart:io with no code change, with method, status, duration and size, live pending rows, filters, sortable columns, headers and bodies as tables and JSON trees, and copy as curl or fetch.
-- **Errors**: Flutter and uncaught errors with stack traces and Flutter's diagnostics, grouped by repeat, with the requests made just before.
+- **Errors**: Flutter and uncaught errors with stack traces that open in the editor and Flutter's diagnostics, grouped by repeat, with the routes, logs and requests just before.
 - **Logs**: `Devpul.log`, `developer.log` and `debugPrint` output with level and logger filters.
 - **Events**: anything you send with `Devpul.emit`, such as state changes from Riverpod or Bloc. See [Extending DevPul](/docs/extend/).
 - **Actions**: buttons that run code in the app, such as clearing a cache or signing out. See [Actions](/docs/actions/).
