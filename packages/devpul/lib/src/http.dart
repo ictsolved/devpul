@@ -181,7 +181,7 @@ final class DevpulHttpCall {
   ) {
     final config = Devpul.config;
     if (config.console == ConsoleMode.off) return;
-    final c = config.ansiColors ? color : null;
+    final c = consoleColors ? color : null;
     if (config.console == ConsoleMode.summary) {
       DevpulConsole.write('#$id $arrow', line, color: c);
       return;

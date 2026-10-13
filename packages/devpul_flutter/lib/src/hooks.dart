@@ -5,16 +5,21 @@ import 'package:flutter/widgets.dart';
 
 import 'inspector.dart';
 import 'navigator.dart';
+import 'simulator.dart' if (dart.library.io) 'simulator_io.dart';
 
 /// Reports Flutter framework errors and uncaught platform errors to DevPul.
 abstract final class DevpulFlutter {
   static bool _installed = false;
   static bool _capturing = false;
 
-  /// Keeps the handlers already set, so crash reporters still run.
+  /// Keeps the handlers already set, so crash reporters still run. Turns
+  /// console colors off on the iOS simulator unless `DevpulConfig.ansiColors`
+  /// is set.
   static void install() {
     if (!Devpul.enabled || _installed) return;
     _installed = true;
+    // The simulator's log stream reaches the IDE with the escapes as text.
+    Devpul.ansiColorsByDefault = !iosSimulator;
 
     final flutterPrevious = FlutterError.onError;
     FlutterError.onError = (details) {

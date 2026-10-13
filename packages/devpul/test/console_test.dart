@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:devpul/devpul.dart';
 import 'package:devpul/src/console.dart';
 import 'package:test/test.dart';
 
@@ -58,5 +59,28 @@ void main() {
     final lines = await capture(() => DevpulConsole.write('n', 'x' * 2500));
     expect(lines.length, 3);
     expect(lines.join(), 'n ${'x' * 2500}');
+  });
+
+  group('colors', () {
+    tearDown(() {
+      Devpul.ansiColorsByDefault = true;
+      Devpul.configure(const DevpulConfig());
+    });
+
+    Future<String> errorLine() async =>
+        (await capture(() => Devpul.error('x', null))).single;
+
+    test('follow the default when the config leaves them unset', () async {
+      Devpul.configure(const DevpulConfig(uiUrl: null));
+      expect(await errorLine(), startsWith(ansiRed));
+      Devpul.ansiColorsByDefault = false;
+      expect(await errorLine(), 'error [app] String: x');
+    });
+
+    test('config overrides the default', () async {
+      Devpul.ansiColorsByDefault = false;
+      Devpul.configure(const DevpulConfig(uiUrl: null, ansiColors: true));
+      expect(await errorLine(), startsWith(ansiRed));
+    });
   });
 }

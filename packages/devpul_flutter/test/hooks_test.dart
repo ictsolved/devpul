@@ -44,6 +44,7 @@ void main() {
       StackTrace.current,
     );
 
+    expect(Devpul.ansiColorsByDefault, isTrue);
     expect(flutterSeen, hasLength(1));
     expect(handled, isTrue);
     expect(events.map((e) => e.$1), ['error', 'error']);

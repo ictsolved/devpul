@@ -18,6 +18,10 @@ const _flutter = bool.fromEnvironment('dart.library.ui');
 /// Envelope `v` and handshake `protocol`.
 const protocolVersion = 1;
 
+/// Whether console lines get ANSI colors.
+bool get consoleColors =>
+    Devpul.config.ansiColors ?? Devpul.ansiColorsByDefault;
+
 /// Receives every posted event. Tests only.
 void Function(String kind, Map<String, Object?> event)? debugOnPost;
 
@@ -73,6 +77,11 @@ abstract final class Devpul {
   static DevpulConfig get config => _config;
   static void configure(DevpulConfig config) => _config = config;
 
+  /// Console colors when `config.ansiColors` is null.
+  /// `DevpulFlutter.install` turns them off on iOS, where Xcode shows the
+  /// escapes as text.
+  static bool ansiColorsByDefault = true;
+
   /// Merged into every event. The UI builds filters from them.
   static final Map<String, String> tags = {};
 
@@ -108,7 +117,7 @@ abstract final class Devpul {
         DevpulConsole.write(
           kind,
           const JsonEncoder.withIndent('  ').convert(toJsonSafe(data)),
-          color: _config.ansiColors ? ansiGrey : null,
+          color: consoleColors ? ansiGrey : null,
         );
       }
     } catch (_) {
@@ -171,7 +180,7 @@ abstract final class Devpul {
         DevpulConsole.write(
           'error',
           '[$where] ${error.runtimeType}: $message',
-          color: _config.ansiColors ? ansiRed : null,
+          color: consoleColors ? ansiRed : null,
         );
       }
       emit('error', {

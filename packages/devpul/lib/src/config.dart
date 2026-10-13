@@ -14,7 +14,7 @@ final class DevpulConfig {
   const DevpulConfig({
     this.enabled = true,
     this.console = ConsoleMode.summary,
-    this.ansiColors = true,
+    this.ansiColors,
     this.uiUrl = _uiUrl,
     this.maxValueLength = 1024 * 1024,
     this.backlogSize = 16 * 1024 * 1024,
@@ -29,7 +29,10 @@ final class DevpulConfig {
   final bool enabled;
 
   final ConsoleMode console;
-  final bool ansiColors;
+
+  /// Colored console lines. Null leaves it to `Devpul.ansiColorsByDefault`,
+  /// on except in Flutter on iOS.
+  final bool? ansiColors;
 
   /// The app prints `<uiUrl>#connect=<VM service URL>` at startup and when
   /// the URL changes, unless [console] is off. Null prints nothing.

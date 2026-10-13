@@ -2,6 +2,7 @@
 
 - Requires Dart 3.8 and Flutter 3.32.
 - `DevpulNavigatorObserver` offers the UI a Routes tab.
+- `DevpulFlutter.install` turns console colors off on the iOS simulator unless `DevpulConfig.ansiColors` is set.
 
 ## 0.2.0
 
