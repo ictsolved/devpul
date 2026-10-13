@@ -11,6 +11,8 @@ dependencies:
   devpul_dio: ^1.0.0-dev.1
 ```
 
+Or run `devpul add dio`, which runs `pub add` for both.
+
 ```dart
 import 'package:devpul_dio/devpul_dio.dart';
 import 'package:dio/dio.dart';

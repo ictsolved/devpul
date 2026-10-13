@@ -77,6 +77,7 @@ Run in the app root, the folder with `pubspec.yaml`. [Installing plugins](/docs/
 
 ```sh
 devpul add riverpod                                     # listed on the plugins page
+devpul add dio                                          # a pub package listed there
 devpul add cart@^1.2.0                                  # a pub version constraint
 devpul add https://example.com/plugins.git --path cart  # a git repository
 devpul add https://example.com/plugins.git#main --path cart
@@ -84,7 +85,7 @@ devpul add https://example.com/flags/plugin.json        # a plugin.json over htt
 devpul add ../plugins/cart                              # a folder
 ```
 
-Copies a plugin into `lib/devpul/<id>/`, records it in `devpul.lock` and writes `lib/devpul/plugins.dart`. `@version` takes a pub version constraint, `#ref` a git branch, tag or commit.
+Copies a plugin into `lib/devpul/<id>/`, records it in `devpul.lock` and writes `lib/devpul/plugins.dart`. `@version` takes a pub version constraint, `#ref` a git branch, tag or commit. A name the plugins page lists as a pub package, such as `dio` or `http`, runs `dart pub add` or `flutter pub add` for that package, and for `devpul` when the app lacks it, then prints the wiring.
 
 | Option         |                                                                            |
 | -------------- | -------------------------------------------------------------------------- |

@@ -39,7 +39,7 @@ describe('pluginPages', () => {
   const pages = pluginPages(registry);
 
   it('writes the index and a page per plugin', () => {
-    expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags']);
+    expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags', 'plugins/net']);
     expect(pages[0]?.html).toContain('<a href="/plugins/cart/">');
   });
 
@@ -51,5 +51,17 @@ describe('pluginPages', () => {
     expect(cart).toContain('data-copy="devpul add cart"');
     expect(cart).toContain('<p>Shows the cart.</p>\n<h3>Usage</h3>');
     expect(pages[2]?.html).not.toContain('<h3>');
+  });
+
+  it('links a pub package and the pub add it runs', () => {
+    const net = pages[3]?.html ?? '';
+    expect(net).toContain('<code>devpul add net</code> runs <code>pub add example_net</code>');
+    expect(net).toContain('<td>Package</td><td><a href="https://pub.dev/packages/example_net"');
+    expect(net).not.toContain('<td>devpul</td>');
+    expect(net).toContain('<span class="plugin-kind">pub</span>');
+    expect(pages[0]?.html).toContain(
+      '<span class="plugin-version">2.1.0</span><span class="plugin-kind">pub</span></a>',
+    );
+    expect(pages[1]?.html).not.toContain('plugin-kind');
   });
 });

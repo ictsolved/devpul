@@ -36,6 +36,8 @@ The next time DevPul connects, it offers the plugin's tab. Allow it once; see [A
 
 Before writing anything, `add` checks the plugin's `devpul` range against the app's `devpul` version and its `requires` against the app's packages. A missing package or a version outside the constraint stops it with the `dart pub add` or `flutter pub add` command; in a terminal it asks to run it, and `--yes` runs it. Run `pub get` first, since `add` reads the resolved packages.
 
+The [Dio](/docs/dio/) and [package:http](/docs/http/) adapters are pub packages the plugins page lists by name: `devpul add dio` and `devpul add http` run `pub add` for them and copy nothing.
+
 ## Approvals
 
 When an app offers a plugin, DevPul shows its id, version, description and source size in the Plugins tab and above the other tabs, and runs it only after you allow it. An approval covers one id at one SHA-256, so a changed plugin asks again. Approvals are kept per browser origin; see [Limits](/docs/limits/#one-store-per-origin).

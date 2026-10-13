@@ -7,12 +7,15 @@ export interface Listed {
   id: string;
   version: string;
   api?: number;
-  devpul: string;
+  /** Absent on pub packages, as are `requires` and `path`. */
+  devpul?: string;
   description: string;
   tags: string[];
   icon?: string;
   usage: string[];
-  requires: Record<string, string>;
+  requires?: Record<string, string>;
+  /** A pub package, which `devpul add` adds with pub; `url` is its pub.dev page. */
+  package?: string;
   url: string;
   path?: string;
 }
@@ -82,6 +85,8 @@ const copyButton = (text: string) =>
 
 const tagsOf = (p: Listed) => p.tags.map((t) => `<span class="plugin-tag">${escape(t)}</span>`).join('');
 
+const kindOf = (p: Listed) => (p.package ? '<span class="plugin-kind">pub</span>' : '');
+
 const code = (s: string) => `<code>${escape(s)}</code>`;
 
 /** A page in the docs collection: `plugins` and `plugins/<id>`. */
@@ -97,36 +102,38 @@ export function pluginPages({ plugins, readmes }: Registry): Page[] {
   const cards = plugins
     .map(
       (p) =>
-        `<li><a href="/plugins/${p.id}/">${iconOf(p)}<strong>${escape(p.id)}</strong><span class="plugin-version">${escape(p.version)}</span></a><p>${escape(p.description)}</p><p>${tagsOf(p)}</p></li>`,
+        `<li><a href="/plugins/${p.id}/">${iconOf(p)}<strong>${escape(p.id)}</strong><span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}</a><p>${escape(p.description)}</p><p>${tagsOf(p)}</p></li>`,
     )
     .join('');
   const index: Page = {
     id: 'plugins',
     title: 'Plugins',
     description: 'Plugins for DevPul: tabs for app state and adapters, installed with devpul add.',
-    html: `<p><code>devpul add &lt;id&gt;</code> copies a plugin into your app. <a href="/docs/plugins/install/">Installing plugins</a> covers wiring and upgrades, <a href="/docs/plugins/#publishing">Writing plugins</a> how to list your own.</p>
+    html: `<p><code>devpul add &lt;id&gt;</code> copies a plugin into your app, or runs <code>pub add</code> for a pub package. <a href="/docs/plugins/install/">Installing plugins</a> covers wiring and upgrades, <a href="/docs/plugins/#publishing">Writing plugins</a> how to list your own.</p>
 ${cards ? `<ul class="plugin-cards not-content">${cards}</ul>` : '<p>No plugins listed yet.</p>'}`,
   };
 
   return [
     index,
     ...plugins.map((p) => {
-      const requires = Object.entries(p.requires).map(([name, range]) => code(`${name} ${range}`));
+      const requires = Object.entries(p.requires ?? {}).map(([name, range]) => code(`${name} ${range}`));
       const source = external(p.url) ? link(p.url, escape(p.url)) : escape(p.url);
       const rows = [
-        ['Install', code(`devpul add ${p.id}`)],
+        ['Install', code(`devpul add ${p.id}`) + (p.package ? ` runs ${code(`pub add ${p.package}`)}` : '')],
         ['Wiring', p.usage.map(code).join('<br />')],
         ['Tab', p.api ? 'Yes' : 'No, sends events to the built-in tabs'],
-        ['devpul', code(p.devpul)],
+        ['devpul', p.devpul && code(p.devpul)],
         ['Requires', requires.join('<br />')],
-        ['Source', p.path ? `${source} ${code(p.path)}` : source],
+        p.package
+          ? ['Package', link(p.url, escape(p.package))]
+          : ['Source', p.path ? `${source} ${code(p.path)}` : source],
       ].filter(([, value]) => value);
       const text = readmes[p.id];
       return {
         id: `plugins/${p.id}`,
         title: p.id,
         description: p.description,
-        html: `<p class="plugin-meta not-content">${iconOf(p)}<span class="plugin-version">${escape(p.version)}</span>${copyButton(`devpul add ${p.id}`)}${tagsOf(p)}</p>
+        html: `<p class="plugin-meta not-content">${iconOf(p)}<span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}${copyButton(`devpul add ${p.id}`)}${tagsOf(p)}</p>
 <p>${escape(p.description)}</p>
 <table><tbody>${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>
 ${text ? renderReadme(text) : ''}`,

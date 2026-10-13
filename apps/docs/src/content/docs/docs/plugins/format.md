@@ -181,6 +181,8 @@ Served at `%SITE_URL%plugins/registry.json`, next to the [plugins page](/plugins
 
 The registry is built from the `<id>-v<version>` tags of the plugins in the DevPul repository and the entries in its `registry/third-party.json`, each fetched as `devpul add <id>` would fetch it and checked as `devpul check` checks a folder. A third-party entry is an `id` and an https `url`: a git repository with `<id>-v<version>` tags, plus `path` for the plugin folder in it, or a `plugin.json` URL. The README is shown on the plugin's page as markdown without HTML; images show as links.
 
+An entry with `package` is a pub package listed under a plugin id, from `registry/packages.json` (`id`, `package`, `tags`, `usage`) at its latest version on pub.dev, with the pubspec's description. It has no `api`, `devpul`, `requires`, `icon` or `path`, and `url` is its pub.dev page. `devpul add <id>` runs `pub add` for it; the UI skips it in update checks.
+
 ```json
 {
   "format": 1,
@@ -197,6 +199,15 @@ The registry is built from the `<id>-v<version>` tags of the plugins in the DevP
       "requires": {},
       "url": "https://example.com/plugins.git",
       "path": "cart"
+    },
+    {
+      "id": "net",
+      "version": "2.1.0",
+      "description": "Requests from the net client in the Network tab.",
+      "tags": ["network"],
+      "usage": ["final client = NetClient(devpul: true);"],
+      "package": "example_net",
+      "url": "https://pub.dev/packages/example_net"
     }
   ]
 }

@@ -102,6 +102,14 @@
   color: var(--muted-foreground);
 }
 
+.plugin-kind {
+  font-size: var(--sl-text-xs);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0 0.375rem;
+}
+
 .plugin-tag {
   display: inline-block;
   font-size: var(--sl-text-xs);

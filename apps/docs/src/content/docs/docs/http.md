@@ -11,6 +11,8 @@ dependencies:
   devpul_http: ^1.0.0-dev.1
 ```
 
+Or run `devpul add http`, which runs `pub add` for both.
+
 ```dart
 import 'package:devpul_http/devpul_http.dart';
 
