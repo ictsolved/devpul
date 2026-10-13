@@ -21,7 +21,7 @@ DevPul talks to the app through the VM service, the same debug protocol IDEs and
 
 ## Agents read what the app sent
 
-[`devpul mcp`](/docs/mcp/) gives an agent the same events the page shows. Its tool results go to the agent's model provider, bodies and unredacted headers included. `run_action` runs the app's actions, which are app code; nothing else in the app is callable through it. The server talks over stdio and opens no port.
+[`devpul mcp`](/docs/mcp/) gives an agent the same events the page shows. Its tool results go to the agent's model provider, bodies and unredacted headers included. `run_action` runs the app's actions, which are app code; `call_plugin` runs plugin handlers that only read, and `call_plugin_write` those that change the app or return secrets, which agents ask before calling unless you allowed the tool. Nothing else in the app is callable. The server talks over stdio and opens no port.
 
 ## No telemetry
 

@@ -31,7 +31,7 @@ Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 
 ## Talking to the app
 
-The app answers through handlers it registers with [`Devpul.handle`](/docs/api/#handlers), named `<plugin id>.<method>`. Args and results are JSON.
+The app answers through handlers it registers with [`Devpul.handle`](/docs/api/#handlers), named `<plugin id>.<method>`. Args and results are JSON. Agents call the same handlers through [`devpul mcp`](/docs/mcp/#plugin-handlers); a `description` tells them what each returns and takes.
 
 ```dart
 Devpul.handle('flags.list', (_) => flags.toJson());
