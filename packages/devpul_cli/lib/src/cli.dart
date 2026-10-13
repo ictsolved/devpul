@@ -7,6 +7,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 import 'cache.dart';
 import 'instance.dart';
+import 'mcp/mcp.dart';
 import 'plugins/app.dart';
 import 'plugins/commands.dart' as plugins;
 import 'plugins/fetch.dart';
@@ -16,6 +17,7 @@ import 'server.dart';
 const usage = '''
 Usage: devpul [options] [vm-service-url]
        devpul [options] run [flutter run or dart run arguments]
+       devpul mcp [--port <n>] [vm-service-url]
        devpul add <plugin>[@version|#ref] [--path <dir>] [--yes]
        devpul remove <id>
        devpul list
@@ -33,6 +35,10 @@ Flutter project, and connects the UI once the app is up; a dart run app hot
 reloads when a .dart file is saved. run --profile keeps DevPul in the profile
 build. A devpul that finds another one on its port hands the app to that
 one's tab.
+
+mcp serves what the app recorded to an agent over MCP on stdio: requests,
+logs, errors, events and actions. Without a URL it reads the app that the
+devpul on --port last connected to.
 
 Options:
   --port <n>       UI port, default 7171. Settings and history are kept per port.
@@ -302,6 +308,29 @@ Future<int> _plugins(List<String> args) async {
   }
 }
 
+Future<int> _mcp(List<String> args) async {
+  final Options options;
+  try {
+    options = parseArgs(args);
+    if (options.run || !options.open || options.plugins.isNotEmpty) {
+      throw const FormatException('mcp takes --port and a URL only');
+    }
+  } on FormatException catch (e) {
+    stderr.writeln('devpul: ${e.message}\n\n$usage');
+    return 64;
+  }
+  if (options.help) {
+    stdout.write(usage);
+    return 0;
+  }
+  await serveMcp(
+    version: (await devpulVersion()).toString(),
+    port: options.port ?? defaultPort,
+    vmUrl: options.rest.firstOrNull,
+  );
+  return 0;
+}
+
 Future<bool> _ask(String question) async {
   stdout.write('$question [y/N] ');
   final answer = stdin.readLineSync()?.trim().toLowerCase();
@@ -312,6 +341,7 @@ Future<int> runCli(List<String> args) async {
   if (args.isNotEmpty && _pluginCommands.contains(args.first)) {
     return _plugins(args);
   }
+  if (args.firstOrNull == 'mcp') return _mcp(args.skip(1).toList());
   final Options options;
   try {
     options = parseArgs(args);

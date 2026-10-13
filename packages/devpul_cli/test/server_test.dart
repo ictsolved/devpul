@@ -80,14 +80,16 @@ void main() {
 
   test('takes connect requests only with the token', () async {
     final body = {'url': 'http://127.0.0.1:1/a=/'};
+    final token = {tokenHeader: server.token};
     expect(
       (await send('cli/connect', method: 'POST', body: body)).statusCode,
       403,
     );
+    expect(await get('cli/vm', headers: token), (200, '{"url":null}'));
     final ok = await send(
       'cli/connect',
       method: 'POST',
-      headers: {tokenHeader: server.token},
+      headers: token,
       body: body,
     );
     expect(ok.statusCode, 204);
@@ -95,6 +97,9 @@ void main() {
     expect(opened, [
       '${server.url}#connect=http%3A%2F%2F127.0.0.1%3A1%2Fa%3D%2F',
     ]);
+    // devpul mcp reads it from there.
+    expect((await get('cli/vm')).$1, 403);
+    expect(await get('cli/vm', headers: token), (200, jsonEncode(body)));
   });
 
   test('sends URLs and plugin changes to open tabs', () async {

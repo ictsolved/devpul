@@ -1,5 +1,5 @@
 name: devpul_cli
-description: Command line for DevPul. Serves the DevPul UI on 127.0.0.1, runs flutter run or dart run with the UI connected and adds plugins to the app.
+description: "Command line for DevPul: serves the UI on 127.0.0.1, runs the app with it connected, adds plugins and serves the app's events to agents over MCP."
 version: 1.0.0-dev.1
 homepage: https://devpul.saradgajurel.com.np
 documentation: https://devpul.saradgajurel.com.np/docs/connecting/
@@ -25,10 +25,13 @@ executables:
 
 dependencies:
   crypto: ^3.0.7
+  dart_mcp: ^0.5.2
   # Holds the UI build.
   devpul: ^1.0.0-dev.1
   path: ^1.9.0
   pub_semver: ^2.2.1
+  stack_trace: ^1.12.1
+  vm_service: ^15.0.0
   watcher: ^1.2.1
 
 dev_dependencies:

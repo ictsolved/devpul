@@ -98,6 +98,18 @@ describe('contract', () => {
     const store = new Store();
     store.add(back);
     const crumbs = (e: DevEvent) => breadcrumbs(store.all, store.httpRows, e).map((c) => c.text);
+    // devpul mcp builds the same crumbs in Dart and writes them there.
+    expect(
+      store.errors.toReversed().map((e) => ({
+        error: e.key,
+        crumbs: breadcrumbs(store.all, store.httpRows, e).map((c) => ({
+          kind: c.kind,
+          key: c.key,
+          offset: c.offset,
+          text: c.text,
+        })),
+      })),
+    ).toEqual(read('breadcrumbs.json'));
     expect(store.errors.map(crumbs)).toEqual([
       [
         'push Cart',

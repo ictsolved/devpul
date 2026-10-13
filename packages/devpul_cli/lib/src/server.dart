@@ -32,7 +32,8 @@ String connectLink(Uri base, String vmUrl) =>
 /// `/cli/events` for VM service URLs to connect to and for plugin modules,
 /// served from `/cli/plugins/`, which reload when a file changes. A plugin
 /// folder serves its module as an app gets it, with the icon. Other
-/// devpul processes send URLs to `/cli/connect` with [token].
+/// devpul processes send URLs to `/cli/connect` and read the last one from
+/// `/cli/vm` with [token].
 final class UiServer {
   UiServer._(this._server, this.root, this.token, this._open, this._plugins);
 
@@ -64,11 +65,15 @@ final class UiServer {
   final List<_Plugin> _plugins;
   final _clients = <HttpResponse>{};
 
+  /// The last URL passed to [connect].
+  String? vmUrl;
+
   int get port => _server.port;
   Uri get url => Uri.parse('http://127.0.0.1:$port/');
 
   /// Sends [vmUrl] to the open tabs, or opens one connected to it.
   void connect(String vmUrl) {
+    this.vmUrl = vmUrl;
     if (_clients.isEmpty) {
       _open(connectLink(url, vmUrl));
     } else {
@@ -156,6 +161,12 @@ final class UiServer {
     }
     if (path == 'ping' && request.method == 'GET') {
       return _status(response, HttpStatus.noContent);
+    }
+    if (path == 'vm' && request.method == 'GET') {
+      response
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode({'url': vmUrl}));
+      return response.close();
     }
     if (path == 'connect' && request.method == 'POST') {
       final body = BytesBuilder(copy: false);

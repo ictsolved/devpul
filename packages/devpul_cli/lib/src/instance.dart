@@ -56,6 +56,26 @@ final class RemoteServer {
     }
   }
 
+  /// The app URL it last connected to, or null.
+  Future<String?> vmUrl() async {
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(url.resolve('cli/vm'));
+      request.headers.set(tokenHeader, _token);
+      final response = await request.close();
+      final text = await utf8.decodeStream(response);
+      if (response.statusCode != HttpStatus.ok) return null;
+      return switch (jsonDecode(text)) {
+        {'url': final String url} => url,
+        _ => null,
+      };
+    } on Exception {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
   Future<bool> _request(String method, String path, [Object? body]) async {
     final client = HttpClient();
     try {
