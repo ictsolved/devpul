@@ -17,6 +17,9 @@ import 'routes_plugin.dart';
 /// ```
 class DevpulNavigatorObserver extends NavigatorObserver {
   DevpulNavigatorObserver() {
+    // Keeps the Routes module out of builds without DevPul: dart2js keeps
+    // the closure passed to Devpul.plugin otherwise.
+    if (!Devpul.included) return;
     Devpul.route ??= _top;
     if (_offered) return;
     _offered = true;

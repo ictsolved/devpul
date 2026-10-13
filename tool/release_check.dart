@@ -18,6 +18,8 @@ Future<void> main() async {
     final example = [
       ..._core,
       'http.request',
+      // devpul_flutter's Routes module.
+      'function stackAt(events, event) {',
       ..._pluginMarkers('examples/devpul_example'),
     ];
     var failed = false;
