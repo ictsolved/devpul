@@ -1,6 +1,6 @@
 # devpul_flutter
 
-Flutter hooks for [DevPul](https://devpul.saradgajurel.com.np). Sends `FlutterError` reports with Flutter's diagnostics and uncaught platform errors to the browser UI, and optionally `debugPrint` output and route changes.
+Flutter hooks for [DevPul](https://devpul.saradgajurel.com.np). Sends `FlutterError` reports with Flutter's diagnostics and uncaught platform errors to the browser UI, and optionally `debugPrint` output and route changes. An Overrides tab sets the text scale, brightness, locale, bold text and disabled animations the app sees.
 
 ## Install
 
@@ -22,6 +22,7 @@ void main() {
   runApp(
     MaterialApp(
       navigatorObservers: [DevpulNavigatorObserver()], // optional: route events
+      builder: DevpulApp.builder, // optional: Overrides tab
       home: const Home(),
     ),
   );

@@ -26,3 +26,8 @@ Widget routes() {
   final app = MaterialApp(navigatorObservers: [DevpulNavigatorObserver()]);
   return app;
 }
+
+Widget overrides() {
+  const app = MaterialApp(builder: DevpulApp.builder);
+  return app;
+}

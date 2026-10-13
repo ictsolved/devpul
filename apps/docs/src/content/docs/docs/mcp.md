@@ -68,6 +68,7 @@ Plugins read the app through handlers it registers with [`Devpul.handle`](/docs/
 | go_router      | `go_router.state`; `go_router.go` (write)                                                             |
 | Riverpod, Bloc | `riverpod.state`, `bloc.state`                                                                        |
 | Secure storage | `secure_storage.keys`; `secure_storage.read`, `secure_storage.write`, `secure_storage.delete` (write) |
+| Overrides      | `overrides.state`; `overrides.set` (write), from [`DevpulApp.builder`](/docs/flutter/#overrides)      |
 
 `call_plugin` runs handlers that only read. `call_plugin_write` runs `writes` handlers and `sensitive` ones, such as reading a secure storage value or navigating; each tool refuses the other's handlers. The agent asks before a tool call unless you allowed the tool or set it to approve calls on its own, as Claude Code's auto mode does, so allow `call_plugin` and keep `call_plugin_write` on ask. In Claude Code that is `"allow": ["mcp__devpul__call_plugin"]` under `permissions` in its settings. The UI's Allow writes switch does not apply: it lives in the browser tab, not in the app. Results are cut at 20,000 characters like the other tools.
 

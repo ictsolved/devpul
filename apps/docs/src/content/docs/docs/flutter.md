@@ -1,9 +1,9 @@
 ---
 title: Flutter
-description: devpul_flutter reports Flutter errors with diagnostics, captures debugPrint and records navigation in DevPul.
+description: devpul_flutter reports Flutter errors with diagnostics, captures debugPrint, records navigation and overrides platform settings in DevPul.
 ---
 
-[devpul_flutter](https://pub.dev/packages/devpul_flutter) reports Flutter errors, `debugPrint` output and route changes.
+[devpul_flutter](https://pub.dev/packages/devpul_flutter) reports Flutter errors, `debugPrint` output and route changes, and overrides platform settings while the app runs.
 
 ```yaml
 dependencies:
@@ -46,3 +46,13 @@ final app = MaterialApp(navigatorObservers: [DevpulNavigatorObserver()]);
 ```
 
 Each push, pop, replace and remove becomes a `route` event with `action`, `route`, `previous` and `arguments`. A route without a name shows its screen widget, such as `CartPage`, once its first frame is built, so its event goes out after that frame. Without widget creation tracking it shows its type. The route on top when an error happens goes out with it as `route`. The observer also offers a Routes tab with the navigation stack at each step; allow it when DevPul asks. With `go_router`, pass the observer in `GoRouter(observers: [...])`; the [go_router plugin](%REPO_URL%/tree/main/plugins/go_router) adds the route tree and the match stack.
+
+## Overrides
+
+```dart
+const app = MaterialApp(builder: DevpulApp.builder);
+```
+
+The builder offers an Overrides tab that sets the text scale, brightness, locale, bold text and disabled animations the app sees, as if changed on the device. Brightness picks `theme` or `darkTheme` while `themeMode` is `ThemeMode.system`; a `themeMode` the app sets stays. The locales are the app's `supportedLocales`. Overrides last until the app restarts. `CupertinoApp` and `WidgetsApp` take the same builder, and so do the `.router` forms. With a builder of your own, wrap its result: `builder: (context, child) => DevpulApp.builder(context, yours(context, child))`.
+
+The values in effect at start and after each change go out as an `overrides` event, so the breadcrumbs before an error show the text scale or locale it happened under. Agents read and set them through [`devpul mcp`](/docs/mcp/#plugin-handlers).

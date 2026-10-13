@@ -9,6 +9,7 @@ void main() {
   runApp(
     MaterialApp(
       navigatorObservers: [DevpulNavigatorObserver()], // optional: route events
+      builder: DevpulApp.builder, // optional: Overrides tab
       home: const Home(),
     ),
   );

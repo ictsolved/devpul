@@ -124,6 +124,7 @@ CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks 
 ## Examples
 
 - Routes, in `devpul_flutter`: [`DevpulNavigatorObserver`](/docs/flutter/#routes) offers a tab with the navigation stack after each route event. It uses `render`.
+- Overrides, in `devpul_flutter`: [`DevpulApp.builder`](/docs/flutter/#overrides) offers a tab that overrides the text scale, brightness, locale, bold text and animations the app sees. It uses `renderTab` and `context.request`.
 - [Riverpod](%REPO_URL%/tree/main/plugins/riverpod) and [Bloc](%REPO_URL%/tree/main/plugins/bloc), in the repository: an observer sends every change to a tab with each provider's or bloc's current value and recent changes. They use `renderTab`, `onEvents`, a handler for the current state, and `context.ui`.
 - [Files](%REPO_URL%/tree/main/plugins/files), in the repository: no events; the tab asks the app for directory listings, file bytes in chunks and deletes, through `context.request`, and shows delete only while `context.writes` is on.
 - [Secure storage](%REPO_URL%/tree/main/plugins/secure_storage), in the repository: the tab lists keys and asks for one value when the user reveals it, so secrets stay in the app until then; add, edit and delete are `writes` handlers.
