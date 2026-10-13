@@ -1,6 +1,6 @@
 # devpul_cli
 
-Command line for [DevPul](https://devpul.saradgajurel.com.np). Runs your app with the DevPul UI connected, serves the UI on 127.0.0.1 and copies plugins into apps.
+Command line for [DevPul](https://devpul.saradgajurel.com.np). Runs your app with the DevPul UI connected, serves the UI on 127.0.0.1, copies plugins into apps and gives coding agents the app's events over MCP.
 
 ## Install
 
@@ -17,11 +17,12 @@ devpul run -d macos          # flutter run with these arguments, UI connected
 devpul run bin/server.dart   # dart run outside a Flutter project, hot reload on save
 devpul                       # just the UI, at http://127.0.0.1:7171
 devpul add riverpod          # copy a plugin into the app
+devpul mcp                   # MCP server on stdio for coding agents
 devpul create my_plugin      # start a plugin
 devpul --help                # every command and flag
 ```
 
-The [command line](https://devpul.saradgajurel.com.np/docs/cli/) page has every command and flag; [installing plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/) and [writing plugins](https://devpul.saradgajurel.com.np/docs/plugins/) the plugin workflow.
+The [command line](https://devpul.saradgajurel.com.np/docs/cli/) page has every command and flag, [agents](https://devpul.saradgajurel.com.np/docs/mcp/) the MCP setup; [installing plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/) and [writing plugins](https://devpul.saradgajurel.com.np/docs/plugins/) the plugin workflow.
 
 ## Limits
 

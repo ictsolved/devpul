@@ -76,5 +76,6 @@ Click it and DevPul opens connected to the app. In an IDE, DevPul is also a tab 
 - **Events**: anything you send with `Devpul.emit`, such as state changes from Riverpod or Bloc. See [Extending DevPul](/docs/extend/).
 - **Actions**: buttons that run code in the app, such as clearing a cache or signing out. See [Actions](/docs/actions/).
 - **Plugins**: tabs for your own events and for parts of the app, such as its files. See [Installing plugins](/docs/plugins/install/).
+- **Agents**: the same requests, logs, errors and events, and the actions, for Claude Code, Copilot and other coding agents over MCP. See [Agents (MCP)](/docs/mcp/).
 
 Release builds have no VM service, and DevPul never emits in them, so nothing needs to be removed before shipping. Profile builds leave DevPul out unless they [opt in](/docs/api/#profile-builds). [Limits](/docs/limits/) lists what DevPul does not do.

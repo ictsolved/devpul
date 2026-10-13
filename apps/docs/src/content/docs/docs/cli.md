@@ -1,6 +1,6 @@
 ---
 title: Command line
-description: Every devpul command and flag - serving the UI, devpul run, connecting to a VM service URL, and the plugin commands add, remove, list, sync, outdated, upgrade, update, cache clean, create and check.
+description: Every devpul command and flag - serving the UI, devpul run, connecting to a VM service URL, devpul mcp, and the plugin commands add, remove, list, sync, outdated, upgrade, update, cache clean, create and check.
 ---
 
 ```sh
@@ -12,6 +12,7 @@ This installs the `devpul` command from [devpul_cli](https://pub.dev/packages/de
 ```text
 devpul [options] [vm-service-url]
 devpul [options] run [flutter run or dart run arguments]
+devpul mcp [--port <n>] [vm-service-url]
 devpul add <plugin>[@version|#ref] [--path <dir>] [--yes]
 devpul remove <id>
 devpul list
@@ -58,6 +59,15 @@ Runs `flutter run` with the arguments after `run`, in a folder whose `pubspec.ya
 - `flutter run` keeps its terminal keys (`r`, `R`, `q`), and DevPul gets **Reload** and **Restart** buttons. `--profile` adds `--dart-define=DEVPUL_PROFILE=true`; see [profile builds](/docs/api/#profile-builds).
 - `dart run` gets a VM service on a free port and hot reloads each time a `.dart` file in the folder is saved.
 - devpul exits with the tool's exit code.
+
+## devpul mcp
+
+```sh
+devpul mcp                                     # the app the devpul on 7171 last connected to
+devpul mcp http://127.0.0.1:41234/AbCdEf12=/   # this app
+```
+
+An MCP server on stdio for coding agents: requests, logs, errors, events and the app's actions. Without a URL it asks the devpul serving the UI on `--port` (7171 by default) for its app on every tool call. See [Agents (MCP)](/docs/mcp/).
 
 ## Plugins
 

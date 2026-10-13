@@ -19,16 +19,21 @@ DevPul talks to the app through the VM service, the same debug protocol IDEs and
 - History is stored in the browser (IndexedDB). Turn it off or clear it in Settings.
 - Exports, HAR and session files, hold everything the app sent. Redact before sharing them.
 
+## Agents read what the app sent
+
+[`devpul mcp`](/docs/mcp/) gives an agent the same events the page shows. Its tool results go to the agent's model provider, bodies and unredacted headers included. `run_action` runs the app's actions, which are app code; nothing else in the app is callable through it. The server talks over stdio and opens no port.
+
 ## No telemetry
 
 DevPul makes no network request you did not ask for.
 
-| From       | Requests                                                                                                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The page   | The app's VM service; `registry.json` on the site, only when you click Check for updates in the Plugins tab; module URLs you add yourself.                                                  |
-| `devpul`   | None when serving. `add`, `outdated` and `upgrade` fetch the plugin sources you name and the registry, `outdated` also asks pub.dev for the `devpul_cli` version, `update` runs `dart pub`. |
-| The app    | None. The packages post events on the VM service and print the connect link.                                                                                                                |
-| These docs | The site's own files. No third-party scripts, fonts or images.                                                                                                                              |
+| From         | Requests                                                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The page     | The app's VM service; `registry.json` on the site, only when you click Check for updates in the Plugins tab; module URLs you add yourself.                                                  |
+| `devpul`     | None when serving. `add`, `outdated` and `upgrade` fetch the plugin sources you name and the registry, `outdated` also asks pub.dev for the `devpul_cli` version, `update` runs `dart pub`. |
+| `devpul mcp` | None. It reads the app's VM service and asks the devpul on `127.0.0.1` for the app's URL.                                                                                                   |
+| The app      | None. The packages post events on the VM service and print the connect link.                                                                                                                |
+| These docs   | The site's own files. No third-party scripts, fonts or images.                                                                                                                              |
 
 ## Connect links reach only this machine
 

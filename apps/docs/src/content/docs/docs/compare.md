@@ -28,6 +28,7 @@ A browser UI for what a debug build sends, over the same VM service as DevTools.
 - HTTP from any client through adapters, including on Flutter web, or from dart:io with no code change, next to errors, logs, routes and custom events, with one filter syntax across them.
 - Several apps at once, history across reloads, HAR and session files.
 - Plugin tabs for your own events and for parts of the app, such as state or files, and [actions](/docs/actions/) that run code in the app.
+- The same events for coding agents over [MCP](/docs/mcp/).
 - Nothing in release builds and nothing inside the app's UI.
 
 ## When not to use DevPul
