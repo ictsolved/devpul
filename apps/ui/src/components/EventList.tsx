@@ -4,7 +4,7 @@ import type { DevEvent } from '../core/events';
 import { matchesQuery, matchesTag, parseQuery } from '../core/filter';
 import { Input } from '@/components/ui/input';
 import { useStored } from '../lib/storage';
-import { Detail, Split } from './Panes';
+import { BackButton, Detail, Split } from './Panes';
 import { VirtualList } from './VirtualList';
 import { Chip, filterClass, PauseButton, rowClass, toolbarClass, useListKeys, usePause, ValueChips } from './list';
 
@@ -29,6 +29,8 @@ export interface Group {
 export interface ListSelection {
   selected: string | null;
   onSelect: (key: string | null) => void;
+  /** Set when the selection was opened from an error. */
+  onBack?: () => void;
 }
 
 type Cells = (e: DevEvent, group?: Group) => ReactNode;
@@ -132,7 +134,16 @@ export function EventList(props: Props) {
     <Split
       detail={
         current && (
-          <Detail label="Detail" head={props.head(current, groupOf(current))} onClose={() => setSelected(null)}>
+          <Detail
+            label="Detail"
+            head={
+              <>
+                {props.onBack && <BackButton onClick={props.onBack} />}
+                {props.head(current, groupOf(current))}
+              </>
+            }
+            onClose={() => setSelected(null)}
+          >
             {props.body(current, groupOf(current))}
           </Detail>
         )

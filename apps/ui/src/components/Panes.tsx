@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -40,5 +40,15 @@ export function Detail({ label, head, onClose, children }: DetailProps) {
       </div>
       <div className="min-h-0 flex-1 overflow-auto pt-1 pb-6">{children}</div>
     </aside>
+  );
+}
+
+/** Returns to the error a detail was opened from. */
+export function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button type="button" variant="outline" size="xs" onClick={onClick}>
+      <ArrowLeft />
+      Back to error
+    </Button>
   );
 }

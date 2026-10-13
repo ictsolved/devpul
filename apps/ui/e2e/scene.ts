@@ -142,6 +142,7 @@ export function session(after: number): VmEvent[][] {
           message: 'FormatException: Unexpected end of input (at character 1)',
           library: 'search',
           context: 'while parsing search results',
+          route: '/order/o_5521',
           stack: stack([
             'SearchRepository.search (package:shop/search/search_repository.dart:41:7)',
             '<asynchronous suspension>',
@@ -173,6 +174,7 @@ export function backlog(): VmEvent[] {
       message: 'A RenderFlex overflowed by 24 pixels on the right.',
       library: 'rendering library',
       context: 'during layout',
+      route: '/order/o_5521',
       information: 'The relevant error-causing widget was:\n  Row Row:file:///shop/lib/order/order_page.dart:57:16',
       stack: stack([
         'RenderFlex.performLayout (package:flutter/src/rendering/flex.dart:1112:7)',

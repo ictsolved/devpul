@@ -144,21 +144,36 @@ test.describe('on web', () => {
   });
 });
 
-test('opens a request from an error and goes back to the error', async ({ page, vm }) => {
+test('opens breadcrumbs from an error and goes back to the error', async ({ page, vm }) => {
   await connect(page, vm);
   await page.getByRole('tab', { name: /^Errors/ }).click();
-  await page.getByRole('row', { name: /Bad state: boom/ }).click();
+  await page.getByRole('row', { name: /Bad state: layout/ }).click();
   const detail = page.getByRole('complementary', { name: 'Detail' });
-  await expect(detail).toContainText('while syncing');
-  await detail.getByRole('button', { name: /example\.com\/upload/ }).click();
+  await expect(detail.getByTitle('Route at the error')).toHaveText('Cart');
+  const crumbs = detail.getByRole('list', { name: 'Breadcrumbs' });
+  await expect(crumbs.getByRole('button')).toHaveText([
+    /route\s*push Cart/,
+    /POST.*example\.com\/items/,
+    /route\s*pop \/checkout/,
+    /log\s*error Sync failed/,
+    /route\s*replace \/checkout/,
+    /log\s*info Signed in/,
+    /route\s*push \/cart/,
+    /route\s*push \//,
+  ]);
 
+  await crumbs.getByRole('button', { name: /example\.com\/items/ }).click();
   await expect(page.getByRole('tab', { name: /^HTTP/ })).toHaveAttribute('aria-selected', 'true');
   const request = page.getByRole('complementary', { name: 'Request detail' });
-  await expect(request).toContainText('https://example.com/upload');
+  await expect(request).toContainText('https://example.com/items');
   await request.getByRole('button', { name: 'Back to error' }).click();
-
   await expect(page.getByRole('tab', { name: /^Errors/ })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('complementary', { name: 'Detail' })).toContainText('Bad state: boom');
+
+  await crumbs.getByRole('button', { name: /Sync failed/ }).click();
+  await expect(page.getByRole('tab', { name: /^Logs/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('row', { name: /Sync failed/ })).toHaveAttribute('aria-selected', 'true');
+  await detail.getByRole('button', { name: 'Back to error' }).click();
+  await expect(detail).toContainText('Bad state: layout');
 });
 
 test('Clear keeps cleared events out after a reload', async ({ page, vm }) => {

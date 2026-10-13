@@ -130,13 +130,14 @@ function Body({ e, call, runLabel }: { e: DevEvent; call: AppCall; runLabel: (ru
   );
 }
 
-export function LogsTab({ logs, runLabel, filterRef, call, selected, onSelect }: Props) {
+export function LogsTab({ logs, runLabel, filterRef, call, selected, onSelect, onBack }: Props) {
   return (
     <EventList
       id="logs"
       label="Logs"
       selected={selected}
       onSelect={onSelect}
+      onBack={onBack}
       events={logs}
       filterRef={filterRef}
       placeholder="Filter, e.g. sync level:warn,error name:auth"

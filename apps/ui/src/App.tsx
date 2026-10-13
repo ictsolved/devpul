@@ -8,6 +8,7 @@ import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { approve } from './core/approvals';
+import type { Crumb } from './core/breadcrumbs';
 import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
 import { parseInfo } from './core/info';
@@ -554,7 +555,18 @@ export function App() {
     store.select(to, key, from);
     setTab(to);
   };
-  const httpFrom = store.selected('http')?.from;
+  const backFrom = (t: string) => {
+    const from = store.selected(t)?.from;
+    return from && (() => openIn(from.tab, from.key));
+  };
+  const openCrumb = (crumb: Crumb) => {
+    const error = store.selected('errors');
+    const kind = crumb.event?.kind ?? '';
+    const owner = plugins.find(({ plugin: p }) => matches(p, kind))?.plugin;
+    const to =
+      crumb.kind === 'request' ? 'http' : crumb.kind === 'log' ? 'logs' : owner ? `plugin:${owner.id}` : 'events';
+    openIn(to, crumb.key, error && { tab: 'errors', key: error.key });
+  };
 
   const openSettings = () => {
     setUsage(persist.current ? { count: persist.current.count, bytes: persist.current.bytes } : null);
@@ -695,20 +707,17 @@ export function App() {
                     runLabel={runLabel}
                     filterRef={filterRef}
                     {...selection('http')}
-                    onBack={httpFrom && (() => openIn(httpFrom.tab, httpFrom.key))}
+                    onBack={backFrom('http')}
                   />
                 )}
                 {activeTab === 'errors' && (
                   <ErrorsTab
                     errors={errors}
-                    requests={store.httpRows}
+                    store={store}
                     runLabel={runLabel}
                     filterRef={filterRef}
                     {...selection('errors')}
-                    onOpenRequest={(key) => {
-                      const error = store.selected('errors');
-                      openIn('http', key, error && { tab: 'errors', key: error.key });
-                    }}
+                    onOpen={openCrumb}
                   />
                 )}
                 {activeTab === 'logs' && (
@@ -718,10 +727,17 @@ export function App() {
                     filterRef={filterRef}
                     call={callApp}
                     {...selection('logs')}
+                    onBack={backFrom('logs')}
                   />
                 )}
                 {activeTab === 'events' && (
-                  <EventsTab events={other} runLabel={runLabel} filterRef={filterRef} {...selection('events')} />
+                  <EventsTab
+                    events={other}
+                    runLabel={runLabel}
+                    filterRef={filterRef}
+                    {...selection('events')}
+                    onBack={backFrom('events')}
+                  />
                 )}
                 {activeTab === 'plugins' && (
                   <PluginsView
@@ -741,6 +757,7 @@ export function App() {
                 {activePlugin && (
                   <PluginTab
                     {...selection(activeTab)}
+                    onBack={backFrom(activeTab)}
                     plugin={activePlugin}
                     events={pluginEvents[activePlugin.id] ?? []}
                     fallback={pluginFallback}

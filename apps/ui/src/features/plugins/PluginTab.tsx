@@ -108,7 +108,7 @@ export function PluginTab(props: Props) {
   return <PluginList {...props} />;
 }
 
-function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSelect }: Props) {
+function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSelect, onBack }: Props) {
   const cells = useCallback(
     (e: DevEvent) => (
       <>
@@ -135,6 +135,7 @@ function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSel
       label={plugin.label}
       selected={selected}
       onSelect={onSelect}
+      onBack={onBack}
       events={events}
       filterRef={filterRef}
       placeholder="Filter, e.g. words -word kind: tag:k=v"

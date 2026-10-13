@@ -36,7 +36,7 @@ Fields narrow further. A comma means any of them, and a leading `-` negates.
 | `size:`                      | HTTP   | `size:>100k`, `size:<1mb`                                                      |
 | `tag:`                       | all    | `tag:env=qa`, `tag:user` (any value)                                           |
 | `kind:`                      | lists  | `kind:cart`, `-kind:route`                                                     |
-| `source:`, `type:`           | Errors | `source:flutter`, `type:StateError`                                            |
+| `source:`, `type:`, `route:` | Errors | `source:flutter`, `type:StateError`, `route:cart`                              |
 | `level:`, `name:`, `source:` | Logs   | `level:warn,error`, `name:auth`, `source:developer.log`                        |
 
 Chips do the same for values seen in the data: status classes, methods, hosts, tags, app runs, sources, levels and kinds. Filters are remembered per tab.
@@ -49,10 +49,10 @@ Click a column header in HTTP to sort by it; click again to flip the direction. 
 
 Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch to a tree with the Tree button. Copy the URL, any section, a curl command or a `fetch()` call for the browser console.
 
-<img class="dark:sl-hidden" src="/screenshots/errors-light.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and the requests made before it" width="1440" height="900" loading="lazy" />
-<img class="light:sl-hidden" src="/screenshots/errors-dark.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and the requests made before it" width="1440" height="900" loading="lazy" />
+<img class="dark:sl-hidden" src="/screenshots/errors-light.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and what happened before it" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/errors-dark.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and what happened before it" width="1440" height="900" loading="lazy" />
 
-In Errors, **Group repeats** folds identical errors into one row with a count, and each error lists the requests made in the 10 seconds before it. Click one to open it in HTTP; **Back to error** returns.
+In Errors, **Group repeats** folds identical errors into one row with a count. The header shows the route at the time of the error. **Before this error** lists the last 30 routes, logs, events and requests of the same app run, newest first, with how long before the error each happened. Click one to open it in its tab; **Back to error** returns. The list is built from the events DevPul holds, so it works on an imported session file and leaves out events dropped by the memory limit.
 
 ## HTTP without an adapter
 

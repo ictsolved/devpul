@@ -2,7 +2,7 @@ import { type RefObject, useCallback } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet, type ListSelection } from '../../components/EventList';
 import { JsonView } from '../../components/JsonView';
-import type { DevEvent } from '../../core/events';
+import { type DevEvent, preview } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
 
 interface Props extends ListSelection {
@@ -13,7 +13,7 @@ interface Props extends ListSelection {
 
 const FACETS: Facet[] = [{ id: 'kind', label: 'Kind', of: (e) => e.kind }];
 
-export function EventsTab({ events, runLabel, filterRef, selected, onSelect }: Props) {
+export function EventsTab({ events, runLabel, filterRef, selected, onSelect, onBack }: Props) {
   const cells = useCallback(
     (e: DevEvent) => (
       <>
@@ -39,6 +39,7 @@ export function EventsTab({ events, runLabel, filterRef, selected, onSelect }: P
       label="Events"
       selected={selected}
       onSelect={onSelect}
+      onBack={onBack}
       events={events}
       filterRef={filterRef}
       placeholder="Filter, e.g. cart -kind:route tag:env=qa"
@@ -62,13 +63,4 @@ export function EventsTab({ events, runLabel, filterRef, selected, onSelect }: P
       )}
     />
   );
-}
-
-export function preview(e: DevEvent): string {
-  const parts: string[] = [];
-  for (const [k, v] of Object.entries(e.data)) {
-    parts.push(`${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
-    if (parts.join(', ').length > 200) break;
-  }
-  return parts.join(', ').slice(0, 200);
 }

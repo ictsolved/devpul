@@ -1,10 +1,10 @@
 import { cn } from 'cn';
-import { ArrowLeft, Braces, ListTree, SquareTerminal } from 'lucide-react';
+import { Braces, ListTree, SquareTerminal } from 'lucide-react';
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
 import { type BodyMode, isEmptyValue, JsonView, KeyValues } from '../../components/JsonView';
-import { Detail } from '../../components/Panes';
+import { BackButton, Detail } from '../../components/Panes';
 import { Section } from '../../components/Section';
 import { Tip } from '../../components/Tip';
 import { isObject, str } from '../../core/events';
@@ -46,12 +46,7 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
       onClose={onClose}
       head={
         <>
-          {onBack && (
-            <Button type="button" variant="outline" size="xs" onClick={onBack}>
-              <ArrowLeft />
-              Back to error
-            </Button>
-          )}
+          {onBack && <BackButton onClick={onBack} />}
           <Method method={row.method} />
           <StatusBadge row={row} />
           {row.durationMs !== undefined && <span className="text-muted-foreground">{row.durationMs} ms</span>}

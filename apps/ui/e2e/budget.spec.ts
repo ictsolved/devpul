@@ -88,6 +88,12 @@ test('10k events and a 5 MB body stay within the frame and memory budget', async
     }
   });
 
+  // Errors shows its breadcrumbs, which scan the whole store, on every visit.
+  await page.keyboard.press('2');
+  await page.getByRole('grid', { name: 'Errors' }).getByRole('row').nth(1).click();
+  await expect(page.getByRole('list', { name: 'Breadcrumbs' }).getByRole('button')).toHaveCount(30);
+  await page.keyboard.press('1');
+
   const tabs = await frames(page, async () => {
     for (let i = 0; i < 3; i++) {
       for (const key of ['2', '3', '4', '1']) {

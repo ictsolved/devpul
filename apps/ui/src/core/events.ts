@@ -87,3 +87,13 @@ export function stringMap(v: unknown): Record<string, string> {
   }
   return out;
 }
+
+/** The fields as `key: value` pairs, cut at [max] characters. */
+export function preview(e: DevEvent, max = 200): string {
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(e.data)) {
+    parts.push(`${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
+    if (parts.join(', ').length > max) break;
+  }
+  return parts.join(', ').slice(0, max);
+}

@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { breadcrumbs } from './breadcrumbs';
 import { type DevEvent, fromVm, type JsonObject } from './events';
 import { fromSession, toSession } from './export';
 import { parseInfo } from './info';
@@ -44,6 +45,7 @@ describe('contract', () => {
     expect(store.httpRows[2]?.size).toBe(11);
     expect(store.errors.map((e) => e.data.source)).toEqual(['flutter', 'zone']);
     expect(store.errors[0]?.data.widget).toBe('Cart');
+    expect(store.errors.map((e) => e.data.route)).toEqual(['Cart', '/cart']);
     expect(readLocation(store.errors[0]?.data.location)).toMatchObject({ file: 'file:///app/test/contract_test.dart' });
     expect(store.logs).toHaveLength(2);
     expect(store.other.map((e) => e.kind)).toEqual([
@@ -92,5 +94,22 @@ describe('contract', () => {
     expect(back.map((e) => [e.key, e.kind, e.data, e.tags])).toEqual(
       events.map((e) => [e.key, e.kind, e.data, e.tags]),
     );
+
+    const store = new Store();
+    store.add(back);
+    const crumbs = (e: DevEvent) => breadcrumbs(store.all, store.httpRows, e).map((c) => c.text);
+    expect(store.errors.map(crumbs)).toEqual([
+      [
+        'push Cart',
+        'POST 201 https://example.com/items?page=1&tag=a&tag=b',
+        'pop /checkout',
+        'error Sync failed',
+        'replace /checkout',
+        'info Signed in',
+        'push /cart',
+        'push /',
+      ],
+      ['pop /checkout', 'error Sync failed', 'replace /checkout', 'info Signed in', 'push /cart', 'push /'],
+    ]);
   });
 });
