@@ -15,6 +15,12 @@ void main() {
     (args) => items += (args['count']! as num).toInt(),
     params: const [DevpulParam.number('count', initial: 1)],
   );
+  final cart = <String>['sku-1'];
+  Devpul.plugin('cart', () => 'export default {}', description: 'The cart.');
+  Devpul.handle('cart.items', (_) => cart, description: 'Skus in the cart.');
+  Devpul.handle('cart.clear', (_) => cart.clear(), writes: true);
+  Devpul.handle('cart.token', (_) => 'secret', sensitive: true);
+  Devpul.handle('flags.list', (_) => {'beta': true});
   Devpul.emit('route', {'action': 'push', 'route': '/cart'});
   Devpul.log('cart opened');
   developer.log('order ${'x' * 300}', name: 'orders', level: 1000);

@@ -9,7 +9,7 @@ import 'store.dart';
 import 'vm.dart';
 
 const _instructions = '''
-Reads what DevPul recorded in a running Dart or Flutter app: HTTP requests, logs, errors with the steps before them, route changes and custom events. List tools return one line per item, oldest first, starting with its id; get_request and get_event take that id. Tools read the newest run (launch or hot restart) unless given another from get_session.''';
+Reads what DevPul recorded in a running Dart or Flutter app: HTTP requests, logs, errors with the steps before them, route changes and custom events. List tools return one line per item, oldest first, starting with its id; get_request and get_event take that id. Tools read the newest run (launch or hot restart) unless given another from get_session. Plugins answer handlers with their current state, such as database rows or router state; get_session lists them with the tool that calls each.''';
 
 /// The MCP server `devpul mcp` runs on stdio.
 base class DevpulMcp extends MCPServer with ToolsSupport {
@@ -28,6 +28,8 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
           (_listEvents, _otherEvents),
           (_getEvent, _event),
           (_runAction, _action),
+          (_callPlugin, (args) => _call(args, write: false)),
+          (_callPluginWrite, (args) => _call(args, write: true)),
         ]) {
       registerTool(tool, (request) => _guard(request, run));
     }
@@ -93,15 +95,7 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
       if (info != null) ...{
         'devpul': info['version'],
         'actions': info['actions'],
-        'plugins': [
-          for (final p in (info['plugins'] as List<Object?>?) ?? [])
-            if (p is Map)
-              {
-                'id': p['id'],
-                'version': ?p['version'],
-                'description': ?p['description'],
-              },
-        ],
+        ..._plugins(info),
         'limits': info['limits'],
         'dropped': info['dropped'],
       },
@@ -116,6 +110,43 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
           },
       ],
     });
+  }
+
+  /// Plugins with their handlers, by the `<plugin id>.` prefix, and the
+  /// handlers no plugin claims.
+  Map<String, Object?> _plugins(Map<String, Object?> info) {
+    final handlers = [
+      for (final h in (info['handlers'] as List<Object?>?) ?? [])
+        if (h case {'name': final String name})
+          (
+            name,
+            {
+              'name': name,
+              'description': ?h['description'],
+              'tool': _writeTool(h) ? 'call_plugin_write' : 'call_plugin',
+            },
+          ),
+    ];
+    final claimed = <String>{};
+    List<Object?> of(Object? id) => [
+      for (final (name, h) in handlers)
+        if (name.startsWith('$id.') && claimed.add(name)) h,
+    ];
+    final plugins = [
+      for (final p in (info['plugins'] as List<Object?>?) ?? [])
+        if (p is Map)
+          {
+            'id': p['id'],
+            'version': ?p['version'],
+            'description': ?p['description'],
+            if (of(p['id']) case final h when h.isNotEmpty) 'handlers': h,
+          },
+    ];
+    final rest = [
+      for (final (name, h) in handlers)
+        if (!claimed.contains(name)) h,
+    ];
+    return {'plugins': plugins, if (rest.isNotEmpty) 'handlers': rest};
   }
 
   String _requests(Map<String, Object?> args) {
@@ -297,16 +328,21 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
     });
   }
 
-  Future<String> _action(Map<String, Object?> args) async {
+  /// The isolate of the run [args] picks, and its handshake read now:
+  /// actions and handlers come and go.
+  Future<(String, Map<String, Object?>)> _app(Map<String, Object?> args) async {
     final runs = _runs(args);
     final run = _store.runs.where((r) => runs.contains(r.key)).lastOrNull;
     final isolateId = run?.isolateId;
     if (run == null || isolateId == null) {
       throw ToolException('The app has sent no DevPul events yet.');
     }
+    return (isolateId, await app.call('ext.devpul.info', isolateId));
+  }
+
+  Future<String> _action(Map<String, Object?> args) async {
+    final (isolateId, info) = await _app(args);
     final name = args['name'] as String;
-    // The list the UI shows, read now: actions come and go.
-    final info = await app.call('ext.devpul.info', isolateId);
     final names = [
       for (final a in (info['actions'] as List<Object?>?) ?? [])
         if (a case {'name': final String name}) name,
@@ -324,7 +360,48 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
     });
     return _json({'result': result['result']});
   }
+
+  Future<String> _call(Map<String, Object?> args, {required bool write}) async {
+    final (isolateId, info) = await _app(args);
+    final name = args['name'] as String;
+    final handlers = {
+      for (final h in (info['handlers'] as List<Object?>?) ?? [])
+        if (h case {'name': final String name}) name: h,
+    };
+    final handler = handlers[name];
+    if (handler == null) {
+      throw ToolException(
+        handlers.isEmpty
+            ? 'The app registers no plugin handlers.'
+            : 'No handler "$name". get_session lists them.',
+      );
+    }
+    if (_writeTool(handler) != write) {
+      throw ToolException(
+        write
+            ? '$name only reads; call it with call_plugin.'
+            : handler['writes'] == true
+            ? '$name changes the app; call it with call_plugin_write.'
+            : '$name returns secrets or acts on the app; call it with '
+                  'call_plugin_write.',
+      );
+    }
+    final result = await app.call('ext.devpul.call', isolateId, {
+      'name': name,
+      'args': jsonEncode(args['args'] ?? const <String, Object?>{}),
+      if (write) 'writes': 'true',
+    });
+    final max = (args['max_chars'] as int?) ?? _maxChars;
+    // _cut drops null fields; a handler returning nothing says so.
+    return _json({
+      'result': null,
+      ..._cut({'result': result['result']}, max),
+    });
+  }
 }
+
+bool _writeTool(Map<Object?, Object?> handler) =>
+    handler['writes'] == true || handler['sensitive'] == true;
 
 const _maxChars = 20000;
 
@@ -366,8 +443,9 @@ final _getSession = Tool(
   name: 'get_session',
   description:
       'The connected app: name and version from its session, devpul '
-      'version, actions with their parameters, plugins, rate limits, and '
-      'the runs (launches and hot restarts) recorded.',
+      'version, actions with their parameters, plugins with their handlers '
+      'and the tool that calls each, rate limits, and the runs (launches '
+      'and hot restarts) recorded.',
   annotations: _readOnly,
   inputSchema: Schema.object(),
 );
@@ -491,6 +569,43 @@ final _runAction = Tool(
     },
     required: ['name'],
   ),
+);
+
+final _callParams = {
+  'name': Schema.string(
+    description: 'The handler name, such as sqflite.query.',
+  ),
+  'args': Schema.object(
+    description: 'Arguments as its description in get_session names them.',
+    additionalProperties: true,
+  ),
+  'max_chars': _maxCharsParam,
+  'run': _runParam,
+};
+
+final _callPlugin = Tool(
+  name: 'call_plugin',
+  description:
+      'Calls a plugin handler that only reads, such as the rows of a SQL '
+      'query, the files list or the router state, and returns its result as '
+      'JSON. get_session lists the handlers with their arguments and the '
+      'tool for each.',
+  annotations: _readOnly,
+  inputSchema: Schema.object(properties: _callParams, required: ['name']),
+);
+
+final _callPluginWrite = Tool(
+  name: 'call_plugin_write',
+  description:
+      'Calls a plugin handler that changes the app (writes data, navigates) '
+      'or returns secrets, and returns its result as JSON. get_session lists '
+      'the handlers with their arguments and the tool for each.',
+  annotations: ToolAnnotations(
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: false,
+  ),
+  inputSchema: Schema.object(properties: _callParams, required: ['name']),
 );
 
 String _json(Object? value) => const JsonEncoder.withIndent(' ').convert(value);

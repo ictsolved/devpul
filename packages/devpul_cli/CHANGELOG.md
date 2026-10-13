@@ -4,3 +4,4 @@
 - `devpul run --profile` keeps DevPul in the profile build.
 - Plugin commands: `add`, `remove`, `list`, `sync`, `sync --check`, `outdated`, `upgrade`, `cache clean`.
 - `update`: `dart pub global activate devpul_cli`.
+- `devpul mcp`: MCP server on stdio with the app's requests, logs, errors, events, actions and plugin handlers.

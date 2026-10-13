@@ -101,6 +101,8 @@ void main() {
       'list_events',
       'get_event',
       'run_action',
+      'call_plugin',
+      'call_plugin_write',
     ]);
 
     final session = await json(server, 'get_session');
@@ -113,6 +115,24 @@ void main() {
           {'name': 'count', 'type': 'number', 'initial': 1},
         ],
       },
+    ]);
+    expect(session['plugins'], [
+      {
+        'id': 'cart',
+        'description': 'The cart.',
+        'handlers': [
+          {
+            'name': 'cart.items',
+            'description': 'Skus in the cart.',
+            'tool': 'call_plugin',
+          },
+          {'name': 'cart.clear', 'tool': 'call_plugin_write'},
+          {'name': 'cart.token', 'tool': 'call_plugin_write'},
+        ],
+      },
+    ]);
+    expect(session['handlers'], [
+      {'name': 'flags.list', 'tool': 'call_plugin'},
     ]);
     expect(session['runs'], [containsPair('run', 1)]);
 
@@ -217,6 +237,48 @@ void main() {
     });
     expect(failed, isTrue);
     expect(unknown, 'No action "drop tables". Actions: add items.');
+
+    expect(await json(server, 'call_plugin', {'name': 'cart.items'}), {
+      'result': ['sku-1'],
+    });
+    expect(await json(server, 'call_plugin_write', {'name': 'cart.token'}), {
+      'result': 'secret',
+    });
+    for (final (tool, name, message) in [
+      (
+        'call_plugin',
+        'cart.clear',
+        'cart.clear changes the app; call it '
+            'with call_plugin_write.',
+      ),
+      (
+        'call_plugin',
+        'cart.token',
+        'cart.token returns secrets or acts on '
+            'the app; call it with call_plugin_write.',
+      ),
+      (
+        'call_plugin_write',
+        'cart.items',
+        'cart.items only reads; call it '
+            'with call_plugin.',
+      ),
+      (
+        'call_plugin',
+        'cart.nope',
+        'No handler "cart.nope". get_session '
+            'lists them.',
+      ),
+    ]) {
+      expect(await call(server, tool, {'name': name}), (message, true));
+    }
+    expect(await json(server, 'call_plugin_write', {'name': 'cart.clear'}), {
+      'result': null,
+    });
+    expect(await json(server, 'call_plugin', {'name': 'cart.items'}), {
+      'result': <Object?>[],
+    });
+
     final (missing, notFound) = await call(server, 'get_request', {'id': 999});
     expect(notFound, isTrue);
     expect(missing, contains('No request 999'));
