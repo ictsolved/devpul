@@ -16,6 +16,7 @@ abstract final class DevpulBloc {
             {..._Observer._key(bloc), 'value': bloc.state},
         ],
       },
+      description: 'Live blocs and cubits with their current states.',
     );
   }
 }

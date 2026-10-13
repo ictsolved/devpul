@@ -30,24 +30,38 @@ abstract final class DevpulSqflite {
             {'name': key, 'path': value.path},
         ],
       };
-    });
-    Devpul.handle('sqflite.query', (args) async {
-      final (db, sql, statement) = _target(args);
-      await _checkRead(db, sql, statement);
-      return _rows(db, sql);
-    });
-    Devpul.handle('sqflite.execute', (args) async {
-      final (db, sql, statement) = _target(args);
-      if (statement.first.text == 'EXPLAIN' ||
-          (await db.rawQuery(
-            'EXPLAIN $sql',
-          )).any((op) => op['opcode'] == 'ResultRow')) {
+    }, description: 'Open databases: name and path.');
+    Devpul.handle(
+      'sqflite.query',
+      (args) async {
+        final (db, sql, statement) = _target(args);
+        await _checkRead(db, sql, statement);
         return _rows(db, sql);
-      }
-      final before = await _totalChanges(db);
-      await db.execute(sql);
-      return {'changes': await _totalChanges(db) - before};
-    }, writes: true);
+      },
+      description:
+          'Rows of one read-only statement (SELECT, WITH, VALUES), at most '
+          '$_maxRows; other statements go to sqflite.execute. Args: db (a '
+          'name from sqflite.databases), sql.',
+    );
+    Devpul.handle(
+      'sqflite.execute',
+      (args) async {
+        final (db, sql, statement) = _target(args);
+        if (statement.first.text == 'EXPLAIN' ||
+            (await db.rawQuery(
+              'EXPLAIN $sql',
+            )).any((op) => op['opcode'] == 'ResultRow')) {
+          return _rows(db, sql);
+        }
+        final before = await _totalChanges(db);
+        await db.execute(sql);
+        return {'changes': await _totalChanges(db) - before};
+      },
+      writes: true,
+      description:
+          'Runs one statement of any kind: rows for one that returns rows, '
+          'else the number of rows changed. Args: db, sql.',
+    );
   }
 }
 

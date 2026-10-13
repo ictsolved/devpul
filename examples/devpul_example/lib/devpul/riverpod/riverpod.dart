@@ -31,7 +31,11 @@ List<ProviderObserver> devpulRiverpodObservers({
 
 final class _Observer extends ProviderObserver {
   _Observer(this._shows) {
-    Devpul.handle('riverpod.state', (_) => {'providers': _live.values});
+    Devpul.handle(
+      'riverpod.state',
+      (_) => {'providers': _live.values},
+      description: 'Live providers with their current values.',
+    );
   }
 
   final bool Function(ProviderBase<Object?> provider) _shows;

@@ -25,6 +25,7 @@ abstract final class DevpulFiles {
         (_) => throw const _FilesError(
           'Files needs dart:io; web apps have no files.',
         ),
+        description: 'Fails: web apps have no files.',
       );
       return;
     }
@@ -40,17 +41,36 @@ abstract final class DevpulFiles {
             },
         ],
       },
+      description:
+          "The app's path_provider directories: name, path, whether it "
+          'exists. Other handlers take paths inside them.',
     );
-    Devpul.handle('files.list', (args) async => _list(await _inside(args)));
-    Devpul.handle('files.size', (args) async => _size(await _inside(args)));
+    Devpul.handle(
+      'files.list',
+      (args) async => _list(await _inside(args)),
+      description:
+          'Entries of a directory, folders first, at most $_maxEntries: '
+          'name, type, size, modified. Args: path.',
+    );
+    Devpul.handle(
+      'files.size',
+      (args) async => _size(await _inside(args)),
+      description:
+          'Total bytes and file count under a directory; partial when it '
+          'took too long. Args: path.',
+    );
     Devpul.handle(
       'files.read',
       (args) async => _read(await _inside(args), args),
+      description:
+          'Bytes of a file as base64, at most 1 MB, and its size. Args: '
+          'path, offset, length.',
     );
     Devpul.handle(
       'files.delete',
       (args) async => _delete(await _inside(args, root: false)),
       writes: true,
+      description: 'Deletes a file, link or directory tree. Args: path.',
     );
   }
 }

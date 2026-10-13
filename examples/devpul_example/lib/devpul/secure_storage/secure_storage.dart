@@ -15,10 +15,13 @@ abstract final class DevpulSecureStorage {
     Devpul.handle(
       'secure_storage.keys',
       (_) async => {'keys': (await storage.readAll()).keys.toList()..sort()},
+      description: 'Stored keys, sorted, without values.',
     );
     Devpul.handle(
       'secure_storage.read',
       (args) async => {'value': await storage.read(key: _string(args, 'key'))},
+      sensitive: true,
+      description: 'The value of one key, null when unset. Args: key.',
     );
     Devpul.handle(
       'secure_storage.write',
@@ -27,11 +30,13 @@ abstract final class DevpulSecureStorage {
         value: _string(args, 'value', empty: true),
       ),
       writes: true,
+      description: 'Sets a key. Args: key, value.',
     );
     Devpul.handle(
       'secure_storage.delete',
       (args) => storage.delete(key: _string(args, 'key')),
       writes: true,
+      description: 'Deletes a key. Args: key.',
     );
   }
 }

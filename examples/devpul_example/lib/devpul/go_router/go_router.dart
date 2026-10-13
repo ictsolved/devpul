@@ -24,15 +24,24 @@ abstract final class DevpulGoRouter {
         'routes': _routes(router.configuration.routes, ''),
         'current': _current(router.routerDelegate.currentConfiguration),
       },
+      description:
+          'The route tree with full path patterns, and the current location '
+          'with its matches, parameters and extra.',
     );
-    Devpul.handle('go_router.go', (args) {
-      final location = args['location'];
-      if (location is! String || location.isEmpty) {
-        throw const _GoRouterError('No location given.');
-      }
-      router.go(location);
-      return null;
-    });
+    // Not writes: in the tab, Go is the intent. Agents ask first.
+    Devpul.handle(
+      'go_router.go',
+      (args) {
+        final location = args['location'];
+        if (location is! String || location.isEmpty) {
+          throw const _GoRouterError('No location given.');
+        }
+        router.go(location);
+        return null;
+      },
+      sensitive: true,
+      description: 'Navigates with GoRouter.go. Args: location.',
+    );
     _changed();
   }
 

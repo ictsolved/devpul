@@ -4,32 +4,32 @@
     "bloc": {
       "url": "../../plugins/bloc",
       "version": "0.1.0",
-      "hash": "dbc44284e5f9dc80ea6e01538a234a2dbcc2b676007ca6d1c1fe8109bf0c5ae1"
+      "hash": "47c669b178a855640e7dfc7ef63ae0a2700999abd9f3b2e8176974f25a736d45"
     },
     "files": {
       "url": "../../plugins/files",
       "version": "0.1.0",
-      "hash": "7f23865d549c4a6e5e0338419bb21ef53c70e62d168cbe6b0bb00a3d067fa868"
+      "hash": "f51068e9ca02a1a41100a5247c66671834fe947481be5408964d91c55cb44a8a"
     },
     "go_router": {
       "url": "../../plugins/go_router",
       "version": "0.1.0",
-      "hash": "fd9c28491d50a3a27cd8a601c464e726feb46bd1b8839529904510d09c3907f6"
+      "hash": "a325fbc91169bf16f78ed01b5223f7fa3252f1bc238daafd3881562a66db6a42"
     },
     "riverpod": {
       "url": "../../plugins/riverpod",
       "version": "0.1.0",
-      "hash": "10fa83217061c642822e47d0f7c59eedb4b6458fa7653efc84f54a01c76e8777"
+      "hash": "1a9afe089672b3e0048f3cbd24b01dbca57373f74ffb6517f19ef074d8973f81"
     },
     "secure_storage": {
       "url": "../../plugins/secure_storage",
       "version": "0.1.0",
-      "hash": "81a5569ad3df4eb26ef2537be220bf2e755a1719dbded6146c1ad960de3c2347"
+      "hash": "b2084c5154240ae21d96906f1db7792a481365dca738ffb704b4f065229e79d9"
     },
     "sqflite": {
       "url": "../../plugins/sqflite",
       "version": "0.1.0",
-      "hash": "1ea15b75f2729eb048f016ce630a36708f0e9cbade44d2c79af482d03e3f84eb"
+      "hash": "2ee9c173f41caaba189d6ed358ed2484fa8c3d9b1ac982d418ffbd67efdb5aa3"
     }
   }
 }
