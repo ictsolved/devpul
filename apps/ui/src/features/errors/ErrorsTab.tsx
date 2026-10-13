@@ -5,10 +5,11 @@ import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet, type Group, type ListSelection } from '../../components/EventList';
 import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
+import { SourceLink, StackText } from '../../components/Stack';
 import { breadcrumbs, type Crumb, formatOffset } from '../../core/breadcrumbs';
 import { type DevEvent, str } from '../../core/events';
 import { formatTime } from '../../core/json';
-import { locationText, readLocation, shortPath } from '../../core/location';
+import { locationText, readLocation, type SourceLocation, shortPath } from '../../core/location';
 import type { Store } from '../../core/store';
 import { Method, StatusBadge } from '../http/DetailPanel';
 
@@ -20,6 +21,7 @@ interface Props extends ListSelection {
   runLabel: (run: string) => string;
   filterRef: RefObject<HTMLInputElement | null>;
   onOpen: (crumb: Crumb) => void;
+  onSource: (e: DevEvent, location: SourceLocation) => void;
 }
 
 const sourceOf = (e: DevEvent) => str(e.data.source) ?? 'error';
@@ -62,7 +64,7 @@ function report(e: DevEvent): string {
     .join('\n\n');
 }
 
-function Widget({ e }: { e: DevEvent }) {
+function Widget({ e, onSource }: { e: DevEvent; onSource: Props['onSource'] }) {
   const widget = str(e.data.widget);
   const location = readLocation(e.data.location);
   if (!widget) return null;
@@ -75,8 +77,10 @@ function Widget({ e }: { e: DevEvent }) {
       <div className="flex min-w-0 gap-2 font-mono text-xs">
         <span className="font-semibold">{widget}</span>
         {location && (
-          <span className="truncate text-muted-foreground" title={locationText(location)}>
-            {shortPath(location.file)}:{location.line}:{location.column}
+          <span className="truncate" title={locationText(location)}>
+            <SourceLink location={location} onOpen={(l) => onSource(e, l)}>
+              {shortPath(location.file)}:{location.line}:{location.column}
+            </SourceLink>
           </span>
         )}
       </div>
@@ -122,7 +126,7 @@ function Breadcrumbs({ e, store, onOpen }: { e: DevEvent; store: Store; onOpen: 
   );
 }
 
-export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, selected, onSelect }: Props) {
+export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, onSource, selected, onSelect }: Props) {
   const cells = useCallback(
     (e: DevEvent, group?: Group) => (
       <>
@@ -199,7 +203,7 @@ export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, selected
             <Section id="err-message" title="Message">
               <pre className={codeClass}>{str(d.message) ?? ''}</pre>
             </Section>
-            <Widget e={e} />
+            <Widget e={e} onSource={onSource} />
             {str(d.context) && (
               <Section id="err-context" title="Context">
                 <div>{str(d.context)}</div>
@@ -212,7 +216,7 @@ export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, selected
             )}
             {stack && (
               <Section id="err-stack" title="Stack trace" actions={<CopyButton text={() => stack} />}>
-                <pre className={codeClass}>{stack}</pre>
+                <StackText stack={stack} onOpen={(l) => onSource(e, l)} />
               </Section>
             )}
             <Breadcrumbs e={e} store={store} onOpen={onOpen} />

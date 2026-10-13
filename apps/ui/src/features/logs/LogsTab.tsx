@@ -4,8 +4,10 @@ import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet, type ListSelection } from '../../components/EventList';
 import { codeClass } from '../../components/JsonView';
 import { Section } from '../../components/Section';
+import { type OpenSource, StackText } from '../../components/Stack';
 import { type DevEvent, str } from '../../core/events';
 import { formatTime } from '../../core/json';
+import type { SourceLocation } from '../../core/location';
 import { DEVELOPER_LOG, loadFull, logObjects } from '../../core/logging';
 import { rpcMessage } from '../../core/rpc';
 import type { AppCall } from '../plugins/PluginTab';
@@ -15,6 +17,7 @@ interface Props extends ListSelection {
   runLabel: (run: string) => string;
   filterRef: RefObject<HTMLInputElement | null>;
   call: AppCall;
+  onSource: (e: DevEvent, location: SourceLocation) => void;
 }
 
 const levelOf = (e: DevEvent) => str(e.data.level)?.toLowerCase() ?? 'info';
@@ -100,7 +103,14 @@ function useFull(e: DevEvent, call: AppCall): { full?: Full; failed?: string } {
   return state?.key === e.key ? state : {};
 }
 
-function Body({ e, call, runLabel }: { e: DevEvent; call: AppCall; runLabel: (run: string) => string }) {
+interface BodyProps {
+  e: DevEvent;
+  call: AppCall;
+  runLabel: (run: string) => string;
+  onOpen: OpenSource;
+}
+
+function Body({ e, call, runLabel, onOpen }: BodyProps) {
   const { full, failed } = useFull(e, call);
   const pending = logObjects(e) && !full;
   const error = full?.error ?? str(e.data.error);
@@ -122,7 +132,7 @@ function Body({ e, call, runLabel }: { e: DevEvent; call: AppCall; runLabel: (ru
       )}
       {stack && (
         <Section id="log-stack" title="Stack trace">
-          <pre className={codeClass}>{stack}</pre>
+          <StackText stack={stack} onOpen={onOpen} />
         </Section>
       )}
       <p className="mx-3 my-1.5 text-xs text-muted-foreground">{runLabel(e.run)}</p>
@@ -130,7 +140,7 @@ function Body({ e, call, runLabel }: { e: DevEvent; call: AppCall; runLabel: (ru
   );
 }
 
-export function LogsTab({ logs, runLabel, filterRef, call, selected, onSelect, onBack }: Props) {
+export function LogsTab({ logs, runLabel, filterRef, call, onSource, selected, onSelect, onBack }: Props) {
   return (
     <EventList
       id="logs"
@@ -156,7 +166,7 @@ export function LogsTab({ logs, runLabel, filterRef, call, selected, onSelect, o
           <CopyButton text={() => textOf(e, 'message') ?? ''} />
         </>
       )}
-      body={(e) => <Body e={e} call={call} runLabel={runLabel} />}
+      body={(e) => <Body e={e} call={call} runLabel={runLabel} onOpen={(l) => onSource(e, l)} />}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { connect, expect, test } from './fixtures.ts';
-import { fixtureEvents, PLUGIN } from './vm.ts';
+import { FakeDtd, fixtureEvents, PLUGIN } from './vm.ts';
 
 const site = JSON.parse(readFileSync(join(import.meta.dirname, '../../../site.json'), 'utf8')) as {
   url: string;
@@ -441,18 +441,63 @@ test.describe('under flutter run', () => {
   });
 });
 
+const CART_ERROR = {
+  source: 'zone',
+  type: 'StateError',
+  message: 'Bad state: cart',
+  stack: '#0      Cart.add (package:shop/cart.dart:12:5)\n#1      _rootRun (dart:async/zone.dart:1525:13)',
+};
+
+test.describe('launched from an IDE', () => {
+  test.use({ vmOptions: { ide: true } });
+
+  test('sends a stack frame to the IDE', async ({ page, vm }) => {
+    await connect(page, vm);
+    vm.emit('error', CART_ERROR);
+    await page.getByRole('tab', { name: /^Errors/ }).click();
+    await page.getByRole('row', { name: /Bad state: cart/ }).click();
+    const stack = page.getByRole('complementary', { name: 'Detail' }).locator('section', { hasText: 'Stack trace' });
+    await expect(stack.getByRole('button', { name: 'dart:async' })).toHaveCount(0);
+    await stack.getByRole('button', { name: 'package:shop/cart.dart:12:5' }).click();
+    await expect(page.getByRole('status')).toHaveText('Sent app/lib/cart.dart:12 to the IDE.');
+    expect(vm.callsTo('lookupResolvedPackageUris')).toEqual([
+      { isolateId: 'isolates/1', uris: ['package:shop/cart.dart'], local: true },
+    ]);
+    expect(vm.callsTo('postEvent')).toEqual([
+      {
+        stream: 'ToolEvent',
+        eventKind: 'navigate',
+        eventData: { fileUri: 'file:///app/lib/cart.dart', line: 12, column: 5, source: 'devpul' },
+      },
+    ]);
+  });
+});
+
+test('copies a widget location when no IDE listens', async ({ page, vm, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await connect(page, vm);
+  await page.getByRole('tab', { name: /^Errors/ }).click();
+  await page.getByRole('row', { name: /Bad state: layout/ }).click();
+  const widget = page.getByRole('complementary', { name: 'Detail' }).locator('section', { hasText: 'Widget' }).first();
+  await widget.getByRole('button', { name: /contract_test\.dart:48:64/ }).click();
+  await expect(page.getByRole('status')).toHaveText('No IDE is attached. Copied /app/test/contract_test.dart:48:64.');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('/app/test/contract_test.dart:48:64');
+  expect(vm.callsTo('postEvent')).toHaveLength(1);
+});
+
 test('runs as a DevTools extension', async ({ page, vm }) => {
+  const dtd = await FakeDtd.start();
   // DevTools serves extensions from its own origin and frames them.
   await page.goto('./docs/');
   await page.evaluate(
-    (uri) => {
+    ({ uri, dtdUri }) => {
       const frame = document.createElement('iframe');
-      frame.src = `../index.html?uri=${encodeURIComponent(uri)}&theme=dark&dtdUri=ws%3A%2F%2F127.0.0.1%3A1%2Fx`;
+      frame.src = `../index.html?uri=${encodeURIComponent(uri)}&theme=dark&dtdUri=${encodeURIComponent(dtdUri)}`;
       frame.style.cssText = 'position: fixed; inset: 0; z-index: 1000; width: 1200px; height: 700px';
       document.body.append(frame);
       window.addEventListener('message', (e) => document.body.append(`|${JSON.stringify(e.data)}`));
     },
-    vm.url.replace('http://', 'ws://') + 'ws',
+    { uri: vm.url.replace('http://', 'ws://') + 'ws', dtdUri: dtd.url },
   );
   const ext = page.frameLocator('iframe');
   await expect(ext.getByRole('list', { name: 'Connections' })).toContainText('Shop');
@@ -473,6 +518,17 @@ test('runs as a DevTools extension', async ({ page, vm }) => {
   await ext.getByRole('button', { name: 'curl' }).click();
   await expect(page.locator('body')).toContainText('|{"type":"copyToClipboard","data":{"content":"curl ');
   await expect(ext.getByRole('button', { name: 'Copied' })).toBeVisible();
+
+  vm.emit('error', CART_ERROR);
+  await ext.getByRole('tab', { name: /^Errors/ }).click();
+  await ext.getByRole('row', { name: /Bad state: cart/ }).click();
+  await ext.getByRole('button', { name: 'package:shop/cart.dart:12:5' }).click();
+  await expect(ext.getByRole('status')).toHaveText('Opened app/lib/cart.dart:12 in the editor.');
+  expect(dtd.calls).toEqual([
+    { method: 'Editor.navigateToCode', params: { uri: 'file:///app/lib/cart.dart', line: 12, column: 5 } },
+  ]);
+  expect(vm.callsTo('postEvent')).toEqual([]);
+  await dtd.close();
 });
 
 test('site pages load under their CSP', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { cn } from 'cn';
 import { CircleHelp, RotateCcw, Settings as SettingsIcon, Trash2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { copyText } from './components/Copy';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Tip } from './components/Tip';
@@ -9,10 +10,12 @@ import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { approve } from './core/approvals';
 import type { Crumb } from './core/breadcrumbs';
+import { openInEditor } from './core/editor';
 import { type DevEvent, str } from './core/events';
 import { fromSession } from './core/export';
 import { parseInfo } from './core/info';
 import { formatTime } from './core/json';
+import { type SourceLocation, shortPath } from './core/location';
 import { Persist } from './core/persist';
 import { type ConnState, Connection, isPaused, rpcMessage } from './core/rpc';
 import { appName, sessionFields } from './core/session';
@@ -33,7 +36,7 @@ import { matches, registry, writes } from './features/plugins/plugins';
 import { SettingsDialog } from './features/settings/SettingsDialog';
 import { type Limited, StatusBar } from './features/status/StatusBar';
 import { cli, listenCli } from './lib/cli';
-import { devtools, hostUri, listenHost } from './lib/devtools';
+import { devtools, hostDtd, hostUri, listenHost } from './lib/devtools';
 import { pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings, useStored } from './lib/storage';
 
@@ -342,6 +345,25 @@ export function App() {
         : params;
     return conn.call(method, withIsolate);
   }, []);
+
+  const openSource = useCallback(
+    (e: DevEvent, source: SourceLocation) => {
+      const dtd = hostDtd();
+      void openInEditor(source, {
+        vm: (method, params) => callApp(e, method, params),
+        isolateId: e.isolateId,
+        dtd: dtd ? (method, params) => dtd.call(method, params) : undefined,
+        copy: copyText,
+      }).then((r) => {
+        const at = 'location' in r ? `${shortPath(r.location.file)}:${r.location.line}` : r.text;
+        if (r.how === 'editor') flash(`Opened ${at} in the editor.`);
+        else if (r.how === 'ide') flash(`Sent ${at} to the IDE.`);
+        else if (r.how === 'copied') flash(`No IDE is attached. Copied ${at}.`);
+        else flash(`Could not copy ${at}.`);
+      });
+    },
+    [callApp, flash],
+  );
 
   const runAction: RunAction = (e, name, args) => {
     callApp(e, 'ext.devpul.action', { name, ...(args && { args: JSON.stringify(args) }) }).then(
@@ -718,6 +740,7 @@ export function App() {
                     filterRef={filterRef}
                     {...selection('errors')}
                     onOpen={openCrumb}
+                    onSource={openSource}
                   />
                 )}
                 {activeTab === 'logs' && (
@@ -726,6 +749,7 @@ export function App() {
                     runLabel={runLabel}
                     filterRef={filterRef}
                     call={callApp}
+                    onSource={openSource}
                     {...selection('logs')}
                     onBack={backFrom('logs')}
                   />

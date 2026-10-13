@@ -1,3 +1,4 @@
+import { Dtd } from '../core/dtd';
 import { isLoopback, toWsUrl } from '../core/url';
 
 export type Theme = 'light' | 'dark';
@@ -22,6 +23,27 @@ const loopbackWs = (value: unknown): string | null => {
 };
 
 export const hostUri = (): string | null => loopbackWs(params.get('uri'));
+
+// DevTools sends `dtdUri=null` when it has no daemon.
+function dtdUri(): string | null {
+  try {
+    const url = new URL(params.get('dtdUri') ?? '');
+    return url.protocol === 'ws:' && isLoopback(url.hostname) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+let dtd: Dtd | null | undefined;
+
+/** The Dart Tooling Daemon DevTools runs, where an IDE registers its Editor service. */
+export function hostDtd(): Dtd | null {
+  if (dtd === undefined) {
+    const url = devtools ? dtdUri() : null;
+    dtd = url ? new Dtd(url) : null;
+  }
+  return dtd;
+}
 
 export const hostTheme = (): Theme | null => {
   const theme = params.get('theme');

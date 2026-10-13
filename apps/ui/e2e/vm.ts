@@ -30,6 +30,8 @@ export interface VmOptions {
   handlers?: Record<string, (args: JsonObject) => unknown>;
   /** A web app: no dart:io, so no HTTP profile. */
   web?: boolean;
+  /** An IDE's debug session listens on the ToolEvent stream. */
+  ide?: boolean;
 }
 
 const contract = (file: string): unknown =>
@@ -166,6 +168,7 @@ export class FakeVm {
   private readonly flutterRun: boolean;
   private readonly handlers: Record<string, (args: JsonObject) => unknown>;
   private readonly web: boolean;
+  private readonly ide: boolean;
   private readonly server: WebSocketServer;
   private readonly streams = new Map<WebSocket, Set<string>>();
   private paused = false;
@@ -185,6 +188,7 @@ export class FakeVm {
     this.flutterRun = options.flutterRun ?? false;
     this.handlers = options.handlers ?? {};
     this.web = options.web ?? false;
+    this.ide = options.ide ?? false;
     this.info = this.hashed(options.info ?? (contract('info.json') as JsonObject));
     this.events = (options.events ?? fixtureEvents()).map((e) =>
       e.kind === 'devpul.app.info' ? { ...e, data: { ...e.data, data: this.hashed(e.data.data) } } : e,
@@ -350,6 +354,17 @@ export class FakeVm {
         if (params.isolateId !== ISOLATE.id)
           throw new RpcError(-32602, `Invalid 'isolateId': ${String(params.isolateId)}`);
         return { type: 'Success' };
+      case 'postEvent':
+        if (params.stream === 'ToolEvent' && this.ide) return { type: 'Success' };
+        throw new RpcError(130, 'Custom stream does not exist');
+      // Packages of the app `shop` live in /app/lib.
+      case 'lookupResolvedPackageUris':
+        return {
+          type: 'UriList',
+          uris: (params.uris as string[]).map((u) =>
+            u.startsWith('package:shop/') ? `file:///app/lib/${u.slice(13)}` : null,
+          ),
+        };
       case 'getVM':
         return { type: 'VM', name: 'vm', isolates: [ISOLATE], isolateGroups: [GROUP] };
       case 'getIsolate':
@@ -427,5 +442,45 @@ export class FakeVm {
       default:
         throw new RpcError(-32601, `Unknown method "${method}".`);
     }
+  }
+}
+
+/** A Dart Tooling Daemon where an editor registered `Editor.navigateToCode`. */
+export class FakeDtd {
+  readonly calls: Call[] = [];
+  private readonly server: WebSocketServer;
+
+  private constructor(server: WebSocketServer) {
+    this.server = server;
+    server.on('connection', (ws) =>
+      ws.on('message', (text) => {
+        const {
+          id,
+          method,
+          params = {},
+        } = JSON.parse(String(text)) as { id: number; method: string; params?: JsonObject };
+        this.calls.push({ method, params });
+        const reply =
+          method === 'Editor.navigateToCode'
+            ? { result: { type: 'Success' } }
+            : { error: { code: -32601, message: `Unknown method "${method}".` } };
+        ws.send(JSON.stringify({ jsonrpc: '2.0', ...reply, id }));
+      }),
+    );
+  }
+
+  get url(): string {
+    return `ws://127.0.0.1:${(this.server.address() as AddressInfo).port}/dtdSecret=`;
+  }
+
+  static async start(): Promise<FakeDtd> {
+    const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+    await new Promise((resolve) => server.once('listening', resolve));
+    return new FakeDtd(server);
+  }
+
+  async close(): Promise<void> {
+    for (const ws of this.server.clients) ws.terminate();
+    await new Promise((resolve) => this.server.close(resolve));
   }
 }

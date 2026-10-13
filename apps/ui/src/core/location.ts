@@ -3,7 +3,7 @@ import { isObject, num, str } from './events';
 export interface SourceLocation {
   file: string;
   line: number;
-  column: number;
+  column?: number;
 }
 
 export function readLocation(v: unknown): SourceLocation | undefined {
@@ -33,4 +33,5 @@ export function shortPath(file: string): string {
   return path.slice(path.lastIndexOf('/', lib - 1) + 1).replace(/^\/+/, '');
 }
 
-export const locationText = (l: SourceLocation) => `${filePath(l.file)}:${l.line}:${l.column}`;
+export const locationText = (l: SourceLocation) =>
+  `${filePath(l.file)}:${l.line}${l.column === undefined ? '' : `:${l.column}`}`;
