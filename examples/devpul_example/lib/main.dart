@@ -14,6 +14,7 @@ import 'package:devpul_http/devpul_http.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
@@ -256,7 +257,15 @@ class ExampleApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp.router(
     title: 'DevPul example',
     theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
+    darkTheme: ThemeData(
+      colorSchemeSeed: Colors.teal,
+      brightness: Brightness.dark,
+      useMaterial3: true,
+    ),
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    supportedLocales: const [Locale('en'), Locale('de'), Locale('ar')],
     routerConfig: router,
+    builder: DevpulApp.builder,
   );
 }
 

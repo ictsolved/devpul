@@ -18,8 +18,9 @@ Future<void> main() async {
     final example = [
       ..._core,
       'http.request',
-      // devpul_flutter's Routes module.
+      // devpul_flutter's Routes and Overrides modules.
       'function stackAt(events, event) {',
+      'const SCALES = [0.85, 1, 1.15, 1.3, 1.5, 2, 3];',
       ..._pluginMarkers('examples/devpul_example'),
     ];
     var failed = false;
