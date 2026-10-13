@@ -10,13 +10,20 @@ export interface RegistryPlugin {
   path?: string;
 }
 
-/** `registry.json`, format 1. Entries without an id, version and url are skipped. */
+/**
+ * `registry.json`, format 1. Entries without an id, version and url are skipped, and so are pub
+ * packages (`package`), which no app reports as a plugin.
+ */
 export function parseRegistry(data: unknown): RegistryPlugin[] {
   if (!isObject(data) || data.format !== 1 || !Array.isArray(data.plugins)) {
     throw new Error('registry.json is not format 1');
   }
   return data.plugins.flatMap((p) =>
-    isObject(p) && typeof p.id === 'string' && typeof p.version === 'string' && typeof p.url === 'string'
+    isObject(p) &&
+    typeof p.id === 'string' &&
+    typeof p.version === 'string' &&
+    typeof p.url === 'string' &&
+    p.package === undefined
       ? [{ id: p.id, version: p.version, url: p.url, ...(typeof p.path === 'string' && { path: p.path }) }]
       : [],
   );

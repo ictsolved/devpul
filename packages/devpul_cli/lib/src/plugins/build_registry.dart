@@ -15,11 +15,12 @@ typedef BuiltRegistry = ({
 });
 
 /// Builds registry.json from the tagged plugins in [root]/plugins, listed
-/// at [repo], and the pointers in [root]/registry/third-party.json, each
-/// fetched as `devpul add <id>` fetches it. [local] lets pointers use file
-/// and loopback URLs, for tests. [skipBroken] logs and leaves out a pointer
-/// whose plugin fails to fetch or check, so one upstream repo cannot block a
-/// deploy.
+/// at [repo], the pointers in [root]/registry/third-party.json, each fetched
+/// as `devpul add <id>` fetches it, and the pub packages in
+/// [root]/registry/packages.json at their latest version. [local] lets
+/// pointers use file and loopback URLs, for tests. [skipBroken] logs and
+/// leaves out a pointer or package that fails to fetch or check, so one
+/// upstream cannot block a deploy.
 Future<BuiltRegistry> buildRegistry(
   String root, {
   required String repo,
@@ -76,20 +77,21 @@ Future<BuiltRegistry> buildRegistry(
     }
   }
 
-  const file = 'registry/third-party.json';
-  var pointers = const <Object?>[];
-  try {
-    final json = jsonDecode(File(p.join(root, file)).readAsStringSync());
-    if (json is List<Object?>) {
-      pointers = json;
-    } else {
+  List<Object?> read(String file) {
+    try {
+      final json = jsonDecode(File(p.join(root, file)).readAsStringSync());
+      if (json is List<Object?>) return json;
       problems.add('$file: needs a list');
+    } on FileSystemException catch (e) {
+      problems.add('$file: ${e.message}');
+    } on FormatException catch (e) {
+      problems.add('$file: ${e.message}');
     }
-  } on FileSystemException catch (e) {
-    problems.add('$file: ${e.message}');
-  } on FormatException catch (e) {
-    problems.add('$file: ${e.message}');
+    return const [];
   }
+
+  const file = 'registry/third-party.json';
+  final pointers = read(file);
   final ids = firstParty.toSet();
   for (final (i, pointer) in pointers.indexed) {
     final where = '$file #${i + 1}';
@@ -127,6 +129,54 @@ Future<BuiltRegistry> buildRegistry(
     } on PluginException catch (e) {
       final problem = '$where: $id: ${e.message}';
       skipBroken ? log('$problem, not listed') : problems.add(problem);
+    }
+  }
+
+  const packagesFile = 'registry/packages.json';
+  for (final (i, entry) in read(packagesFile).indexed) {
+    final where = '$packagesFile #${i + 1}';
+    if (entry is! Map<String, Object?> ||
+        entry.keys.any(
+          (k) => !const {'id', 'package', 'tags', 'usage'}.contains(k),
+        )) {
+      problems.add('$where: needs an object of id, package, tags and usage');
+      continue;
+    }
+    if (entry case {
+      'id': final String id,
+      'package': final String package,
+      'tags': final List<Object?> tags,
+      'usage': final List<Object?> usage,
+    } when isPluginId(id) && isPackageName(package)) {
+      if (tags.length > 5 || !tags.every((t) => t is String && isTag(t))) {
+        problems.add('$where: tags needs up to 5 plugin tags');
+        continue;
+      }
+      if (!usage.every((line) => line is String)) {
+        problems.add('$where: usage needs a list of strings');
+        continue;
+      }
+      if (!ids.add(id)) {
+        problems.add('$where: $id is already listed');
+        continue;
+      }
+      try {
+        final latest = await fetcher.latestPackage(package);
+        entries[id] = {
+          'id': id,
+          'version': '${latest.version}',
+          'description': latest.description ?? '',
+          'tags': tags,
+          'usage': usage,
+          'package': package,
+          'url': 'https://pub.dev/packages/$package',
+        };
+      } on PluginException catch (e) {
+        final problem = '$where: $package: ${e.message}';
+        skipBroken ? log('$problem, not listed') : problems.add(problem);
+      }
+    } else {
+      problems.add('$where: needs a plugin id and a package name');
     }
   }
 

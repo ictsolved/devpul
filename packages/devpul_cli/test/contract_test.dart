@@ -81,13 +81,20 @@ void main() {
     final registry = parseRegistry(
       File('../../contract/registry.json').readAsStringSync(),
     );
-    expect(registry.keys, ['cart', 'flags']);
-    expect(registry['cart'], (
-      id: 'cart',
-      version: Version(1, 3, 0),
-      url: 'https://example.com/plugins.git',
-      path: 'cart',
-    ));
+    expect(registry.keys, ['cart', 'flags', 'net']);
+    final cart = registry['cart']!;
+    expect(
+      (cart.id, cart.version, cart.url, cart.path, cart.package),
+      (
+        'cart',
+        Version(1, 3, 0),
+        'https://example.com/plugins.git',
+        'cart',
+        null,
+      ),
+    );
     expect(registry['flags']?.path, isNull);
+    expect(registry['net']?.package, 'example_net');
+    expect(registry['net']?.usage, ['final client = NetClient(devpul: true);']);
   });
 }

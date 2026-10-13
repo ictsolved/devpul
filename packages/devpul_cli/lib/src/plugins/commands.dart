@@ -10,6 +10,7 @@ import 'create.dart' as template;
 import 'fetch.dart';
 import 'lock.dart';
 import 'manifest.dart';
+import 'registry.dart';
 import 'render.dart';
 
 /// Where a plugin command writes, and how it asks.
@@ -44,6 +45,13 @@ Future<void> add(
   bool yes = false,
 }) async {
   final packages = app.packages();
+  if (source is RegistrySource) {
+    fetcher.log = console.out.writeln;
+    final entry = await fetcher.lookup(source.id);
+    if (entry.package case final package?) {
+      return _addPackage(packages, source, entry, package, console, yes: yes);
+    }
+  }
   final lock = app.readLock();
   final vendored = app.allVendored(lock);
 
@@ -79,17 +87,48 @@ Future<void> add(
     replace: {id: fetched.files},
   );
   console.out.writeln('Added $name to devpul.lock, $dir and $generatedFile.');
-  if (manifest.usage.isNotEmpty) {
-    console.out.writeln('Wiring:');
-    for (final line in manifest.usage) {
-      console.out.writeln('  $line');
-    }
-  }
+  _wiring(console, manifest.usage);
   if (!app.callsInstall) {
     console.out
       ..writeln('Call DevpulPlugins.install() in main:')
       ..writeln("  import 'package:${packages.name}/devpul/plugins.dart';")
       ..writeln('  DevpulPlugins.install();');
+  }
+}
+
+/// Adds the pub package a registry entry lists, and devpul when the app
+/// lacks it.
+Future<void> _addPackage(
+  Packages packages,
+  RegistrySource source,
+  RegistryEntry entry,
+  String package,
+  Console console, {
+  required bool yes,
+}) async {
+  if (source.ref != null) {
+    throw PluginException(
+      '${source.id} is the pub package $package; #ref is for plugins',
+    );
+  }
+  final add = [
+    if (!packages.dependencies.contains('devpul')) 'devpul',
+    if (!packages.dependencies.contains(package))
+      [package, ?source.constraint].join(':'),
+  ];
+  if (add.isEmpty) {
+    console.out.writeln('The app depends on $package.');
+  } else {
+    await _pubAdd(packages, console, add, yes: yes);
+  }
+  _wiring(console, entry.usage);
+}
+
+void _wiring(Console console, List<String> usage) {
+  if (usage.isEmpty) return;
+  console.out.writeln('Wiring:');
+  for (final line in usage) {
+    console.out.writeln('  $line');
   }
 }
 
@@ -140,23 +179,42 @@ Future<void> _requires(
     }
   }
   if (add.isEmpty) return;
+  await _pubAdd(
+    packages,
+    console,
+    [for (final MapEntry(:key, :value) in add.entries) '$key:$value'],
+    yes: yes,
+    retry: retry,
+  );
+}
 
-  final executable = packages.flutter ? 'flutter' : 'dart';
-  final args = [
-    'pub',
-    'add',
-    for (final MapEntry(:key, :value) in add.entries) '$key:$value',
-  ];
+/// Runs pub add for [packages] on [yes] or a yes answer. [retry] is the
+/// command that writes nothing until pub add has run.
+Future<void> _pubAdd(
+  Packages app,
+  Console console,
+  List<String> packages, {
+  required bool yes,
+  String? retry,
+}) async {
+  final executable = app.flutter ? 'flutter' : 'dart';
+  final args = ['pub', 'add', ...packages];
   final command = [executable, ...args.map(_quote)].join(' ');
   final run =
       yes || (console.ask != null && await console.ask!('Run $command?'));
   if (!run || console.pubAdd == null) {
-    throw PluginException('nothing written; run $command, then $retry again');
+    throw PluginException(
+      retry == null
+          ? 'run $command'
+          : 'nothing written; run $command, then $retry again',
+    );
   }
   console.out.writeln(command);
   final code = await console.pubAdd!(executable, args);
   if (code != 0) {
-    throw PluginException('$command failed; nothing written');
+    throw PluginException(
+      retry == null ? '$command failed' : '$command failed; nothing written',
+    );
   }
 }
 

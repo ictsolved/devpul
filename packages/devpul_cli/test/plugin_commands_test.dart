@@ -160,6 +160,13 @@ void main() {
                 'version': '0.3.1',
                 'url': '${base}flags/plugin.json',
               },
+              {
+                'id': 'dio',
+                'version': '1.0.0',
+                'usage': ['dio.interceptors.add(DevpulDioInterceptor())'],
+                'package': 'devpul_dio',
+                'url': 'https://pub.dev/packages/devpul_dio',
+              },
             ],
           }),
         );
@@ -379,6 +386,31 @@ void main() {
     );
   });
 
+  test('add by name runs pub add for a listed package', () async {
+    await expectLater(
+      addArg('dio', path: null),
+      fails('run dart pub add devpul_dio'),
+    );
+    await addSource(parseSource('dio@^1.0.0'), yes: true);
+    expect(output.pubAdds, [
+      ['dart', 'pub', 'add', 'devpul_dio:^1.0.0'],
+    ]);
+    expect(
+      output.out.toString(),
+      endsWith('Wiring:\n  dio.interceptors.add(DevpulDioInterceptor())\n'),
+    );
+    expect(app.hasLock, isFalse);
+
+    app = fakeApp(app.root, dependencies: {'devpul_dio': '1.0.0'});
+    await addArg('dio', path: null);
+    expect(output.out.toString(), contains('The app depends on devpul_dio.'));
+    expect(output.pubAdds, hasLength(1));
+    await expectLater(
+      addArg('dio#main', path: null),
+      fails(contains('#ref is for plugins')),
+    );
+  });
+
   test('add from a folder records its path from the app', () async {
     await addSource(LocalSource(p.join(repo, 'cart')));
     final entry = app.readLock().plugins['cart']!;
@@ -594,17 +626,14 @@ void main() {
     late String pub;
     // One fetcher per command, as in the CLI: a fetcher fetches each mirror
     // once.
-    Fetcher fresh() => fetcher = Fetcher(
-      root: app.root,
-      cache: cache,
-      pub: '${base}api/packages/$pub',
-    );
+    Fetcher fresh() =>
+        fetcher = Fetcher(root: app.root, cache: cache, pub: '$base$pub/');
     setUp(() async {
       tagged = p.join(temp.path, 'tagged${n++}');
       copyDir(p.join(repo, 'cart'), p.join(tagged, 'cart'));
       git(temp.path, ['init', '-q', '-b', 'main', tagged]);
       release(tagged, '1.0.0');
-      pub = 'devpul_cli';
+      pub = 'api/packages';
       await addArg(Uri.file(tagged).toString());
       await addArg('${base}flags/plugin.json', path: null);
       output = Output();
@@ -664,7 +693,10 @@ flags       0.3.1                can't check
 devpul_cli  1.4.0                can't check
 ''');
       expect(output.err.toString(), contains('flags: ${base}gone'));
-      expect(output.err.toString(), contains('devpul_cli: ${base}api'));
+      expect(
+        output.err.toString(),
+        contains('devpul_cli: ${base}nope/devpul_cli'),
+      );
     });
 
     test('upgrade shows the diff, asks, and keeps the constraint', () async {

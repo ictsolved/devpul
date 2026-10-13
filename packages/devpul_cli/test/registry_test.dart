@@ -58,7 +58,17 @@ void main() {
     served = 'http://127.0.0.1:${server.port}/plugin.json';
     server.listen((request) async {
       final file = File(p.join(stock, request.uri.path.substring(1)));
-      if (file.existsSync()) {
+      if (request.uri.path == '/api/packages/devpul_dio') {
+        request.response.write(
+          jsonEncode({
+            'name': 'devpul_dio',
+            'latest': {
+              'version': '1.1.0',
+              'pubspec': {'description': 'Dio interceptor for DevPul.'},
+            },
+          }),
+        );
+      } else if (file.existsSync()) {
         request.response.add(file.readAsBytesSync());
       } else {
         request.response.statusCode = HttpStatus.notFound;
@@ -75,18 +85,26 @@ void main() {
   late List<String> log;
   Future<BuiltRegistry> build(
     List<Object?> pointers, {
+    List<Object?> packages = const [],
     bool local = true,
     bool skipBroken = false,
   }) {
     File('$root/registry/third-party.json')
       ..parent.createSync(recursive: true)
       ..writeAsStringSync(jsonEncode(pointers));
+    File(
+      '$root/registry/packages.json',
+    ).writeAsStringSync(jsonEncode(packages));
     log = [];
     final cache = temp.createTempSync('cache').path;
     return buildRegistry(
       root,
       repo: 'https://example.com/site',
-      fetcher: Fetcher(root: root, cache: cache),
+      fetcher: Fetcher(
+        root: root,
+        cache: cache,
+        pub: 'http://127.0.0.1:${server.port}/api/packages/',
+      ),
       local: local,
       skipBroken: skipBroken,
       log: log.add,
@@ -126,6 +144,59 @@ void main() {
     expect(plugins[2].containsKey('path'), isFalse);
 
     expect(parseRegistry(built.json).keys, ['cart', 'shop', 'stock']);
+  });
+
+  test('lists pub packages at their latest version', () async {
+    const dio = {
+      'id': 'dio',
+      'package': 'devpul_dio',
+      'tags': ['network'],
+      'usage': ['dio.interceptors.add(DevpulDioInterceptor())'],
+    };
+    final built = await build(const [], packages: [dio]);
+    expect(built.problems, isEmpty);
+    final json = jsonDecode(built.json) as Map<String, Object?>;
+    expect((json['plugins'] as List).last, {
+      ...dio,
+      'version': '1.1.0',
+      'description': 'Dio interceptor for DevPul.',
+      'url': 'https://pub.dev/packages/devpul_dio',
+    });
+    final entry = parseRegistry(built.json)['dio']!;
+    expect(entry.package, 'devpul_dio');
+    expect(entry.usage, dio['usage']);
+
+    final broken = await build(
+      const [],
+      packages: [
+        {...dio, 'id': 'cart'},
+        {...dio, 'package': 'devpul_gone'},
+        {
+          ...dio,
+          'tags': ['Net'],
+        },
+        {...dio, 'package': 'Dio'},
+        {...dio, 'url': 'https://example.com'},
+      ],
+    );
+    expect(broken.problems, [
+      'registry/packages.json #1: cart is already listed',
+      'registry/packages.json #2: devpul_gone: '
+          'http://127.0.0.1:${server.port}/api/packages/devpul_gone: HTTP 404',
+      'registry/packages.json #3: tags needs up to 5 plugin tags',
+      'registry/packages.json #4: needs a plugin id and a package name',
+      'registry/packages.json #5: needs an object of id, package, tags and '
+          'usage',
+    ]);
+    final skipped = await build(
+      const [],
+      packages: [
+        {...dio, 'package': 'devpul_gone'},
+      ],
+      skipBroken: true,
+    );
+    expect(skipped.problems, isEmpty);
+    expect(log.last, endsWith('HTTP 404, not listed'));
   });
 
   test('fails on broken pointers and plugins', () async {

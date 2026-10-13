@@ -14,7 +14,7 @@ import 'registry.dart';
 /// Matches `registry` in site.json, checked by a test.
 const registryUrl = 'https://devpul.saradgajurel.com.np/plugins/registry.json';
 
-const pubUrl = 'https://pub.dev/api/packages/devpul_cli';
+const pubUrl = 'https://pub.dev/api/packages/';
 
 /// Where `devpul add` takes a plugin from.
 sealed class Source {}
@@ -168,8 +168,10 @@ final class Fetcher {
   final String cache;
   final String registry;
 
-  /// The pub.dev API URL of devpul_cli.
+  /// The pub.dev API URL that package names are appended to.
   final String pub;
+
+  Future<Map<String, RegistryEntry>>? _entries;
 
   /// Mirrors fetched by this fetcher, so each repository is fetched once.
   final _mirrors = <String, Future<_Repo>>{};
@@ -256,29 +258,56 @@ final class Fetcher {
   }
 
   /// The latest devpul_cli on pub.dev.
-  Future<Version> latestCli() async {
-    final text = await _get(Uri.parse(pub));
+  Future<Version> latestCli() async =>
+      (await latestPackage('devpul_cli')).version;
+
+  /// The latest version of [package] on pub.dev, with its description.
+  Future<({Version version, String? description})> latestPackage(
+    String package,
+  ) async {
+    final url = '$pub$package';
+    final text = await _get(Uri.parse(url));
     try {
-      if (jsonDecode(text) case {'latest': {'version': final String version}}) {
-        return Version.parse(version);
+      if (jsonDecode(text) case {
+        'latest': {'version': final String version} && final latest,
+      }) {
+        return (
+          version: Version.parse(version),
+          description: switch (latest['pubspec']) {
+            {'description': final String description} => description,
+            _ => null,
+          },
+        );
       }
     } on FormatException {
       // Below.
     }
-    throw PluginException('$pub: no latest version');
+    throw PluginException('$url: no latest version');
   }
 
-  Future<Fetched> _registry(RegistrySource source) async {
-    log('Reading $registry');
+  /// Plugin [id] as registry.json lists it.
+  Future<RegistryEntry> lookup(String id) async {
     final Map<String, RegistryEntry> entries;
     try {
-      entries = parseRegistry(await _get(Uri.parse(registry)));
+      entries = await (_entries ??= _readRegistry());
     } on FormatException catch (e) {
       throw PluginException(e.message);
     }
-    final entry = entries[source.id];
-    if (entry == null) {
-      throw PluginException('no plugin ${source.id} in $registry');
+    return entries[id] ?? (throw PluginException('no plugin $id in $registry'));
+  }
+
+  Future<Map<String, RegistryEntry>> _readRegistry() async {
+    log('Reading $registry');
+    return parseRegistry(await _get(Uri.parse(registry)));
+  }
+
+  Future<Fetched> _registry(RegistrySource source) async {
+    final entry = await lookup(source.id);
+    if (entry.package case final package?) {
+      throw PluginException(
+        '${source.id} is the pub package $package; devpul add ${source.id} '
+        'adds it with pub',
+      );
     }
     return listed(
       source.id,

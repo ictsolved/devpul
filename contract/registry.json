@@ -29,6 +29,19 @@
       "usage": [],
       "requires": {},
       "url": "https://example.com/flags/plugin.json"
+    },
+    {
+      "id": "net",
+      "version": "2.1.0",
+      "description": "Requests from the net client in the Network tab.",
+      "tags": [
+        "network"
+      ],
+      "usage": [
+        "final client = NetClient(devpul: true);"
+      ],
+      "package": "example_net",
+      "url": "https://pub.dev/packages/example_net"
     }
   ]
 }

@@ -51,6 +51,7 @@ Plugins, run in the app root:
                and write lib/devpul/plugins.dart. <plugin> is a registry
                name, a git URL, a plugin.json URL or a folder. @version takes
                a pub version constraint, #ref a git branch, tag or commit.
+               A registry name for a pub package, such as dio, runs pub add.
     --path     the plugin folder in a git repository
     --yes      run the pub add a plugin needs without asking
   remove       delete a plugin's folder and lock entry

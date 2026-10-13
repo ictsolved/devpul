@@ -4,12 +4,16 @@ import 'package:pub_semver/pub_semver.dart';
 
 import 'manifest.dart';
 
-/// A plugin listed in `registry.json`, at its latest version.
+/// A plugin listed in `registry.json`, at its latest version. [package] is
+/// set for a pub package listed under a plugin id, which `add` adds with pub
+/// and prints [usage] for.
 typedef RegistryEntry = ({
   String id,
   Version version,
   String url,
   String? path,
+  String? package,
+  List<String> usage,
 });
 
 /// The CLI reads where each plugin lives; the rest of an entry is for the
@@ -38,6 +42,14 @@ Map<String, RegistryEntry> parseRegistry(String text) {
             path: switch (plugin['path']) {
               final String path when isPluginPath(path) => path,
               _ => null,
+            },
+            package: switch (plugin['package']) {
+              final String package when isPackageName(package) => package,
+              _ => null,
+            },
+            usage: switch (plugin['usage']) {
+              final List<Object?> usage => usage.whereType<String>().toList(),
+              _ => const [],
             },
           ),
   };

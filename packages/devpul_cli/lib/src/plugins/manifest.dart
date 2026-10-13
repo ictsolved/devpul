@@ -11,6 +11,10 @@ final _segment = RegExp(r'^[A-Za-z0-9_][A-Za-z0-9._-]*$');
 /// A lowercase letter, then up to 31 lowercase letters, digits or `_`.
 bool isPluginId(String id) => _id.hasMatch(id);
 
+bool isPackageName(String name) => _package.hasMatch(name);
+
+bool isTag(String tag) => _tag.hasMatch(tag);
+
 /// Relative, `/` separated, with no empty, `.`, `..` or hidden segments.
 bool isPluginPath(String path) => path.split('/').every(_segment.hasMatch);
 
@@ -116,7 +120,7 @@ final class Manifest {
     final tags = strings('tags', required: false) ?? const [];
     if (tags.length > 5) problem('tags', 'at most 5');
     for (final tag in tags) {
-      if (!_tag.hasMatch(tag)) {
+      if (!isTag(tag)) {
         problem('tags', '"$tag": up to 20 lowercase letters, digits or -');
       }
     }

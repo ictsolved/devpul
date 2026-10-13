@@ -1,0 +1,14 @@
+[
+  {
+    "id": "dio",
+    "package": "devpul_dio",
+    "tags": ["network", "dio"],
+    "usage": ["dio.interceptors.add(DevpulDioInterceptor())"]
+  },
+  {
+    "id": "http",
+    "package": "devpul_http",
+    "tags": ["network", "http"],
+    "usage": ["final client = DevpulClient();"]
+  }
+]
