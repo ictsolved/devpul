@@ -45,7 +45,13 @@ Devpul.log('Retrying', level: 'warn', name: 'sync');
 Devpul.log('Sync failed', level: 'error', name: 'sync', error: e, stack: s);
 ```
 
-`level` is free-form; `debug`, `info`, `warn` and `error` get colors. To forward `package:logging`:
+`level` is free-form; `debug`, `info`, `warn` and `error` get colors. Any value logs as its `toString()`. A closure is called only when DevPul is enabled, so a costly message is not built in other builds:
+
+```dart
+Devpul.log(() => 'Cart: ${cart.items}', name: 'cart');
+```
+
+To forward `package:logging`:
 
 ```dart
 Logger.root.onRecord.listen(

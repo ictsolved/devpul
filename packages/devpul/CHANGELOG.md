@@ -11,6 +11,7 @@
 - `Devpul.plugin` offers a browser plugin to the UI under its plugin id; the handshake lists its origin, description and the SHA-256 of its source.
 - `Devpul.included`: true in debug builds and in native profile builds compiled with `--dart-define=DEVPUL_PROFILE=true`, false in every other build.
 - `Devpul.handle` answers plugin requests through `ext.devpul.call`. A `writes: true` handler runs only while Allow writes is on in the UI.
+- `Devpul.log` takes any object: a closure is called only when DevPul is enabled, other values log their `toString()`.
 
 ## 0.2.0
 

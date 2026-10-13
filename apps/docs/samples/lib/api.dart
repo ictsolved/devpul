@@ -30,6 +30,10 @@ void logs(Object e, StackTrace s) {
   Devpul.log('Sync failed', level: 'error', name: 'sync', error: e, stack: s);
 }
 
+void lazyLog() {
+  Devpul.log(() => 'Cart: ${cart.items}', name: 'cart');
+}
+
 void logging() {
   Logger.root.onRecord.listen(
     (r) => Devpul.log(

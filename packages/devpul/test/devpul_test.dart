@@ -118,6 +118,22 @@ void main() {
     expect(events[1].$2.containsKey('name'), isFalse);
   });
 
+  test('log sends toString, calls a closure and catches its throw', () {
+    Devpul.log(42);
+    Devpul.log(null);
+    Devpul.log(() => 'built');
+    Devpul.log(() => throw StateError('x'), level: 'warn');
+    expect(events.map((e) => e.$2['message']), [
+      '42',
+      'null',
+      'built',
+      'Devpul.log message threw',
+    ]);
+    expect(events[3].$2['level'], 'warn');
+    expect(events[3].$2['error'], 'Bad state: x');
+    expect(events[3].$2['stack'], isA<String>());
+  });
+
   test('info reports protocol, version, actions, plugins and limits', () async {
     Devpul.action('Clear cache', (_) => 3);
     Devpul.plugin(
@@ -256,6 +272,7 @@ void main() {
     Devpul.emit('custom', {});
     Devpul.error('x', null);
     Devpul.log('x');
+    Devpul.log(() => fail('called while disabled'));
     Devpul.action('x', (_) => null);
     Devpul.handle('x.y', (_) => null);
     expect(events, isEmpty);

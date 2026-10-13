@@ -123,19 +123,29 @@ abstract final class Devpul {
     emit('app.session', info);
   }
 
-  /// Shows in the Logs tab. [level] is free-form; debug, info, warn and
-  /// error get colors.
+  /// Shows in the Logs tab as the [message]'s `toString()`. A closure such as
+  /// `() => 'Cart: $cart'` is called only when DevPul is enabled. [level] is
+  /// free-form; debug, info, warn and error get colors.
   static void log(
-    String message, {
+    Object? message, {
     String level = 'info',
     String? name,
     Object? error,
     StackTrace? stack,
   }) {
     if (!enabled) return;
+    String text;
+    try {
+      text = '${message is Object? Function() ? message() : message}';
+    } catch (e, s) {
+      // Release builds never call it, so a throw must not reach the app here.
+      text = 'Devpul.log message threw';
+      error = e;
+      stack = s;
+    }
     emit('log', {
       'level': level,
-      'message': message,
+      'message': text,
       'name': ?name,
       if (error != null) 'error': error.toString(),
       if (stack != null) 'stack': stack.toString(),
