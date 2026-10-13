@@ -2,4 +2,4 @@
 library;
 
 export 'src/hooks.dart';
-export 'src/navigator.dart';
+export 'src/navigator.dart' show DevpulNavigatorObserver;

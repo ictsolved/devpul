@@ -32,7 +32,7 @@ test('connects from a #connect= link and shows the fixture events in each tab', 
   for (const kind of ['cart.updated', 'big', 'route']) {
     await expect(events.getByRole('row', { name: new RegExp(kind) }).first()).toBeVisible();
   }
-  await expect(events.getByRole('row', { name: /route/ })).toHaveCount(4);
+  await expect(events.getByRole('row', { name: /route/ })).toHaveCount(5);
 });
 
 test('shows developer.log records and reads a cut message in full', async ({ page, vm }) => {

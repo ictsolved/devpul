@@ -39,17 +39,17 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 
 ## Kinds
 
-| Kind            | `data`                                                                                        |
-| --------------- | --------------------------------------------------------------------------------------------- |
-| `http.request`  | `id`, `method`, `url`, `params`, `headers`, `body`, `curl`                                    |
-| `http.response` | `id`, `method`, `url`, `status`, `statusMessage`, `finalUrl`, `durationMs`, `headers`, `body` |
-| `http.error`    | `id`, `method`, `url`, `status`, `errorType`, `message`, `durationMs`, `headers`, `body`      |
-| `app.session`   | free-form                                                                                     |
-| `app.info`      | the handshake, below; posted when actions, plugins or limits change                           |
-| `error`         | `source`, `type`, `message`, `library`, `context`, `information`, `silent`, `stack`           |
-| `log`           | `level`, `message`, `name`, `error`, `stack`                                                  |
-| `route`         | `action` (`push`, `pop`, `replace`, `remove`), `route`, `previous`, `arguments`               |
-| anything else   | custom, shown in Events or a plugin tab                                                       |
+| Kind            | `data`                                                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `http.request`  | `id`, `method`, `url`, `params`, `headers`, `body`, `curl`                                                                           |
+| `http.response` | `id`, `method`, `url`, `status`, `statusMessage`, `finalUrl`, `durationMs`, `headers`, `body`                                        |
+| `http.error`    | `id`, `method`, `url`, `status`, `errorType`, `message`, `durationMs`, `headers`, `body`                                             |
+| `app.session`   | free-form                                                                                                                            |
+| `app.info`      | the handshake, below; posted when actions, plugins or limits change                                                                  |
+| `error`         | `source`, `type`, `message`, `library`, `context`, `information`, `widget`, `location` (`file`, `line`, `column`), `silent`, `stack` |
+| `log`           | `level`, `message`, `name`, `error`, `stack`                                                                                         |
+| `route`         | `action` (`push`, `pop`, `replace`, `remove`), `route`, `previous`, `arguments`                                                      |
+| anything else   | custom, shown in Events or a plugin tab                                                                                              |
 
 HTTP events pair on `session` + `id`. A response may arrive before its request; the UI pairs them either way. `finalUrl` is present only when a redirect ended somewhere else.
 

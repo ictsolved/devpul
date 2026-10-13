@@ -43,7 +43,15 @@ describe('contract', () => {
     expect(store.httpRows[2]?.size).toBe(11);
     expect(store.errors.map((e) => e.data.source)).toEqual(['flutter', 'zone']);
     expect(store.logs).toHaveLength(2);
-    expect(store.other.map((e) => e.kind)).toEqual(['route', 'route', 'route', 'route', 'big', 'cart.updated']);
+    expect(store.other.map((e) => e.kind)).toEqual([
+      'route',
+      'route',
+      'route',
+      'route',
+      'route',
+      'big',
+      'cart.updated',
+    ]);
     expect([...store.tags.get('env')!]).toEqual(['dev']);
     const run = [...store.runs.values()][0];
     expect(run?.session?.data.name).toBe('Shop');

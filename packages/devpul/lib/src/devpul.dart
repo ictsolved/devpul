@@ -145,6 +145,8 @@ abstract final class Devpul {
     String? library,
     String? context,
     String? information,
+    String? widget,
+    ({String file, int line, int column})? location,
     bool silent = false,
   }) {
     if (!enabled) return;
@@ -165,6 +167,13 @@ abstract final class Devpul {
         'library': library,
         'context': context,
         'information': information,
+        'widget': ?widget,
+        if (location != null)
+          'location': {
+            'file': location.file,
+            'line': location.line,
+            'column': location.column,
+          },
         if (silent) 'silent': true,
         'stack': stack?.toString(),
       });

@@ -76,11 +76,26 @@ void main() {
     expect(event['stack'], isA<String>());
   });
 
-  test('error carries diagnostics and the silent flag', () {
-    Devpul.error('x', null, information: 'widget: Foo', silent: true);
+  test('error carries diagnostics, the widget and the silent flag', () {
+    Devpul.error(
+      'x',
+      null,
+      information: 'widget: Foo',
+      widget: 'Foo',
+      location: (file: 'file:///app/lib/foo.dart', line: 3, column: 7),
+      silent: true,
+    );
     Devpul.error('y', null);
     expect(events[0].$2['information'], 'widget: Foo');
+    expect(events[0].$2['widget'], 'Foo');
+    expect(events[0].$2['location'], {
+      'file': 'file:///app/lib/foo.dart',
+      'line': 3,
+      'column': 7,
+    });
     expect(events[0].$2['silent'], isTrue);
+    expect(events[1].$2.keys, isNot(contains('widget')));
+    expect(events[1].$2.keys, isNot(contains('location')));
     expect(events[1].$2.containsKey('silent'), isFalse);
   });
 

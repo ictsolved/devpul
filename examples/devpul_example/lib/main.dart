@@ -378,6 +378,12 @@ class _HomePageState extends State<HomePage> {
     ('Open page', () => context.go('/details/42?tab=info')),
     ('Flutter error', () => throw StateError('Button handler failed')),
     (
+      'Build error',
+      () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const ReceiptPage())),
+    ),
+    (
       'Async error',
       () => Future<void>.delayed(
         Duration.zero,
@@ -424,4 +430,22 @@ class _HomePageState extends State<HomePage> {
       ],
     ),
   );
+}
+
+class ReceiptPage extends StatelessWidget {
+  const ReceiptPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Receipt')),
+    body: const ReceiptTotal(),
+  );
+}
+
+class ReceiptTotal extends StatelessWidget {
+  const ReceiptTotal({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      throw StateError('Receipt has no total');
 }

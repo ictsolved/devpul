@@ -1,5 +1,10 @@
 import 'package:devpul/devpul.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
+
+import 'inspector.dart';
+import 'navigator.dart';
 
 /// Reports Flutter framework errors and uncaught platform errors to DevPul.
 abstract final class DevpulFlutter {
@@ -13,15 +18,7 @@ abstract final class DevpulFlutter {
 
     final flutterPrevious = FlutterError.onError;
     FlutterError.onError = (details) {
-      Devpul.error(
-        details.exception,
-        details.stack,
-        source: 'flutter',
-        library: details.library,
-        context: details.context?.toDescription(),
-        information: _information(details),
-        silent: details.silent,
-      );
+      _report(details);
       flutterPrevious?.call(details);
     };
 
@@ -46,15 +43,55 @@ abstract final class DevpulFlutter {
     };
   }
 
-  // The "relevant error-causing widget" and similar notes.
-  static String? _information(FlutterErrorDetails details) {
-    final collect = details.informationCollector;
-    if (collect == null) return null;
+  static void _report(FlutterErrorDetails details) {
+    var nodes = const <DiagnosticsNode>[];
+    Element? creator;
+    Element? widget;
     try {
-      final text = collect()
-          .map((n) => n.toStringDeep().trimRight())
-          .join('\n');
-      return text.isEmpty ? null : text;
+      nodes = details.informationCollector?.call().toList() ?? const [];
+      for (final node in nodes) {
+        if (node is DiagnosticsDebugCreator && creationTracked) {
+          creator = (node.value! as DebugCreator).element;
+          widget = localAncestor(creator);
+          break;
+        }
+      }
+    } catch (_) {
+      // Diagnostics are best effort; the error still goes out.
+    }
+    // A route pushed in this frame goes out before an error in its build.
+    flushRoutes(creator);
+    Devpul.error(
+      details.exception,
+      details.stack,
+      source: 'flutter',
+      library: details.library,
+      context: details.context?.toDescription(),
+      information: _information(nodes),
+      widget: widget?.widget.runtimeType.toString(),
+      location: widget == null ? null : _location(widget),
+      silent: details.silent,
+    );
+  }
+
+  static ({String file, int line, int column})? _location(Element element) {
+    try {
+      return creationLocation(element);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // The "relevant error-causing widget" and similar notes, as the console
+  // prints them.
+  static String? _information(List<DiagnosticsNode> nodes) {
+    try {
+      Iterable<DiagnosticsNode> shown = nodes;
+      for (final transform in FlutterErrorDetails.propertiesTransformers) {
+        shown = transform(shown);
+      }
+      final text = shown.map((n) => n.toStringDeep().trimRight()).join('\n');
+      return text.trim().isEmpty ? null : text.trim();
     } catch (_) {
       return null;
     }
