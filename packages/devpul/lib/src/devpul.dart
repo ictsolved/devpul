@@ -78,6 +78,10 @@ abstract final class Devpul {
 
   static bool get enabled => included && _config.enabled;
 
+  /// The screen the app shows, called for each error and sent with it as
+  /// `route`. `DevpulNavigatorObserver` sets it unless it is set.
+  static String? Function()? route;
+
   // Random per isolate, so ids stay unique across hot restarts and isolates.
   static final String _session = _randomId();
   static int _seq = 0;
@@ -168,6 +172,7 @@ abstract final class Devpul {
         'context': context,
         'information': information,
         'widget': ?widget,
+        'route': ?_route(),
         if (location != null)
           'location': {
             'file': location.file,
@@ -179,6 +184,14 @@ abstract final class Devpul {
       });
     } catch (_) {
       // Tooling errors must never reach the app.
+    }
+  }
+
+  static String? _route() {
+    try {
+      return route?.call();
+    } catch (_) {
+      return null;
     }
   }
 

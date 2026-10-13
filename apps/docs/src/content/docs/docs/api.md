@@ -75,6 +75,8 @@ try {
 
 `source` groups errors in the UI. `library`, `context`, `information`, `widget` and `location` add detail; `silent: true` marks errors that are expected noise. `DevpulFlutter.install()` reports Flutter and uncaught errors for you.
 
+Each error also carries `route`, the result of `Devpul.route`, a function that returns the screen the app shows. `DevpulNavigatorObserver` sets it unless the app already has.
+
 ## Actions
 
 ```dart

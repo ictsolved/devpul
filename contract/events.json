@@ -133,6 +133,7 @@
         "library": "sync",
         "context": "while syncing",
         "information": "widget: Cart",
+        "route": "/cart",
         "silent": true,
         "stack": "#0      main (file:///app.dart:1:1)"
       }

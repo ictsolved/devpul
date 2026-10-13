@@ -133,6 +133,7 @@
         "library": "sync",
         "context": "while syncing",
         "information": "widget: Cart",
+        "route": "/cart",
         "silent": true,
         "stack": "#0      main (file:///app.dart:1:1)"
       }
@@ -409,6 +410,7 @@
         "context": "during layout",
         "information": "The relevant error-causing widget was:\n  Cart\n  Cart:file:///app/test/contract_test.dart:48:64",
         "widget": "Cart",
+        "route": "Cart",
         "location": {
           "file": "file:///app/test/contract_test.dart",
           "line": 48,

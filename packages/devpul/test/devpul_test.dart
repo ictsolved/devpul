@@ -99,6 +99,15 @@ void main() {
     expect(events[1].$2.containsKey('silent'), isFalse);
   });
 
+  test('error carries the current route', () {
+    Devpul.route = () => '/cart';
+    Devpul.error('x', null);
+    Devpul.route = null;
+    Devpul.error('y', null);
+    expect(events[0].$2['route'], '/cart');
+    expect(events[1].$2.keys, isNot(contains('route')));
+  });
+
   test('log emits level, name and error text', () {
     Devpul.log('signed in', name: 'auth');
     Devpul.log('failed', level: 'error', error: StateError('x'));

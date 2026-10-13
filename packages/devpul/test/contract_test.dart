@@ -46,6 +46,7 @@ void main() {
       error: const FormatException('bad'),
       stack: stack,
     );
+    Devpul.route = () => '/cart';
     Devpul.error(
       StateError('boom'),
       stack,
@@ -55,6 +56,7 @@ void main() {
       information: 'widget: Cart',
       silent: true,
     );
+    Devpul.route = null;
 
     DevpulHttp.request(
       method: 'post',

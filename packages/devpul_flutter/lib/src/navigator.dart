@@ -9,13 +9,15 @@ import 'routes_plugin.dart';
 /// the UI a Routes tab that shows the stack after each one.
 ///
 /// A route without a name shows its screen widget, such as `HomePage`, when
-/// widget creation is tracked (debug default), else its type.
+/// widget creation is tracked (debug default), else its type. The top route
+/// goes out with each error as `route`.
 ///
 /// ```dart
 /// MaterialApp(navigatorObservers: [DevpulNavigatorObserver()])
 /// ```
 class DevpulNavigatorObserver extends NavigatorObserver {
   DevpulNavigatorObserver() {
+    Devpul.route ??= _top;
     if (_offered) return;
     _offered = true;
     Devpul.plugin(
@@ -50,6 +52,7 @@ typedef _Change = (String action, Route<dynamic> route, Route<dynamic>? other);
 
 // Shared by every observer so nested navigators keep their order.
 final _pending = <_Change>[];
+final _stack = <Route<dynamic>>[];
 final _names = Expando<String>();
 var _scheduled = false;
 
@@ -86,6 +89,33 @@ void flushRoutes([Element? building]) {
       if (route.settings.arguments != null)
         'arguments': route.settings.arguments,
     });
+    _track(action, route, other);
+  }
+}
+
+// The stack the Routes tab shows, across navigators. A navigator disposed
+// with its routes, such as a shell's, sends no pops; its routes go inactive.
+String? _top() {
+  for (final route in _stack.reversed) {
+    if (route.isActive) return _names[route];
+  }
+  return null;
+}
+
+void _track(String action, Route<dynamic> route, Route<dynamic>? other) {
+  _stack.removeWhere((r) => !r.isActive);
+  switch (action) {
+    case 'push':
+      _stack.add(route);
+    case 'pop' || 'remove':
+      _stack.remove(route);
+    case 'replace':
+      final i = other == null ? -1 : _stack.indexOf(other);
+      if (i < 0) {
+        _stack.add(route);
+      } else {
+        _stack[i] = route;
+      }
   }
 }
 

@@ -94,8 +94,10 @@ void main() {
     );
     unawaited(key.currentState!.pushNamed('/cart', arguments: {'id': 3}));
     await tester.pumpAndSettle();
+    expect(Devpul.route?.call(), '/cart');
     key.currentState!.pop();
     await tester.pumpAndSettle();
+    expect(Devpul.route?.call(), '/');
 
     final routes = events.where((e) => e.$1 == 'route').map((e) => e.$2);
     expect(routes.map((e) => [e['action'], e['route'], e['previous']]), [
@@ -115,5 +117,42 @@ void main() {
       },
     ]);
     expect(debugPluginSource('routes'), contains("id: 'routes'"));
+  });
+
+  testWidgets('the route at an error skips a disposed nested navigator', (
+    tester,
+  ) async {
+    Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
+    final key = GlobalKey<NavigatorState>();
+    final inner = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      WidgetsApp(
+        navigatorKey: key,
+        color: const Color(0xFF000000),
+        navigatorObservers: [DevpulNavigatorObserver()],
+        onGenerateRoute: (settings) => PageRouteBuilder<void>(
+          settings: settings,
+          pageBuilder: (_, _, _) => settings.name == '/shell'
+              ? Navigator(
+                  key: inner,
+                  observers: [DevpulNavigatorObserver()],
+                  onGenerateRoute: (settings) => PageRouteBuilder<void>(
+                    settings: RouteSettings(name: '/shell${settings.name}'),
+                    pageBuilder: (_, _, _) => const SizedBox(),
+                  ),
+                )
+              : const SizedBox(),
+        ),
+      ),
+    );
+    unawaited(key.currentState!.pushNamed('/shell'));
+    await tester.pumpAndSettle();
+    unawaited(inner.currentState!.pushNamed('/items'));
+    await tester.pumpAndSettle();
+    expect(Devpul.route?.call(), '/shell/items');
+
+    key.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(Devpul.route?.call(), '/');
   });
 }
