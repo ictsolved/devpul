@@ -1,0 +1,19 @@
+environment:
+  sdk: ^3.8.0
+package:devpul_dio/devpul_dio.dart:
+  DevpulDioInterceptor (class extends Interceptor):
+    new (constructor: DevpulDioInterceptor Function())
+    onError (method: void Function(DioException, ErrorInterceptorHandler))
+    onRequest (method: void Function(RequestOptions, RequestInterceptorHandler))
+    onResponse (method: void Function(Response<dynamic>, ResponseInterceptorHandler))
+package:dio/src/dio_exception.dart:
+  DioException (referenced)
+package:dio/src/dio_mixin.dart:
+  ErrorInterceptorHandler (referenced)
+  Interceptor (referenced)
+  RequestInterceptorHandler (referenced)
+  ResponseInterceptorHandler (referenced)
+package:dio/src/options.dart:
+  RequestOptions (referenced)
+package:dio/src/response.dart:
+  Response (referenced)

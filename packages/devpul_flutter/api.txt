@@ -1,0 +1,23 @@
+environment:
+  flutter: >=3.32.0
+  sdk: ^3.8.0
+package:devpul_flutter/devpul_flutter.dart:
+  DevpulApp (class extends Object, abstract, final):
+    builder (static method: Widget Function(BuildContext, Widget?))
+  DevpulFlutter (class extends Object, abstract, final):
+    captureDebugPrint (static method: void Function())
+    install (static method: void Function())
+  DevpulNavigatorObserver (class extends NavigatorObserver):
+    new (constructor: DevpulNavigatorObserver Function())
+    didPop (method: void Function(Route<dynamic>, Route<dynamic>?))
+    didPush (method: void Function(Route<dynamic>, Route<dynamic>?))
+    didRemove (method: void Function(Route<dynamic>, Route<dynamic>?))
+    didReplace (method: void Function({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}))
+dart:core:
+  Object (referenced)
+package:flutter/src/widgets/framework.dart:
+  BuildContext (referenced)
+  Widget (referenced)
+package:flutter/src/widgets/navigator.dart:
+  NavigatorObserver (referenced)
+  Route (referenced)

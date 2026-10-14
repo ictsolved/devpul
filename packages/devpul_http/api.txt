@@ -1,0 +1,17 @@
+environment:
+  sdk: ^3.8.0
+package:devpul_http/devpul_http.dart:
+  DevpulClient (class extends BaseClient):
+    new (constructor: DevpulClient Function([Client?]))
+    close (method: void Function())
+    send (method: Future<StreamedResponse> Function(BaseRequest))
+dart:async:
+  Future (referenced)
+package:http/src/base_client.dart:
+  BaseClient (referenced)
+package:http/src/base_request.dart:
+  BaseRequest (referenced)
+package:http/src/client.dart:
+  Client (referenced)
+package:http/src/streamed_response.dart:
+  StreamedResponse (referenced)
