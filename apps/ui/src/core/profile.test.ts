@@ -34,6 +34,13 @@ const full = (ref: JsonObject) => fixture.requests.find((r) => r.id === ref.id)!
 const ISO = 'isolates/1';
 const ids = { conn: 'c1', run: 'c1|isolateGroups/1', isolate: 'main', isolateId: ISO, n: 1 };
 const bytes = (text: string) => [...new TextEncoder().encode(text)];
+const typed = (type: string, length: number) => ({
+  ...items,
+  response: {
+    ...(items.response as JsonObject),
+    headers: { 'content-type': [type], 'content-length': [String(length)] },
+  },
+});
 
 describe('profile entries', () => {
   it('maps a request and its response as the adapters send them', () => {
@@ -111,6 +118,17 @@ describe('profile entries', () => {
     expect(profileBody([0xff, 0xfe, 0x00])).toBe('<3 bytes>');
     const long = profileBody(bytes('x'.repeat(1024 * 1024 + 1)));
     expect(long).toEqual({ 'devpul.truncated': { size: 1024 * 1024 + 1, preview: 'x'.repeat(1024 * 1024) } });
+  });
+
+  it('reads images as data URLs while they fit', () => {
+    expect(profileBody([71, 73, 70], 'image/gif')).toBe('data:image/gif;base64,R0lG');
+    expect(profileBody(bytes('<svg/>'), 'image/svg+xml')).toBe('<svg/>');
+    expect(
+      profileBody(
+        Array.from({ length: 786_430 }, () => 0),
+        'image/png',
+      ),
+    ).toBe('<786430 bytes>');
   });
 });
 
@@ -251,18 +269,22 @@ describe('HttpProfiler', () => {
   });
 
   it('counts a body it does not read', async () => {
-    const image = {
-      ...items,
-      response: {
-        ...(items.response as JsonObject),
-        headers: { 'content-type': ['image/png'], 'content-length': ['2048'] },
-      },
-    };
-    const vm = app(() => [image]);
+    const vm = app(() => [typed('application/octet-stream', 2048), { ...typed('image/png', 2_000_000), id: '9' }]);
     start(vm);
     profiler.setOn(true);
     await tick();
-    expect(events[1]?.data.body).toBe('<2048 bytes>');
+    expect(events.filter((e) => e.kind === 'http.response').map((e) => e.data.body)).toEqual([
+      '<2048 bytes>',
+      '<2000000 bytes>',
+    ]);
     expect(vm.calls.some((c) => c.method === 'ext.dart.io.getHttpProfileRequest')).toBe(false);
+  });
+
+  it('reads an image body that fits', async () => {
+    const vm = app(() => [typed('image/png', 2048)]);
+    start(vm);
+    profiler.setOn(true);
+    await tick();
+    expect(events[1]?.data.body).toMatch(/^data:image\/png;base64,/);
   });
 });

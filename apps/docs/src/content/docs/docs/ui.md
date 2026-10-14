@@ -47,7 +47,7 @@ Click a column header in HTTP to sort by it; click again to flip the direction. 
 
 ## Details
 
-Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch between **Tree** and **Raw** in the header. The choice holds for every detail that shows JSON: HTTP bodies, Events, and plugin events the plugin does not render. Copy the URL, any section, a curl command or a `fetch()` call for the browser console. A JWT in a bearer `Authorization` header shows decoded under **Bearer token**: claims, with `exp`, `iat` and `nbf` as times and how long before or after the request it expires, and the header. The signature is not checked.
+Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch between **Tree** and **Raw** in the header. The choice holds for every detail that shows JSON: HTTP bodies, Events, and plugin events the plugin does not render. Copy the URL, any section, a curl command or a `fetch()` call for the browser console. A JWT in a bearer `Authorization` header shows decoded under **Bearer token**: claims, with `exp`, `iat` and `nbf` as times and how long before or after the request it expires, and the header. The signature is not checked. Image bodies show as a preview with their type, dimensions and size, and so do SVG bodies sent as text. In Tree view, `data:` image strings anywhere in the JSON show as thumbnails; click one to enlarge it.
 
 <img class="dark:sl-hidden" src="/screenshots/errors-light.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and what happened before it" width="1440" height="900" loading="lazy" />
 <img class="light:sl-hidden" src="/screenshots/errors-dark.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and what happened before it" width="1440" height="900" loading="lazy" />
@@ -60,7 +60,7 @@ Calls through dart:io's `HttpClient` can show with no adapter: `package:http`'s 
 
 - These rows show `dart:io` in the `#` column and in the detail; type `dart:io` in the filter to list them.
 - A request an adapter reported shows once, from the adapter. A followed redirect is one row with the URL it ended at.
-- A request shows once its response headers arrive or it fails. Bodies that are not text show their size.
+- A request shows once its response headers arrive or it fails. Images up to about 768 KB show as previews; other bodies that are not text show their size.
 - The app's ignore and redact rules do not apply.
 - Clients that record into `package:http_profile` show the same way.
 - Flutter web has no dart:io and shows no globe.

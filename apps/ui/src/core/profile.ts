@@ -1,4 +1,5 @@
 import { type DevEvent, type IsolateRef, isObject, type Json, type JsonObject, num, str, TRUNCATED } from './events';
+import { dataUrl, dataUrlLength, imageType } from './image';
 
 /** `data.source` of a request read from dart:io's HTTP profile, with no adapter in the app. */
 export const DART_IO = 'dart:io';
@@ -106,9 +107,20 @@ function params(url: string): JsonObject {
 
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
-/** Profile body bytes as the adapters send a body: JSON parsed, text as is, anything else as its size. */
-export function profileBody(bytes: unknown): Json {
+const binaryImage = (type: string | undefined) => (type && !TEXT.test(type) ? imageType(type) : undefined);
+// The adapters send an image whole within their `maxValueLength`.
+const fits = (image: string, bytes: number) => dataUrlLength(image, bytes) + 2 <= MAX_BODY;
+
+/**
+ * Profile body bytes as the adapters send a body: JSON parsed, text as is,
+ * an image as a `data:` URL, anything else as its size.
+ */
+export function profileBody(bytes: unknown, type?: string): Json {
   if (!Array.isArray(bytes) || !bytes.length) return null;
+  const image = binaryImage(type);
+  if (image) {
+    return fits(image, bytes.length) ? dataUrl(image, Uint8Array.from(bytes as number[])) : `<${bytes.length} bytes>`;
+  }
   let text: string;
   try {
     text = decoder.decode(Uint8Array.from(bytes as number[]));
@@ -167,7 +179,7 @@ export function requestEvent(ref: JsonObject, full: JsonObject | undefined, ids:
       url,
       params: params(url),
       headers: headers(obj(ref.request)?.headers),
-      body: noBody(method) ? null : profileBody(full?.requestBody),
+      body: noBody(method) ? null : profileBody(full?.requestBody, header(obj(ref.request)?.headers, 'content-type')),
       source: DART_IO,
     },
     ids,
@@ -355,7 +367,10 @@ export class HttpProfiler {
     const length = Number(header(res?.headers, 'content-length') ?? NaN);
     const type = header(res?.headers, 'content-type');
     let body: Json = null;
-    if (wantEnd && res && type && !TEXT.test(type) && Number.isFinite(length)) body = `<${length} bytes>`;
+    if (wantEnd && res && type && !TEXT.test(type) && Number.isFinite(length)) {
+      const image = binaryImage(type);
+      if (!image || !fits(image, length)) body = `<${length} bytes>`;
+    }
     const readResponse = wantEnd && res !== undefined && body === null;
     const read = async (entry: JsonObject) => {
       try {
@@ -365,7 +380,7 @@ export class HttpProfiler {
       }
     };
     const full = (wantRequest && !noBody(method)) || (readResponse && source === ref) ? await read(ref) : undefined;
-    if (readResponse) body = profileBody((source === ref ? full : await read(source))?.responseBody);
+    if (readResponse) body = profileBody((source === ref ? full : await read(source))?.responseBody, type);
 
     const ids = () => ({
       conn: this.context.conn,

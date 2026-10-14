@@ -143,6 +143,44 @@ test('decodes a bearer JWT in HTTP detail', async ({ page, vm }) => {
   await expect(detail.getByRole('row', { name: /^alg HS256$/ })).toBeVisible();
 });
 
+test('previews image bodies and data image strings', async ({ page, vm }) => {
+  await connect(page, vm);
+  const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  const src = `data:image/png;base64,${png}`;
+  const ts = Date.UTC(2026, 9, 14, 9, 0, 0);
+  const post = (kind: string, seq: number, data: Record<string, unknown>) =>
+    vm.post({ kind: `devpul.${kind}`, data: { v: 1, session: 's2', seq, ts, data } });
+  post('http.request', 1, { id: 'img', method: 'GET', url: 'https://example.com/logo.png' });
+  post('http.response', 2, { id: 'img', method: 'GET', url: 'https://example.com/logo.png', status: 200, body: src });
+  post('profile.loaded', 3, { user: { name: 'Ada', avatar: src } });
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><rect width="12" height="8"/></svg>';
+  post('shape.drawn', 4, { shape: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}` });
+
+  await page.getByRole('row', { name: /example\.com\/logo\.png/ }).click();
+  const detail = page.getByRole('complementary', { name: 'Request detail' });
+  await expect(detail.getByRole('img', { name: 'image/png preview' })).toBeVisible();
+  await expect(detail).toContainText(`image/png · 1×1 · ${Buffer.from(png, 'base64').length} B`);
+
+  await page.getByRole('tab', { name: /^Events/ }).click();
+  await page
+    .getByRole('grid', { name: 'Events' })
+    .getByRole('row', { name: /profile\.loaded/ })
+    .click();
+  const event = page.getByRole('complementary', { name: 'Detail' });
+  await event.getByRole('group', { name: 'JSON view' }).getByRole('button', { name: 'Tree' }).click();
+  const thumb = event.getByRole('button', { name: 'Show larger' });
+  await expect(thumb.getByRole('img')).toBeVisible();
+  await thumb.click();
+  await expect(event.getByRole('button', { name: 'Show smaller' })).toHaveAttribute('aria-expanded', 'true');
+
+  // Another event's image starts small.
+  await page
+    .getByRole('grid', { name: 'Events' })
+    .getByRole('row', { name: /shape\.drawn/ })
+    .click();
+  await expect(event.getByRole('button', { name: 'Show larger' })).toContainText('image/svg+xml · 12×8');
+});
+
 test('reads requests from the dart:io HTTP profile only while its toggle is on', async ({ page, vm }) => {
   await connect(page, vm);
   const toggle = page.getByRole('button', { name: 'HTTP without an adapter' });

@@ -4,6 +4,7 @@ import { memo, useMemo, useState, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { isObject, type Json, TRUNCATED } from '../core/events';
 import { headerValue } from '../core/fetch';
+import { type DataImage, dataImage } from '../core/image';
 import { chunkLines, formatBytes, highlight, pretty } from '../core/json';
 import { load, save } from '../lib/storage';
 
@@ -100,10 +101,50 @@ function Truncated({ marker }: { marker: Json }) {
   );
 }
 
+// Transparent pixels show over a checkerboard.
+const checkerClass = 'bg-[repeating-conic-gradient(var(--color-muted)_0_25%,transparent_0_50%)] bg-size-[12px_12px]';
+
+interface PreviewProps {
+  image: DataImage;
+  small?: boolean;
+}
+
+// Keyed by source, so another event's image starts with fresh state.
+export const ImagePreview = (props: PreviewProps) => <Preview key={props.image.src} {...props} />;
+
+function Preview({ image, small }: PreviewProps) {
+  const [size, setSize] = useState<string>();
+  const [failed, setFailed] = useState(false);
+  const caption = [image.type, size, formatBytes(image.bytes)].filter(Boolean).join(' · ');
+  // Spans, so a preview can sit inside a button.
+  return (
+    <span className="block">
+      {failed ? (
+        <span className={cn('block', noteClass)}>Not a valid image.</span>
+      ) : (
+        <img
+          src={image.src}
+          alt={`${image.type} preview`}
+          onLoad={(e) => setSize(`${e.currentTarget.naturalWidth}×${e.currentTarget.naturalHeight}`)}
+          onError={() => setFailed(true)}
+          className={cn(
+            'block min-h-8 max-w-full min-w-8 rounded-sm border object-contain',
+            checkerClass,
+            small ? 'max-h-24' : 'max-h-80',
+          )}
+        />
+      )}
+      <span className="mt-0.5 block text-xs text-muted-foreground">{caption}</span>
+    </span>
+  );
+}
+
 function JsonViewInner({ value }: { value: unknown }) {
   const mode = useSyncExternalStore(subscribeBodyMode, getBodyMode);
   if (isEmptyValue(value)) return <div className="text-muted-foreground">empty</div>;
   if (isObject(value) && value[TRUNCATED] !== undefined) return <Truncated marker={value[TRUNCATED]} />;
+  const image = dataImage(value);
+  if (image) return <ImagePreview image={image} />;
   if (mode === 'tree' && (isObject(value) || Array.isArray(value))) {
     return (
       <div className={codeClass}>
@@ -195,7 +236,30 @@ function TreeNode(props: { name: string; value: Json; depth: number; open: boole
   );
 }
 
+// Enough of a data URL to show its type and start.
+const DATA_PREFIX = 48;
+
+function ImageLeaf({ image }: { image: DataImage }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <span className={jsonClass.str}>"{image.src.slice(0, DATA_PREFIX)}…"</span>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={open ? 'Show smaller' : 'Show larger'}
+        className="block cursor-zoom-in py-0.5 text-left aria-expanded:cursor-zoom-out"
+        onClick={() => setOpen(!open)}
+      >
+        <ImagePreview image={image} small={!open} />
+      </button>
+    </>
+  );
+}
+
 function Leaf({ value }: { value: Json }) {
+  const image = dataImage(value);
+  if (image) return <ImageLeaf key={image.src} image={image} />;
   if (typeof value === 'string') return <span className={jsonClass.str}>{JSON.stringify(value)}</span>;
   if (typeof value === 'number') return <span className={jsonClass.num}>{value}</span>;
   if (value === null || typeof value === 'boolean') return <span className={jsonClass.lit}>{String(value)}</span>;

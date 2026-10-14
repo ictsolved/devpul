@@ -1,4 +1,5 @@
 import { type DevEvent, isObject, type JsonObject, num, str, TRUNCATED } from './events';
+import { dataImage } from './image';
 import type { ProfileLookup } from './profile';
 
 export type HttpState = 'pending' | 'done' | 'error';
@@ -414,7 +415,7 @@ export function bodySize(data: JsonObject): number {
   if (body === undefined || body === null) return 0;
   if (typeof body === 'string') {
     const m = BYTES.exec(body);
-    return m ? Number(m[1]) : encoder.encode(body).length;
+    return m ? Number(m[1]) : (dataImage(body)?.bytes ?? encoder.encode(body).length);
   }
   if (isObject(body) && isObject(body[TRUNCATED]) && typeof body[TRUNCATED].size === 'number') {
     return body[TRUNCATED].size;

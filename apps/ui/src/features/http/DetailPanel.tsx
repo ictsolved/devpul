@@ -2,12 +2,13 @@ import { cn } from 'cn';
 import { SquareTerminal } from 'lucide-react';
 import { memo } from 'react';
 import { CopyButton } from '../../components/Copy';
-import { isEmptyValue, JsonModeToggle, JsonView, KeyValues, kvClass } from '../../components/JsonView';
+import { ImagePreview, isEmptyValue, JsonModeToggle, JsonView, KeyValues, kvClass } from '../../components/JsonView';
 import { BackButton, Detail } from '../../components/Panes';
 import { Section } from '../../components/Section';
 import { Tip } from '../../components/Tip';
 import { isObject, type JsonObject, str } from '../../core/events';
 import { toFetch } from '../../core/fetch';
+import { type DataImage, dataImage, svgImage } from '../../core/image';
 import { DART_IO } from '../../core/profile';
 import { formatBytes, formatDateTime, formatTime, pretty } from '../../core/json';
 import { bearerJwt, expiry, type Jwt, TIME_CLAIMS } from '../../core/jwt';
@@ -22,7 +23,9 @@ const count = (v: unknown): string | undefined => {
 const size = (v: unknown): string =>
   v === undefined || v === null
     ? 'empty'
-    : formatBytes(new TextEncoder().encode(typeof v === 'string' ? v : JSON.stringify(v)).length);
+    : formatBytes(
+        dataImage(v)?.bytes ?? new TextEncoder().encode(typeof v === 'string' ? v : JSON.stringify(v)).length,
+      );
 
 const breakClass = 'font-mono text-xs break-all';
 
@@ -85,7 +88,13 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
       <Part id="params" title="Params" value={req?.params} summary={count(req?.params)} table />
       <Part id="req-headers" title="Request headers" value={req?.headers} summary={count(req?.headers)} table />
       {jwt && <Token jwt={jwt} sentAt={row.ts} />}
-      <Part id="req-body" title="Request body" value={req?.body} summary={size(req?.body)} />
+      <Part
+        id="req-body"
+        title="Request body"
+        value={req?.body}
+        summary={size(req?.body)}
+        image={svgImage(req?.body, req?.headers)}
+      />
       <Part
         id="res-headers"
         title="Response headers"
@@ -98,13 +107,21 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
         title="Response body"
         value={end?.body}
         summary={end ? (row.size === undefined ? size(end.body) : formatBytes(row.size)) : 'pending'}
+        image={svgImage(end?.body, end?.headers)}
       />
     </Detail>
   );
 }
 
-function Part(props: { id: string; title: string; value: unknown; summary?: string; table?: boolean }) {
-  const { id, title, value, summary, table } = props;
+function Part(props: {
+  id: string;
+  title: string;
+  value: unknown;
+  summary?: string;
+  table?: boolean;
+  image?: DataImage;
+}) {
+  const { id, title, value, summary, table, image } = props;
   const empty = isEmptyValue(value);
   return (
     <Section
@@ -113,6 +130,11 @@ function Part(props: { id: string; title: string; value: unknown; summary?: stri
       summary={summary}
       actions={empty ? undefined : <CopyButton text={() => pretty(value)} />}
     >
+      {image && (
+        <div className="mb-1.5">
+          <ImagePreview image={image} />
+        </div>
+      )}
       {table ? <KeyValues value={value} /> : <JsonView value={value} />}
     </Section>
   );
