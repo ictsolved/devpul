@@ -11,6 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tip } from '../../components/Tip';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import type { DevEvent, Json } from '../../core/events';
@@ -58,12 +59,14 @@ export function ActionsMenu({ apps, onRun }: Props) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" size="xs" aria-label="Actions">
-            <MousePointerClick />
-            <span className="max-[560px]:hidden">Actions</span>
-          </Button>
-        </DropdownMenuTrigger>
+        <Tip content="Run code in the app">
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" aria-label="Actions">
+              <MousePointerClick />
+              Actions
+            </Button>
+          </DropdownMenuTrigger>
+        </Tip>
         <DropdownMenuContent
           align="end"
           className="min-w-50"

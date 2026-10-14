@@ -356,7 +356,8 @@ test('Clear keeps cleared events out after a reload', async ({ page, vm }) => {
 
 test('keeps settings and sets limits in the app', async ({ page, vm }) => {
   await connect(page, vm);
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
   const dialog = page.getByRole('dialog', { name: 'Settings' });
   await expect(dialog).toContainText(`In memory: ${vm.events.length} events`);
   await dialog.getByLabel('Amber from (ms)').fill('250');
@@ -370,7 +371,8 @@ test('keeps settings and sets limits in the app', async ({ page, vm }) => {
 
   await page.keyboard.press('Escape');
   await page.reload();
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
   await expect(page.getByRole('dialog').getByLabel('Amber from (ms)')).toHaveValue('250');
 });
 
@@ -670,9 +672,11 @@ test('runs as a DevTools extension', async ({ page, vm, context }) => {
   const ext = page.frameLocator('iframe');
   await expect(ext.getByRole('list', { name: 'Connections' })).toContainText('Shop');
   await expect(ext.getByRole('textbox', { name: 'VM service URL' })).toHaveCount(0);
-  await expect(ext.getByRole('button', { name: /^Theme/ })).toHaveCount(0);
   await expect(ext.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(ext.getByRole('link', { name: 'Help' })).toHaveAttribute('href', `${site.url}docs/help/`);
+  await ext.getByRole('button', { name: 'More' }).click();
+  await expect(ext.getByRole('menuitem', { name: 'Help' })).toHaveAttribute('href', `${site.url}docs/help/`);
+  await expect(ext.getByRole('menuitemradio')).toHaveCount(0);
+  await page.keyboard.press('Escape');
 
   const [popup] = await Promise.all([
     context.waitForEvent('page'),

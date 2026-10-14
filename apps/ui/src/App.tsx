@@ -1,8 +1,9 @@
 import { cn } from 'cn';
-import { AppWindow, CircleHelp, RotateCcw, Settings as SettingsIcon, Trash2, Zap } from 'lucide-react';
+import { RotateCcw, Settings as SettingsIcon, SquareArrowOutUpRight, Trash2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { copyText } from './components/Copy';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
+import { MoreMenu } from './components/MoreMenu';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Tip } from './components/Tip';
 import { Badge } from './components/ui/badge';
@@ -25,7 +26,7 @@ import { ActionsMenu, appActions, type RunAction } from './features/actions/Acti
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
 import { ErrorsTab } from './features/errors/ErrorsTab';
 import { EventsTab } from './features/events/EventsTab';
-import { ExportMenu } from './features/export/ExportMenu';
+import { ExportItems } from './features/export/ExportItems';
 import { Home } from './features/home/Home';
 import { HttpTab } from './features/http/HttpTab';
 import { LogsTab } from './features/logs/LogsTab';
@@ -53,7 +54,6 @@ let counter = 0;
 const nextN = () => ++counter;
 const localOrigin = isLoopback(location.hostname);
 const pageTitle = document.title;
-const LABEL = 'max-[560px]:hidden';
 // DevTools passes the connection; it is not stored, since its token dies with the run.
 const hostConnections = (url: string | null): ConnEntry[] => (url ? [{ id: crypto.randomUUID(), url }] : []);
 // Registered by `flutter run`, which reloads every device it runs.
@@ -595,27 +595,14 @@ export function App() {
     setSettingsOpen(true);
   };
 
-  const settingsButton = (
-    <Button
-      type="button"
-      // Ghost in the header, so the session controls under it carry the weight.
-      variant={showMain ? 'ghost' : 'outline'}
-      size={showMain ? 'sm' : 'icon-sm'}
-      onClick={openSettings}
-      aria-label="Settings"
-    >
-      <SettingsIcon />
-      {showMain && <span className={LABEL}>Settings</span>}
-    </Button>
-  );
   // This page's own loopback origin, which the VM service accepts; from Dart 3.14 it refuses the hosted site.
   const hostConn = devtools ? connections[0] : undefined;
   const windowButton = hostConn && (
-    <Tip content="Open DevPul in a window of its own, connected to this app">
+    <Tip content="Open in window">
       <Button
         type="button"
         variant={showMain ? 'ghost' : 'outline'}
-        size={showMain ? 'sm' : 'icon-sm'}
+        size="icon-sm"
         aria-label="Open in window"
         onClick={() =>
           window.open(
@@ -625,16 +612,19 @@ export function App() {
           )
         }
       >
-        <AppWindow />
-        {showMain && <span className={LABEL}>Open in window</span>}
+        <SquareArrowOutUpRight />
       </Button>
     </Tip>
   );
   const tools = (
     <>
       {windowButton}
-      <Tip content="Settings">{settingsButton}</Tip>
-      {!devtools && <ThemeToggle variant="outline" />}
+      <Tip content="Settings">
+        <Button type="button" variant="outline" size="icon-sm" onClick={openSettings} aria-label="Settings">
+          <SettingsIcon />
+        </Button>
+      </Tip>
+      {!devtools && <ThemeToggle />}
     </>
   );
 
@@ -646,23 +636,22 @@ export function App() {
             <Tip key={service} content={HOT[service].tip}>
               <Button
                 type="button"
-                variant="outline"
-                size="xs"
+                variant="ghost"
+                size="icon-sm"
                 aria-label={HOT[service].label}
                 onClick={() => runHot(service)}
               >
                 {service === 'reloadSources' ? <Zap /> : <RotateCcw />}
-                <span className={LABEL}>{HOT[service].label}</span>
               </Button>
             </Tip>
           ),
       )}
       <ActionsMenu apps={actions} onRun={runAction} />
-      <ExportMenu store={store} onOpenFile={() => fileRef.current?.click()} />
-      <Button type="button" variant="outline" size="xs" aria-label="Clear" onClick={clearAll}>
-        <Trash2 />
-        <span className={LABEL}>Clear</span>
-      </Button>
+      <Tip content="Clear">
+        <Button type="button" variant="ghost" size="icon-sm" aria-label="Clear" onClick={clearAll}>
+          <Trash2 />
+        </Button>
+      </Tip>
     </>
   );
 
@@ -714,18 +703,16 @@ export function App() {
               DevPul
             </a>
             {connectionBar(false)}
-            <nav className="col-start-3 row-start-1 flex gap-1.5 max-[860px]:col-start-2">
+            <nav className="col-start-3 row-start-1 flex gap-1 max-[860px]:col-start-2">
               {windowButton}
-              {settingsButton}
-              <Tip content="Help opens in a new tab. Press ? for shortcuts.">
-                <Button asChild variant="ghost" size="sm">
-                  <a href={pageUrl('docs/help/')} target="_blank" rel="noopener">
-                    <CircleHelp />
-                    <span className={LABEL}>Help</span>
-                  </a>
-                </Button>
-              </Tip>
-              {!devtools && <ThemeToggle variant="ghost" label />}
+              <MoreMenu
+                helpUrl={pageUrl('docs/help/')}
+                themes={!devtools}
+                onSettings={openSettings}
+                onShortcuts={() => setShortcutsOpen(true)}
+              >
+                <ExportItems store={store} onOpenFile={() => fileRef.current?.click()} />
+              </MoreMenu>
             </nav>
           </header>
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">

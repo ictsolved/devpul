@@ -1,12 +1,6 @@
-import { FileDown } from 'lucide-react';
+import { FileDown, FileJson, FolderOpen } from 'lucide-react';
 import { version } from '../../../package.json';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { toHar, toSession } from '../../core/export';
 import type { Store } from '../../core/store';
 import { download } from '../../lib/download';
@@ -18,24 +12,19 @@ interface Props {
   onOpenFile: () => void;
 }
 
-export function ExportMenu({ store, onOpenFile }: Props) {
+/** Export and import items for a menu. */
+export function ExportItems({ store, onOpenFile }: Props) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="xs" aria-label="Export">
-          <FileDown />
-          <span className="max-[560px]:hidden">Export</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-50">
-        <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>
-          HTTP as HAR
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}>
-          Session file (all events)
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={onOpenFile}>Open a session file</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.har`, toHar(store.httpRows, version))}>
+        <FileDown /> Export HTTP as HAR
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => download(`devpul-${stamp()}.devpul.json`, toSession(store.all))}>
+        <FileJson /> Export session file
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={onOpenFile}>
+        <FolderOpen /> Open a session file
+      </DropdownMenuItem>
+    </>
   );
 }
