@@ -120,9 +120,10 @@ test('shares the tree and raw switch across details and reloads', async ({ page,
   await expect(event).toContainText('"items": 3');
 });
 
+const part = (v: object) => Buffer.from(JSON.stringify(v)).toString('base64url');
+
 test('decodes a bearer JWT in HTTP detail', async ({ page, vm }) => {
   await connect(page, vm);
-  const part = (v: object) => Buffer.from(JSON.stringify(v)).toString('base64url');
   const ts = Date.UTC(2026, 9, 14, 9, 0, 0);
   const token = `${part({ alg: 'HS256', typ: 'JWT' })}.${part({ sub: 'user-42', exp: ts / 1000 - 300 })}.c2ln`;
   vm.post({
@@ -141,6 +142,71 @@ test('decodes a bearer JWT in HTTP detail', async ({ page, vm }) => {
   await expect(detail).toContainText('expired 5 min before the request');
   await expect(detail.getByRole('row', { name: /^sub user-42$/ })).toBeVisible();
   await expect(detail.getByRole('row', { name: /^alg HS256$/ })).toBeVisible();
+});
+
+test('decodes values in JSON trees and header tables', async ({ page, vm, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await connect(page, vm);
+  const ts = Date.UTC(2026, 9, 14, 9, 0, 0);
+  const token = `${part({ alg: 'HS256' })}.${part({ sub: 'user-42', exp: ts / 1000 })}.c2ln`;
+  const post = (kind: string, seq: number, data: Record<string, unknown>) =>
+    vm.post({ kind: `devpul.${kind}`, data: { v: 1, session: 's2', seq, ts, data } });
+  post('session.saved', 1, {
+    user: { token, prefs: '{"theme":"dark"}', note: Buffer.from('hello').toString('base64') },
+    created_at: ts,
+  });
+  post('http.request', 2, { id: 'dates', method: 'GET', url: 'https://example.com/dates' });
+  post('http.response', 3, {
+    id: 'dates',
+    method: 'GET',
+    url: 'https://example.com/dates',
+    status: 200,
+    headers: { 'last-modified': 'Wed, 14 Oct 2026 09:00:00 GMT', 'x-ratelimit-remaining': '9' },
+  });
+
+  await page.getByRole('tab', { name: /^Events/ }).click();
+  await page
+    .getByRole('grid', { name: 'Events' })
+    .getByRole('row', { name: /session\.saved/ })
+    .click();
+  const event = page.getByRole('complementary', { name: 'Detail' });
+  await event.getByRole('group', { name: 'JSON view' }).getByRole('button', { name: 'Tree' }).click();
+  await expect(event.getByText('created_at:')).toContainText('2026-10-14');
+
+  await event.getByRole('button', { name: 'JWT', exact: true }).click();
+  const jwt = event.getByRole('group', { name: 'Decoded as JWT' });
+  await expect(jwt).toContainText('sub: "user-42"');
+  await expect(jwt.getByText('exp:')).toContainText('2026-10-14');
+  await event.getByRole('button', { name: 'JWT', exact: true }).click();
+  await expect(jwt).toBeHidden();
+
+  await event.getByRole('button', { name: 'JSON', exact: true }).click();
+  await expect(event.getByRole('group', { name: 'Decoded as JSON' })).toContainText('theme: "dark"');
+
+  await event.getByText('note:').click({ button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Value' });
+  await menu.getByRole('menuitem', { name: 'Base64' }).click();
+  const base64 = event.getByRole('group', { name: 'Decoded as Base64' });
+  await expect(base64).toContainText('"hello"');
+  await base64.getByRole('button', { name: 'Close Base64' }).click();
+  await expect(base64).toBeHidden();
+
+  await event.getByText('note:').click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: 'JWT' }).click();
+  await expect(event.getByRole('group', { name: 'Decoded as JWT' })).toContainText('Not a signed JWT.');
+
+  await event.getByText('note:').hover();
+  await event.getByText('note:').getByRole('button', { name: 'Value menu' }).click();
+  await menu.getByRole('menuitem', { name: 'Copy path' }).click();
+  await expect(menu).toBeHidden();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('user.note');
+  await expect(event.getByText('note:').getByRole('button', { name: 'Value menu' })).toBeFocused();
+
+  await page.getByRole('tab', { name: /^HTTP/ }).click();
+  await page.getByRole('row', { name: /example\.com\/dates/ }).click();
+  const detail = page.getByRole('complementary', { name: 'Request detail' });
+  await expect(detail.getByRole('row', { name: /^last-modified/ })).toContainText('GMT2026-10-14');
+  await expect(detail.getByRole('row', { name: /^x-ratelimit-remaining/ })).toHaveText(/^x-ratelimit-remaining9/);
 });
 
 test('previews image bodies and data image strings', async ({ page, vm }) => {
@@ -322,7 +388,14 @@ test('offers the app plugin and loads it once allowed', async ({ page, vm }) => 
     .getByRole('grid', { name: 'Cart' })
     .getByRole('row', { name: /3 items/ })
     .click();
-  await expect(page.getByRole('complementary', { name: 'Detail' })).toContainText('42.5');
+  const detail = page.getByRole('complementary', { name: 'Detail' });
+  await expect(detail).toContainText('42.5');
+  await detail.getByText('42.5').click({ button: 'right' });
+  await page.getByRole('menu', { name: 'Value' }).getByRole('menuitem', { name: 'Timestamp' }).click();
+  const time = detail.getByRole('group', { name: 'Decoded as Timestamp' });
+  await expect(time).toContainText('(Unix seconds)');
+  await time.getByRole('button', { name: 'Close Timestamp' }).click();
+  await expect(time).toBeHidden();
   await page.getByRole('tab', { name: /^Events/ }).click();
   await expect(page.getByRole('grid', { name: 'Events' }).getByRole('row', { name: /cart\.updated/ })).toHaveCount(0);
 

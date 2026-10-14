@@ -37,7 +37,8 @@ interface Props {
 
 function DetailPanelInner({ row, onClose, onBack }: Props) {
   const req = row.request?.data;
-  const end = (row.response ?? row.error)?.data;
+  const endEvent = row.response ?? row.error;
+  const end = endEvent?.data;
   const curl = str(req?.curl);
   const fetchCode = toFetch(row);
   const finalUrl = str(end?.finalUrl);
@@ -86,7 +87,15 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
         </Section>
       )}
       <Part id="params" title="Params" value={req?.params} summary={count(req?.params)} table />
-      <Part id="req-headers" title="Request headers" value={req?.headers} summary={count(req?.headers)} table />
+      <Part
+        id="req-headers"
+        title="Request headers"
+        value={req?.headers}
+        summary={count(req?.headers)}
+        table
+        headers
+        at={row.ts}
+      />
       {jwt && <Token jwt={jwt} sentAt={row.ts} />}
       <Part
         id="req-body"
@@ -101,6 +110,8 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
         value={end?.headers}
         summary={end ? count(end.headers) : 'pending'}
         table
+        headers
+        at={endEvent?.ts}
       />
       <Part
         id="res-body"
@@ -119,9 +130,11 @@ function Part(props: {
   value: unknown;
   summary?: string;
   table?: boolean;
+  headers?: boolean;
+  at?: number;
   image?: DataImage;
 }) {
-  const { id, title, value, summary, table, image } = props;
+  const { id, title, value, summary, table, headers, at, image } = props;
   const empty = isEmptyValue(value);
   return (
     <Section
@@ -135,7 +148,7 @@ function Part(props: {
           <ImagePreview image={image} />
         </div>
       )}
-      {table ? <KeyValues value={value} /> : <JsonView value={value} />}
+      {table ? <KeyValues value={value} headers={headers} at={at} /> : <JsonView value={value} />}
     </Section>
   );
 }

@@ -1,12 +1,14 @@
 import { cn } from 'cn';
-import { Braces, ChevronDown, ChevronRight, ListTree } from 'lucide-react';
-import { memo, useMemo, useState, useSyncExternalStore } from 'react';
+import { Braces, ChevronDown, ChevronRight, Ellipsis, ListTree, X } from 'lucide-react';
+import { memo, type ReactNode, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
+import { childPath, DECODE_LABELS, type DecodeAs, decodeAs, hint, type HintContext } from '../core/decode';
 import { isObject, type Json, TRUNCATED } from '../core/events';
 import { headerValue } from '../core/fetch';
 import { type DataImage, dataImage } from '../core/image';
-import { chunkLines, formatBytes, highlight, pretty } from '../core/json';
+import { chunkLines, formatBytes, formatDateTime, highlight, pretty } from '../core/json';
 import { load, save } from '../lib/storage';
+import { contextMenu, menuButtonClass, openValueMenu } from './ValueMenu';
 
 const LIMIT = 100_000;
 const CHUNK = 50_000;
@@ -29,6 +31,12 @@ export const jsonClass = {
 // highlight() marks tokens with j-* classes.
 const highlightClass =
   '[&_.j-key]:text-json-key [&_.j-lit]:text-json-literal [&_.j-num]:text-json-number [&_.j-str]:text-json-string';
+export const chipClass =
+  'ml-1.5 inline-flex cursor-pointer rounded-sm bg-primary-soft px-1 align-middle font-sans text-[10px] leading-4 font-medium text-foreground outline-none hover:bg-primary/25 focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:bg-primary aria-expanded:text-primary-foreground';
+export const timeClass = 'ml-1.5 font-sans text-muted-foreground';
+export const decodedClass = 'my-0.5 border-l-2 border-primary-soft pl-2';
+export const closeClass =
+  'inline-flex cursor-pointer rounded-sm hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none';
 export const kvClass = {
   table: 'w-full border-collapse font-mono text-xs',
   key: 'w-[34%] max-w-60 border-b py-0.5 pr-2 text-left align-top font-semibold wrap-anywhere text-json-key',
@@ -148,7 +156,7 @@ function JsonViewInner({ value }: { value: unknown }) {
   if (mode === 'tree' && (isObject(value) || Array.isArray(value))) {
     return (
       <div className={codeClass}>
-        <Children value={value} depth={0} />
+        <Children value={value} depth={0} path="" />
       </div>
     );
   }
@@ -190,8 +198,10 @@ const lineCount = (text: string) => {
 
 export const JsonView = memo(JsonViewInner);
 
-function Children({ value, depth }: { value: Json[] | { [key: string]: Json }; depth: number }) {
+function Children(props: { value: Json[] | { [key: string]: Json }; depth: number; path?: string }) {
+  const { value, depth, path } = props;
   const [limit, setLimit] = useState(CHILDREN);
+  const index = Array.isArray(value);
   const shown: [string, Json][] = Array.isArray(value)
     ? value.slice(0, limit).map((v, i) => [String(i), v])
     : Object.entries(value).slice(0, limit);
@@ -200,7 +210,15 @@ function Children({ value, depth }: { value: Json[] | { [key: string]: Json }; d
   return (
     <ul className={depth ? 'pl-4' : undefined}>
       {shown.map(([k, v]) => (
-        <TreeNode key={k} name={k} value={v} depth={depth} open={open} />
+        <TreeNode
+          key={k}
+          name={k}
+          value={v}
+          depth={depth}
+          open={open}
+          index={index}
+          path={path === undefined ? undefined : childPath(path, k, index)}
+        />
       ))}
       {total > limit && (
         <li>
@@ -213,26 +231,110 @@ function Children({ value, depth }: { value: Json[] | { [key: string]: Json }; d
   );
 }
 
-function TreeNode(props: { name: string; value: Json; depth: number; open: boolean }) {
-  const { name, value, depth } = props;
+function TreeNode(props: { name: string; value: Json; depth: number; open: boolean; index: boolean; path?: string }) {
+  const { name, value, depth, index, path } = props;
   const [open, setOpen] = useState(props.open);
   const branch = isObject(value) || Array.isArray(value);
+  const label = <span className={jsonClass.key}>{name}</span>;
   if (!branch || isEmptyValue(value)) {
     return (
       <li className="wrap-anywhere">
-        <span className={jsonClass.key}>{name}</span>: <Leaf value={value} />
+        <Value value={value} name={index ? undefined : name} path={path} label={<>{label}: </>} />
       </li>
     );
   }
   const size = Array.isArray(value) ? `[${value.length}]` : `{${Object.keys(value).length}}`;
   return (
     <li className="wrap-anywhere">
-      <button type="button" className={treeToggleClass} onClick={() => setOpen(!open)} aria-expanded={open}>
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <span className={jsonClass.key}>{name}</span> <span className="text-muted-foreground">{size}</span>
-      </button>
-      {open && <Children value={value} depth={depth + 1} />}
+      <Value value={value} path={path}>
+        <button type="button" className={treeToggleClass} onClick={() => setOpen(!open)} aria-expanded={open}>
+          {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          {label} <span className="text-muted-foreground">{size}</span>
+        </button>
+      </Value>
+      {open && <Children value={value} depth={depth + 1} path={path} />}
     </li>
+  );
+}
+
+interface ValueProps extends HintContext {
+  value: Json;
+  /** The key, for hints that go by name; none for array items. */
+  name?: string;
+  path?: string;
+  /** In a table: strings as they are, "Copy key". */
+  table?: boolean;
+  label?: ReactNode;
+  /** Shown in place of the value, as a branch's toggle. */
+  children?: ReactNode;
+}
+
+/** A value with its hint, the value menu and what it decodes to. */
+function Value({ value, name, path, table, label, children, headers, at }: ValueProps) {
+  const [decoded, setDecoded] = useState<DecodeAs>();
+  const found = useMemo(
+    () => (children ? undefined : hint(name, value, { headers, at })),
+    [children, name, value, headers, at],
+  );
+  const button = useRef<HTMLButtonElement>(null);
+  const open = () => {
+    if (!button.current) return;
+    openValueMenu({ anchor: button.current, value, path, table, onDecode: setDecoded });
+  };
+  const toggle = (as: DecodeAs) => setDecoded(decoded === as ? undefined : as);
+  return (
+    <>
+      <span className="group/value" onContextMenu={(e) => contextMenu(e, open)}>
+        {label}
+        {children ?? (table && typeof value === 'string' ? value : <Leaf value={value} />)}
+        {found && 'as' in found && (
+          <button
+            type="button"
+            className={chipClass}
+            aria-expanded={decoded === found.as}
+            onClick={() => toggle(found.as)}
+          >
+            {DECODE_LABELS[found.as]}
+          </button>
+        )}
+        {found && 'time' in found && <span className={timeClass}>{formatDateTime(found.time)}</span>}
+        <button
+          ref={button}
+          type="button"
+          aria-label="Value menu"
+          aria-haspopup="menu"
+          className={menuButtonClass}
+          onClick={open}
+        >
+          <Ellipsis size={12} />
+        </button>
+      </span>
+      {decoded && <DecodedValue as={decoded} value={value} onClose={() => setDecoded(undefined)} />}
+    </>
+  );
+}
+
+function DecodedValue({ as, value, onClose }: { as: DecodeAs; value: Json; onClose: () => void }) {
+  const result = useMemo(() => decodeAs(as, value), [as, value]);
+  const label = DECODE_LABELS[as];
+  return (
+    <div className={decodedClass} role="group" aria-label={`Decoded as ${label}`}>
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        {label}
+        <button type="button" className={closeClass} aria-label={`Close ${label}`} onClick={onClose}>
+          <X size={12} />
+        </button>
+      </div>
+      {'error' in result ? (
+        <div className={noteClass}>{result.error}</div>
+      ) : 'text' in result ? (
+        <div>{result.text}</div>
+      ) : (isObject(result.value) || Array.isArray(result.value)) && !isEmptyValue(result.value) ? (
+        <Children value={result.value} depth={0} />
+      ) : (
+        <Value value={result.value} />
+      )}
+    </div>
   );
 }
 
@@ -267,11 +369,11 @@ function Leaf({ value }: { value: Json }) {
 }
 
 /** Headers and params: one row per value. */
-export function KeyValues({ value }: { value: unknown }) {
+export function KeyValues({ value, headers, at }: { value: unknown } & HintContext) {
   if (!isObject(value)) return <JsonView value={value} />;
   if (isEmptyValue(value)) return <div className="text-muted-foreground">empty</div>;
   if (value[TRUNCATED] !== undefined) return <Truncated marker={value[TRUNCATED]} />;
-  const rows = Object.entries(value).flatMap(([k, v]) =>
+  const rows: [string, string, string][] = Object.entries(value).flatMap(([k, v]): [string, string, string][] =>
     Array.isArray(v) ? v.map((x, i) => [`${k}|${i}`, k, headerValue(x)]) : [[k, k, v === null ? '' : headerValue(v)]],
   );
   return (
@@ -280,7 +382,9 @@ export function KeyValues({ value }: { value: unknown }) {
         {rows.map(([id, k, v]) => (
           <tr key={id}>
             <th className={kvClass.key}>{k}</th>
-            <td className={kvClass.value}>{v}</td>
+            <td className={kvClass.value}>
+              <Value value={v} name={k} path={k} table headers={headers} at={at} />
+            </td>
           </tr>
         ))}
       </tbody>

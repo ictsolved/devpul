@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { TooltipProvider } from './components/ui/tooltip';
+import { ValueMenu } from './components/ValueMenu';
 import './index.css';
 import { devtools, hostTheme } from './lib/devtools';
 
@@ -20,6 +21,7 @@ if (root) {
     <StrictMode>
       <TooltipProvider delayDuration={300} disableHoverableContent>
         <App />
+        <ValueMenu />
       </TooltipProvider>
     </StrictMode>,
   );
