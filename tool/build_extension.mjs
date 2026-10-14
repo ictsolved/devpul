@@ -1,6 +1,6 @@
 // Builds the UI into packages/devpul/extension/devtools/build, which the
-// DevTools extension and devpul_cli serve. --check only compares the stamp
-// with the UI source.
+// DevTools extension and devpul_cli serve, marked so its links go to the
+// site. --check only compares the stamp with the UI source.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,16 @@ const SITE_ONLY = ['sw.js', 'og.png'];
 function sourceHash() {
   const files = execFileSync(
     'git',
-    ['ls-files', '--cached', '--others', '--exclude-standard', 'apps/ui', 'site.json', 'package-lock.json'],
+    [
+      'ls-files',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+      'apps/ui',
+      'site.json',
+      'package-lock.json',
+      'tool/build_extension.mjs',
+    ],
     { cwd: root, encoding: 'utf8' },
   )
     .split('\n')
@@ -42,5 +51,7 @@ if (process.argv.includes('--check')) {
   rmSync(out, { recursive: true, force: true });
   cpSync(join(root, 'apps/ui/dist'), out, { recursive: true });
   for (const f of SITE_ONLY) rmSync(join(out, f), { force: true });
+  const index = join(out, 'index.html');
+  writeFileSync(index, readFileSync(index, 'utf8').replace('<head>', '<head>\n    <meta name="devpul-package" />'));
   writeFileSync(stamp, `${sourceHash()}\n`);
 }

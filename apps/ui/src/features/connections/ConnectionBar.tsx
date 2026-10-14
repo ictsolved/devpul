@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tip } from '../../components/Tip';
 import type { ConnState } from '../../core/rpc';
 import { connectionLabel, toWsUrl } from '../../core/url';
+import { onSite } from '../../lib/links';
 
 const DOT: Record<ConnState['status'], string> = {
   open: 'bg-success',
@@ -86,7 +87,8 @@ export function ConnectionBar(props: Props) {
                 ? 'http://127.0.0.1:41234/AbCdEf12=/'
                 : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'
             }
-            autoFocus={hero}
+            // Low on the site's landing page, where focus would scroll to it.
+            autoFocus={hero && !onSite}
             aria-label="VM service URL"
             spellCheck={false}
             autoComplete="off"
@@ -181,7 +183,7 @@ export function ConnectionBar(props: Props) {
           Waiting for {stuck.map((c) => connectionLabel(c.url)).join(', ')}. The token in the URL changes on every run;
           pasting the new one replaces the old.
           {!localOrigin &&
-            ' This page is hosted, so the browser may ask to allow access to apps on this device: allow it, or check the site settings for local network access. Safari blocks this; use the local version.'}
+            ' From Dart 3.14 the VM service refuses this site: use devpul run or the DevPul tab in DevTools. On older Dart the browser may ask to allow access to apps on this device: allow it, or check the site settings for local network access. Safari blocks it.'}
         </div>
       )}
     </div>

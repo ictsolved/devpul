@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { CircleHelp, RotateCcw, Settings as SettingsIcon, Trash2, Zap } from 'lucide-react';
+import { AppWindow, CircleHelp, RotateCcw, Settings as SettingsIcon, Trash2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { copyText } from './components/Copy';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
@@ -608,8 +608,31 @@ export function App() {
       {showMain && <span className={LABEL}>Settings</span>}
     </Button>
   );
+  // This page's own loopback origin, which the VM service accepts; from Dart 3.14 it refuses the hosted site.
+  const hostConn = devtools ? connections[0] : undefined;
+  const windowButton = hostConn && (
+    <Tip content="Open DevPul in a window of its own, connected to this app">
+      <Button
+        type="button"
+        variant={showMain ? 'ghost' : 'outline'}
+        size={showMain ? 'sm' : 'icon-sm'}
+        aria-label="Open in window"
+        onClick={() =>
+          window.open(
+            `${location.origin}${location.pathname}#connect=${encodeURIComponent(hostConn.url)}`,
+            '_blank',
+            'popup,noopener',
+          )
+        }
+      >
+        <AppWindow />
+        {showMain && <span className={LABEL}>Open in window</span>}
+      </Button>
+    </Tip>
+  );
   const tools = (
     <>
+      {windowButton}
       <Tip content="Settings">{settingsButton}</Tip>
       {!devtools && <ThemeToggle variant="outline" />}
     </>
@@ -692,6 +715,7 @@ export function App() {
             </a>
             {connectionBar(false)}
             <nav className="col-start-3 row-start-1 flex gap-1.5 max-[860px]:col-start-2">
+              {windowButton}
               {settingsButton}
               <Tip content="Help opens in a new tab. Press ? for shortcuts.">
                 <Button asChild variant="ghost" size="sm">

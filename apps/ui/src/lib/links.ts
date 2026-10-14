@@ -1,10 +1,17 @@
 import site from '../../../../site.json';
-import { cli } from './cli';
 import { devtools } from './devtools';
 
 export const repoUrl = site.repo;
 export const registryUrl = site.registry;
 
-/** Docs and plugin pages: next to the app on the site, the site itself from the CLI and DevTools. */
-export const pageUrl = (path: string): string => (cli || devtools ? `${site.url}${path}` : `./${path}`);
+/**
+ * The copy in the devpul package, which the CLI and DevTools serve and which
+ * holds no docs; `build:extension` marks it.
+ */
+const packaged = document.querySelector('meta[name="devpul-package"]') !== null;
+
+/** The hosted site, with the docs next to the app. */
+export const onSite = !packaged && !devtools;
+
+export const pageUrl = (path: string): string => (onSite ? `./${path}` : `${site.url}${path}`);
 export const marketUrl = pageUrl('plugins/');

@@ -653,7 +653,7 @@ test('copies a widget location when no IDE listens', async ({ page, vm, context 
   expect(vm.callsTo('postEvent')).toHaveLength(1);
 });
 
-test('runs as a DevTools extension', async ({ page, vm }) => {
+test('runs as a DevTools extension', async ({ page, vm, context }) => {
   const dtd = await FakeDtd.start();
   // DevTools serves extensions from its own origin and frames them.
   await page.goto('./docs/');
@@ -673,6 +673,14 @@ test('runs as a DevTools extension', async ({ page, vm }) => {
   await expect(ext.getByRole('button', { name: /^Theme/ })).toHaveCount(0);
   await expect(ext.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(ext.getByRole('link', { name: 'Help' })).toHaveAttribute('href', `${site.url}docs/help/`);
+
+  const [popup] = await Promise.all([
+    context.waitForEvent('page'),
+    ext.getByRole('button', { name: 'Open in window' }).click(),
+  ]);
+  await expect(popup.getByRole('list', { name: 'Connections' })).toContainText('Shop');
+  await expect(popup.getByRole('textbox', { name: 'VM service URL' })).toBeVisible();
+  await popup.close();
 
   await page.evaluate(() => {
     const target = document.querySelector('iframe')?.contentWindow;
@@ -715,7 +723,13 @@ test('copies a plugin install command', async ({ page, context }) => {
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('devpul add cart');
 });
 
-test('links the docs next to the app', async ({ page }) => {
+test('lands on the site with setup steps and links the docs next to the app', async ({ page }) => {
   await page.goto('./');
   await expect(page.getByRole('link', { name: 'Help' })).toHaveAttribute('href', './docs/help/');
+  await expect(page.getByText('dart pub global activate devpul_cli')).toBeVisible();
+  await expect(page.getByText('Dart 3.13 and older')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'VM service URL' })).not.toBeFocused();
+  const shot = page.getByRole('img', { name: /^DevPul connected/ }).first();
+  await expect(shot).toHaveJSProperty('complete', true);
+  expect(await shot.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1440);
 });
