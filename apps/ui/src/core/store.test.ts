@@ -85,6 +85,18 @@ describe('Store', () => {
     expect(one2).not.toBe(one);
   });
 
+  it('moves a run to the connection that sends a known event again', () => {
+    const store = new Store();
+    const session = { session: 's', seq: 1, ts: 10, name: 'Shop' };
+    store.add([
+      vmEvent('app.session', session, { conn: 'old' }),
+      vmEvent('log', { session: 's', seq: 2, ts: 11 }, { conn: 'old' }),
+    ]);
+    expect(store.add([vmEvent('app.session', session, { conn: 'new' })])).toEqual([]);
+    expect([...store.runs.values()].map((r) => [r.conn, r.session?.data.name])).toEqual([['new', 'Shop']]);
+    expect(store.all.map((e) => e.conn)).toEqual(['new', 'new']);
+  });
+
   it('groups runs by isolate group and picks the latest session', () => {
     const store = new Store();
     store.add([

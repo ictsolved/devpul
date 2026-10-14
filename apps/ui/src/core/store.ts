@@ -112,18 +112,39 @@ export class Store implements ProfileLookup {
   /** Returns the events that were not already known. */
   add(incoming: DevEvent[]): DevEvent[] {
     const added: DevEvent[] = [];
+    let moved = false;
     for (const e of incoming) {
-      if (this.events.has(e.key)) continue;
+      const known = this.events.get(e.key);
+      if (known) {
+        // Stored by another page on this origin, or before a reload: the run lives on this connection now.
+        if (known.conn !== e.conn) {
+          this.moveRun(known.run, e);
+          moved = true;
+        }
+        continue;
+      }
       this.events.set(e.key, e);
       this.order.push(e);
       this.total += e.size;
       this.index(e);
       added.push(e);
     }
-    if (!added.length) return added;
+    if (!added.length) {
+      if (moved) this.changed();
+      return added;
+    }
     if (this.total > this.maxBytes) this.evict();
     this.changed();
     return added;
+  }
+
+  private moveRun(from: string, to: DevEvent): void {
+    for (const e of this.order) {
+      if (e.run !== from) continue;
+      e.run = to.run;
+      e.conn = to.conn;
+    }
+    this.reindex();
   }
 
   /** Drops matching events and returns them. */
