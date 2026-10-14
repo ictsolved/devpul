@@ -62,7 +62,6 @@ const open = async (scheme: Scheme, deviceScaleFactor: number) => {
 };
 
 const views: [string, (page: Page, vm: FakeVm) => Promise<void>][] = [
-  ['home', async () => {}],
   [
     'http',
     async (page, vm) => {

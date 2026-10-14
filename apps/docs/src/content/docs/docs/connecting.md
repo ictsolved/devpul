@@ -45,9 +45,6 @@ Any of these work:
 
 Paste it into the field, or anywhere on the page outside a text field. On the hosted site this needs Dart 3.13 or older; see [Hosted or local](#hosted-or-local).
 
-<img class="dark:sl-hidden" src="/screenshots/home-light.webp" alt="The DevPul home page with the VM service URL field and Connect button" width="1440" height="900" loading="lazy" />
-<img class="light:sl-hidden" src="/screenshots/home-dark.webp" alt="The DevPul home page with the VM service URL field and Connect button" width="1440" height="900" loading="lazy" />
-
 | Tool                           | Where                                                                                             |
 | ------------------------------ | ------------------------------------------------------------------------------------------------- |
 | `flutter run`                  | "A Dart VM Service on ... is available at:"                                                       |
