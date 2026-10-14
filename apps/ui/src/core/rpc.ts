@@ -56,6 +56,7 @@ export class Connection {
   private pending = new Map<number, Pending>();
   private retry: ReturnType<typeof setTimeout> | null = null;
   private stopped = true;
+  private retrying = false;
   private paused = new Set<string>();
   // Isolates whose handshake or backlog a pause cut off; attached again on resume.
   private reattach = new Set<string>();
@@ -205,7 +206,8 @@ export class Connection {
   }
 
   private open(): void {
-    this.setStatus('connecting');
+    // A retry stays closed: switching to connecting every RETRY_MS blinks the chip and the hints.
+    if (!this.retrying) this.setStatus('connecting');
     let ws: WebSocket;
     try {
       ws = new WebSocket(this.url);
@@ -215,6 +217,7 @@ export class Connection {
     }
     this.ws = ws;
     ws.onopen = () => {
+      this.retrying = false;
       this.setStatus('open');
       void this.subscribe();
     };
@@ -238,6 +241,7 @@ export class Connection {
 
   private scheduleRetry(): void {
     if (this.stopped) return;
+    this.retrying = true;
     if (this.state.status !== 'closed') this.setStatus('closed');
     this.retry = setTimeout(() => {
       this.retry = null;

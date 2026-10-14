@@ -113,6 +113,29 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('Connection retry', () => {
+  it('stays closed between retries until it opens', async () => {
+    vi.useFakeTimers();
+    const statuses: string[] = [];
+    conn = new Connection(
+      'c1',
+      'ws://127.0.0.1:1/ws',
+      () => {},
+      () => statuses.push(conn.state.status),
+      () => 0,
+    );
+    conn.start();
+    FakeSocket.last.close();
+    await vi.advanceTimersByTimeAsync(2000);
+    FakeSocket.last.close();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(statuses.filter((s) => s !== 'closed')).toEqual(['connecting']);
+    expect(conn.state.status).toBe('closed');
+    FakeSocket.last.open();
+    expect(conn.state.status).toBe('open');
+  });
+});
+
 describe('Connection timeout', () => {
   it('fails a service extension call after 5 s and drops it', async () => {
     const ws = await connect(vm('Resume'));
