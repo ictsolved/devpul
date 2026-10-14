@@ -7,8 +7,8 @@ DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls wit
 
 > Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab and are never sent to a server. History is kept in the browser's own storage, and you can turn that off.
 
-<img class="dark:sl-hidden" src="/screenshots/session-light.webp" alt="DevPul connecting to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" width="1440" height="900" loading="lazy" />
-<img class="light:sl-hidden" src="/screenshots/session-dark.webp" alt="DevPul connecting to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" width="1440" height="900" loading="lazy" />
+<img class="dark:sl-hidden" src="/screenshots/session-light.webp" alt="DevPul connected to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" width="1440" height="900" loading="lazy" />
+<img class="light:sl-hidden" src="/screenshots/session-dark.webp" alt="DevPul connected to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" width="1440" height="900" loading="lazy" />
 
 ## 1. Add the packages
 
@@ -63,10 +63,10 @@ devpul run -d macos
 Every debug run prints a link once the tool is attached, from the terminal, VS Code or Android Studio:
 
 ```text
-DevPul %SITE_URL%#connect=http%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2F
+DevPul http://127.0.0.1:41234/AbCdEf12=/devtools/devpul_ext?uri=ws%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2Fws
 ```
 
-Click it and DevPul opens connected to the app. In an IDE, DevPul is also a tab in DevTools; see [IDE setup](/docs/ide/). [Connecting](/docs/connecting/) covers pasted URLs, `flutter attach`, the web and plain Dart.
+Click it and DevTools opens on the DevPul tab, connected to the app; enable DevPul once per project when DevTools asks. In an IDE, DevTools is also a click away; see [IDE setup](/docs/ide/). [Connecting](/docs/connecting/) covers pasted URLs, `flutter attach`, the web and plain Dart.
 
 ## What you get
 

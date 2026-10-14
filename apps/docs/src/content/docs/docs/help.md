@@ -9,6 +9,10 @@ description: Troubleshooting DevPul connections and missing events, how your dat
 
 The URL is from an earlier run; the port and token change on every full restart. Click the new [printed link](/docs/connecting/#the-printed-link) or paste the new URL, and it replaces the old one. `devpul run` hands each new run to the open tab.
 
+### The hosted site does not connect
+
+From Dart 3.14 the VM service accepts websockets only from pages on `127.0.0.1`, and the browser shows no reason for the refusal. Use [`devpul run`](/docs/cli/#devpul-run) or the [printed link](/docs/connecting/#the-printed-link), which opens DevPul in DevTools. The hosted site connects to Dart 3.13 and older.
+
 ### The browser asks to access apps on this device
 
 Chrome and Firefox ask before a hosted page connects to `127.0.0.1`. Allow it once for this site. If you dismissed it, allow "Local network access" in the site settings.
@@ -21,7 +25,7 @@ Safari blocks hosted pages from reaching `127.0.0.1`. Run [`devpul`](/docs/cli/#
 
 - In Flutter, the link appears once a tool is attached through DDS, a moment after startup; see [the printed link](/docs/connecting/#the-printed-link).
 - It appears after the app's first DevPul call, such as `Devpul.session`.
-- `uiUrl: null` or `console: ConsoleMode.off` turn it off, and Flutter web prints none.
+- `printLink: false` or `console: ConsoleMode.off` turn it off, and Flutter web prints none.
 
 ### Connected, but nothing shows
 

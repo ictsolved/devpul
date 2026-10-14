@@ -6,7 +6,7 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="apps/docs/public/screenshots/session-dark.webp">
-  <img alt="DevPul connecting to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" src="apps/docs/public/screenshots/session-light.webp">
+  <img alt="DevPul connected to a running app: requests arrive, a POST request opens with its headers and bodies, then an error shows with the requests before it" src="apps/docs/public/screenshots/session-light.webp">
 </picture>
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
@@ -53,7 +53,7 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
    devpul run
    ```
 
-   Any other debug run prints a link that opens DevPul connected to it, and IDEs show DevPul as a DevTools extension.
+   Any other debug run prints a link that opens DevPul in DevTools, connected to it, and IDEs show DevPul as a DevTools extension.
 
 The [example app](examples/devpul_example) uses every package.
 

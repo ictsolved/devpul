@@ -15,11 +15,11 @@ Configuration, the session, tags, actions, handlers, plugins and limits are per 
 
 Browsers keep storage per origin, so each place DevPul runs from has its own settings, history, saved URLs and plugin approvals:
 
-| Origin                         | Store                                                                                                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The hosted site                | One, across every run and IDE.                                                                                                                         |
-| `devpul` on `127.0.0.1:<port>` | One per port. The port stays 7171 unless you pass `--port` or it is taken.                                                                             |
-| DevTools                       | One per DevTools server. The IDE keeps one per session; DevTools served by DDS from a `flutter run` link gets a new port, and starts empty, every run. |
+| Origin                         | Store                                                                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The hosted site                | One, across every run and IDE. Connects to Dart 3.13 and older.                                                                                    |
+| `devpul` on `127.0.0.1:<port>` | One per port. The port stays 7171 unless you pass `--port` or it is taken.                                                                         |
+| DevTools                       | One per DevTools server. The IDE keeps one per session; DevTools served by DDS from the printed link gets a new port, and starts empty, every run. |
 
 Nothing moves between them. Approve a plugin once in each.
 
@@ -47,5 +47,5 @@ Events are encoded as JSON on the app's isolate, about 0.1 ms for a 2 KB event i
 - No request replay, mocking or breakpoints on requests.
 - Calls from the UI into the app, such as actions and plugin requests, are disabled while the app is paused in the debugger and fail after 5 s without an answer.
 - Plugin sources are limited to 512 KB.
-- Safari does not let the hosted site reach `127.0.0.1`; use `devpul`.
+- From Dart 3.14 the hosted site cannot connect to apps; use `devpul` or DevTools. Safari does not let it reach `127.0.0.1` on any version.
 - Flutter web prints no connect link.

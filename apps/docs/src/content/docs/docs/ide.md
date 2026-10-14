@@ -28,10 +28,10 @@ Settings, history and plugin approvals are kept per DevTools server. The IDE kee
 At startup the app prints a link in the Debug Console or Run tool window:
 
 ```text
-DevPul %SITE_URL%#connect=http%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2F
+DevPul http://127.0.0.1:41234/AbCdEf12=/devtools/devpul_ext?uri=ws%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2Fws
 ```
 
-Click it to open DevPul in the browser, connected to the app. Settings and history live on that site, so they stay across runs and IDEs. [Connecting](/docs/connecting/#the-printed-link) says when the link appears.
+Click it to open DevTools in the browser on the DevPul tab, connected to the app. That DevTools is served by the run's DDS, so its settings and history start empty every run. [Connecting](/docs/connecting/#the-printed-link) says when the link appears.
 
 ## devpul run in the IDE's terminal
 

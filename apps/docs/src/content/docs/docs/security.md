@@ -32,7 +32,7 @@ DevPul makes no network request you did not ask for.
 | The page     | The app's VM service; `registry.json` on the site, only when you click Check for updates in the Plugins tab; module URLs you add yourself.                                                  |
 | `devpul`     | None when serving. `add`, `outdated` and `upgrade` fetch the plugin sources you name and the registry, `outdated` also asks pub.dev for the `devpul_cli` version, `update` runs `dart pub`. |
 | `devpul mcp` | None. It reads the app's VM service and asks the devpul on `127.0.0.1` for the app's URL.                                                                                                   |
-| The app      | None. The packages post events on the VM service and print the connect link.                                                                                                                |
+| The app      | None. The packages post events on the VM service and print a link.                                                                                                                          |
 | These docs   | The site's own files. No third-party scripts, fonts or images.                                                                                                                              |
 
 ## Connect links reach only this machine

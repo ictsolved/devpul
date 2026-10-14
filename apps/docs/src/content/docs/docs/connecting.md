@@ -16,18 +16,20 @@ devpul run -d macos
 
 ## The printed link
 
-The app prints a link that opens DevPul connected to it:
+The app prints a link to the DevPul tab of DevTools, which the app's Dart Development Service (DDS) serves:
 
 ```text
-DevPul %SITE_URL%#connect=http%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2F
+DevPul http://127.0.0.1:41234/AbCdEf12=/devtools/devpul_ext?uri=ws%3A%2F%2F127.0.0.1%3A41234%2FAbCdEf12%3D%2Fws
 ```
 
-It works for any run, IDE runs included. When it appears:
+It works for any run, IDE runs included. The first time, DevTools asks to enable DevPul for the project; see [IDE setup](/docs/ide/#devtools-extension). **Open in window** in DevPul's header opens it in a window of its own, still connected. DDS has a new port every run, so settings, history and plugin approvals there start empty each run; [`devpul run`](#devpul-run) keeps them.
+
+When it appears:
 
 - **Flutter**: once a tool, such as `flutter run`, the IDE or `flutter attach`, is attached through DDS, which takes a moment after the app starts. Before that the app knows only the VM's own URL, which redirects to DDS, and browsers do not follow redirects for websockets. It prints again after each hot restart.
-- **Plain Dart**: at the first DevPul call, and again if the URL changes.
+- **Plain Dart**: at the first DevPul call, and again if the URL changes. The link is `http://127.0.0.1:41234/AbCdEf12=/?page=devpul_ext`, which opens the DevPul tab from Dart 3.14 and DevTools' home before it.
 
-The link appears only after the app's first DevPul call, such as `Devpul.session`. Set [`uiUrl`](/docs/api/#configuration) to link to another copy of DevPul, or `null` to turn it off; `console: ConsoleMode.off` turns it off too. Flutter web prints no link.
+The link appears only after the app's first DevPul call, such as `Devpul.session`. Under `devpul run` it opens devpul's own page. Set [`uiUrl`](/docs/api/#configuration) to link to another copy of DevPul with `#connect=`; `printLink: false` or `console: ConsoleMode.off` turn it off. Flutter web prints no link.
 
 ## DevTools
 
@@ -41,7 +43,7 @@ Any of these work:
 - a DevTools link that contains `?uri=...`
 - a `ws://127.0.0.1:PORT/TOKEN=/ws` URL
 
-Paste it into the field, or anywhere on the page outside a text field.
+Paste it into the field, or anywhere on the page outside a text field. On the hosted site this needs Dart 3.13 or older; see [Hosted or local](#hosted-or-local).
 
 <img class="dark:sl-hidden" src="/screenshots/home-light.webp" alt="The DevPul home page with the VM service URL field and Connect button" width="1440" height="900" loading="lazy" />
 <img class="light:sl-hidden" src="/screenshots/home-dark.webp" alt="The DevPul home page with the VM service URL field and Connect button" width="1440" height="900" loading="lazy" />
@@ -61,10 +63,10 @@ A hot restart or a replaced URL also drops that app's older events. With **Keep 
 
 ## Open DevPul already connected
 
-Add the URL after `#connect=`:
+Add the URL after `#connect=` on devpul's page, or on the hosted site for Dart 3.13 and older:
 
 ```text
-%SITE_URL%#connect=http://127.0.0.1:41234/AbCdEf12=/
+http://127.0.0.1:7171/#connect=http://127.0.0.1:41234/AbCdEf12=/
 ```
 
 Any site can link here, so a link connects only to this machine: `localhost`, `127.0.0.0/8` or `[::1]`. DevPul ignores a link to any other host and says so. A pasted URL may point anywhere.
@@ -84,9 +86,10 @@ While the app is stopped at a breakpoint, its connection shows **paused** and De
 
 ## Hosted or local
 
-| Where        | How                 | Notes                                                                                                                                            |
-| ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Hosted       | the site you are on | Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. Installable as an app. |
-| Local server | `devpul`            | Any browser, Safari included.                                                                                                                    |
+| Where        | How                      | Notes                                                                                                                                                                                                                                                           |
+| ------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local server | `devpul`                 | Any browser, Safari included.                                                                                                                                                                                                                                   |
+| DevTools     | the printed link, an IDE | Served by DDS or the IDE.                                                                                                                                                                                                                                       |
+| Hosted       | the site you are on      | Dart 3.13 and older: from Dart 3.14 the VM service refuses websockets from pages not on `127.0.0.1`, and the browser shows no reason. Chrome and Firefox ask once to allow access to apps on this device. Safari blocks hosted pages from reaching `127.0.0.1`. |
 
-Both run entirely in the browser. The hosted site only serves the page; your app's data goes from the app to the tab. Each keeps its own settings and history; see [Limits](/docs/limits/#one-store-per-origin).
+All of them run entirely in the browser. The hosted site only serves the page; your app's data goes from the app to the tab. Each keeps its own settings and history; see [Limits](/docs/limits/#one-store-per-origin).

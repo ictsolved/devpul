@@ -29,7 +29,7 @@ void main() {
 }
 ```
 
-Run the app with `devpul run` from [devpul_cli](https://pub.dev/packages/devpul_cli), or click the `DevPul` link it prints in any debug run. The [core API](https://devpul.saradgajurel.com.np/docs/api/) page covers configuration, redaction, limits and handlers; [getting started](https://devpul.saradgajurel.com.np/docs/) the whole setup.
+Run the app with `devpul run` from [devpul_cli](https://pub.dev/packages/devpul_cli), or click the `DevPul` link it prints in any debug run, which opens DevPul in DevTools. The [core API](https://devpul.saradgajurel.com.np/docs/api/) page covers configuration, redaction, limits and handlers; [getting started](https://devpul.saradgajurel.com.np/docs/) the whole setup.
 
 ## Limits
 
