@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { RotateCcw, Settings as SettingsIcon, SquareArrowOutUpRight, Trash2, Zap } from 'lucide-react';
+import { Ban, RotateCcw, Settings as SettingsIcon, SquareArrowOutUpRight, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { copyText } from './components/Copy';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
@@ -648,9 +648,9 @@ export function App() {
           ),
       )}
       <ActionsMenu apps={actions} onRun={runAction} />
-      <Tip content="Clear">
+      <Tip content="Clear events">
         <Button type="button" variant="ghost" size="icon-sm" aria-label="Clear" onClick={clearAll}>
-          <Trash2 />
+          <Ban />
         </Button>
       </Tip>
     </>
