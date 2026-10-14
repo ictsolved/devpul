@@ -744,10 +744,14 @@ test('copies a plugin install command', async ({ page, context }) => {
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('devpul add cart');
 });
 
-test('lands on the site with setup steps and links the docs next to the app', async ({ page }) => {
+test('lands on the site with setup steps and links the docs next to the app', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('./');
   await expect(page.getByRole('link', { name: 'Help' })).toHaveAttribute('href', './docs/help/');
-  await expect(page.getByText('dart pub global activate devpul_cli')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Get started' })).toHaveAttribute('href', './docs/');
+  await expect(page.getByRole('region', { name: 'Set up' })).toContainText('dart pub global activate devpul_cli');
+  await page.getByRole('button', { name: 'Copy', exact: true }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('dart pub global activate devpul_cli');
   await expect(page.getByText('Dart 3.13 and older')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'VM service URL' })).not.toBeFocused();
   const shot = page.getByRole('img', { name: /^DevPul connected/ }).first();
