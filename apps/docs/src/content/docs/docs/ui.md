@@ -47,7 +47,7 @@ Click a column header in HTTP to sort by it; click again to flip the direction. 
 
 ## Details
 
-Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch to a tree with the Tree button. Copy the URL, any section, a curl command or a `fetch()` call for the browser console.
+Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch to a tree with the Tree button. Copy the URL, any section, a curl command or a `fetch()` call for the browser console. A JWT in a bearer `Authorization` header shows decoded under **Bearer token**: claims, with `exp`, `iat` and `nbf` as times and how long before or after the request it expires, and the header. The signature is not checked.
 
 <img class="dark:sl-hidden" src="/screenshots/errors-light.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and what happened before it" width="1440" height="900" loading="lazy" />
 <img class="light:sl-hidden" src="/screenshots/errors-dark.webp" alt="The Errors tab with a FormatException open: message, context, stack trace and what happened before it" width="1440" height="900" loading="lazy" />

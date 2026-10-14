@@ -3,14 +3,15 @@ import { Braces, ListTree, SquareTerminal } from 'lucide-react';
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
-import { type BodyMode, isEmptyValue, JsonView, KeyValues } from '../../components/JsonView';
+import { type BodyMode, isEmptyValue, JsonView, KeyValues, kvClass } from '../../components/JsonView';
 import { BackButton, Detail } from '../../components/Panes';
 import { Section } from '../../components/Section';
 import { Tip } from '../../components/Tip';
-import { isObject, str } from '../../core/events';
+import { isObject, type JsonObject, str } from '../../core/events';
 import { toFetch } from '../../core/fetch';
 import { DART_IO } from '../../core/profile';
-import { formatBytes, formatTime, pretty } from '../../core/json';
+import { formatBytes, formatDateTime, formatTime, pretty } from '../../core/json';
+import { bearerJwt, expiry, type Jwt, TIME_CLAIMS } from '../../core/jwt';
 import type { HttpRow } from '../../core/store';
 import { useStored } from '../../lib/storage';
 
@@ -40,6 +41,7 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
   const curl = str(req?.curl);
   const fetchCode = toFetch(row);
   const finalUrl = str(end?.finalUrl);
+  const jwt = bearerJwt(req?.headers);
   return (
     <Detail
       label="Request detail"
@@ -90,6 +92,7 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
       )}
       <Part id="params" title="Params" value={req?.params} summary={count(req?.params)} table />
       <Part id="req-headers" title="Request headers" value={req?.headers} summary={count(req?.headers)} table />
+      {jwt && <Token jwt={jwt} sentAt={row.ts} />}
       <Part id="req-body" title="Request body" value={req?.body} summary={size(req?.body)} mode={mode} />
       <Part
         id="res-headers"
@@ -128,6 +131,49 @@ function Part(props: {
     >
       {table ? <KeyValues value={value} /> : <JsonView value={value} mode={mode} />}
     </Section>
+  );
+}
+
+const subClass = 'mb-0.5 text-xs text-muted-foreground';
+
+function Token({ jwt, sentAt }: { jwt: Jwt; sentAt: number }) {
+  return (
+    <Section
+      id="req-token"
+      title="Bearer token"
+      summary={expiry(jwt.claims, sentAt)}
+      actions={<CopyButton text={() => pretty({ header: jwt.header, claims: jwt.claims })} />}
+    >
+      <h4 className={subClass}>Claims</h4>
+      <Claims value={jwt.claims} />
+      <h4 className={cn(subClass, 'mt-2')}>Header</h4>
+      <Claims value={jwt.header} />
+    </Section>
+  );
+}
+
+function Claims({ value }: { value: JsonObject }) {
+  return (
+    <table className={kvClass.table}>
+      <tbody>
+        {Object.entries(value).map(([k, v]) => (
+          <tr key={k}>
+            <th className={kvClass.key}>{k}</th>
+            <td className={kvClass.value}>
+              {TIME_CLAIMS.has(k) && typeof v === 'number' ? (
+                <>
+                  {formatDateTime(v * 1000)} <span className="text-muted-foreground">{v}</span>
+                </>
+              ) : typeof v === 'string' ? (
+                v
+              ) : (
+                JSON.stringify(v)
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

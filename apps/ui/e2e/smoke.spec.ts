@@ -89,6 +89,29 @@ test('opens HTTP detail', async ({ page, vm }) => {
   await expect(detail.getByRole('button', { name: 'curl' })).toBeVisible();
 });
 
+test('decodes a bearer JWT in HTTP detail', async ({ page, vm }) => {
+  await connect(page, vm);
+  const part = (v: object) => Buffer.from(JSON.stringify(v)).toString('base64url');
+  const ts = Date.UTC(2026, 9, 14, 9, 0, 0);
+  const token = `${part({ alg: 'HS256', typ: 'JWT' })}.${part({ sub: 'user-42', exp: ts / 1000 - 300 })}.c2ln`;
+  vm.post({
+    kind: 'devpul.http.request',
+    data: {
+      v: 1,
+      session: 's2',
+      seq: 1,
+      ts,
+      data: { id: 'jwt', method: 'GET', url: 'https://example.com/me', headers: { authorization: `Bearer ${token}` } },
+    },
+  });
+  await page.getByRole('row', { name: /example\.com\/me/ }).click();
+  const detail = page.getByRole('complementary', { name: 'Request detail' });
+  await expect(detail.getByRole('heading', { name: 'Bearer token' })).toBeVisible();
+  await expect(detail).toContainText('expired 5 min before the request');
+  await expect(detail.getByRole('row', { name: /^sub user-42$/ })).toBeVisible();
+  await expect(detail.getByRole('row', { name: /^alg HS256$/ })).toBeVisible();
+});
+
 test('reads requests from the dart:io HTTP profile only while its toggle is on', async ({ page, vm }) => {
   await connect(page, vm);
   const toggle = page.getByRole('button', { name: 'HTTP without an adapter' });
