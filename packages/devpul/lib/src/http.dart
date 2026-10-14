@@ -13,26 +13,26 @@ final class DevpulForm {
 
   /// Field name to file name.
   final List<MapEntry<String, String>> files;
+}
 
-  Map<String, Object?> flatten() {
-    final out = <String, Object?>{};
-    void put(String key, String value) {
-      final existing = out[key];
-      out[key] = switch (existing) {
-        null => value,
-        final List<Object?> list => [...list, value],
-        _ => [existing, value],
-      };
-    }
-
-    for (final e in fields) {
-      put(e.key, e.value);
-    }
-    for (final e in files) {
-      put(e.key, e.value);
-    }
-    return out;
+Map<String, Object?> _flatten(DevpulForm form) {
+  final out = <String, Object?>{};
+  void put(String key, String value) {
+    final existing = out[key];
+    out[key] = switch (existing) {
+      null => value,
+      final List<Object?> list => [...list, value],
+      _ => [existing, value],
+    };
   }
+
+  for (final e in form.fields) {
+    put(e.key, e.value);
+  }
+  for (final e in form.files) {
+    put(e.key, e.value);
+  }
+  return out;
 }
 
 /// Shared by HTTP adapters: ids, pairing, ignore rules, redaction, curl and
@@ -51,7 +51,7 @@ abstract final class DevpulHttp {
     try {
       final config = Devpul.config;
       final upper = method.toUpperCase();
-      if (config.ignores(upper, url)) return null;
+      if (_ignores(config, upper, url)) return null;
       final id = config.idGenerator?.call() ?? ++_counter;
       final call = DevpulHttpCall._(id, upper, url);
       final h = _headers(config, url, normalizeHeaders(headers));
@@ -70,6 +70,12 @@ abstract final class DevpulHttp {
     } catch (_) {
       return null;
     }
+  }
+
+  static bool _ignores(DevpulConfig config, String method, Uri url) {
+    if (config.ignoreMethods.contains(method)) return true;
+    final text = url.toString();
+    return config.ignoreUrls.any((p) => p.allMatches(text).isNotEmpty);
   }
 
   static Map<String, Object?> _headers(
@@ -223,7 +229,7 @@ final _imageType = RegExp(r'^image/[\w.+-]+$');
 /// become a `data:` URL when it fits the config's `maxValueLength`, other
 /// bytes are summarised.
 Object? normalizeBody(Object? body, {String? type}) {
-  if (body is DevpulForm) return body.flatten();
+  if (body is DevpulForm) return _flatten(body);
   if (body is List<int>) {
     return _dataUrl(body, type) ?? '<${body.length} bytes>';
   }

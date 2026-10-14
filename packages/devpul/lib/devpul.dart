@@ -2,8 +2,8 @@
 /// DevPul browser UI over the Dart VM service.
 library;
 
-export 'src/action.dart';
+export 'src/action.dart' show DevpulParam;
 export 'src/config.dart';
 export 'src/devpul.dart' show Devpul;
-export 'src/encode.dart' show toJsonSafe, truncatedKey;
-export 'src/http.dart';
+export 'src/encode.dart' show toJsonSafe;
+export 'src/http.dart' show DevpulForm, DevpulHttp, DevpulHttpCall;

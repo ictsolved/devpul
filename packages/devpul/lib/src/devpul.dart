@@ -290,7 +290,7 @@ abstract final class Devpul {
       throw ArgumentError.value(name, 'name', 'unknown action');
     }
     final values = {
-      for (final p in action.params) p.name: p.read(args?[p.name]),
+      for (final p in action.params) p.name: readParam(p, args?[p.name]),
     };
     return toJsonSafe(await action.run(values));
   }
@@ -324,7 +324,7 @@ abstract final class Devpul {
       for (final MapEntry(:key, :value) in _actions.entries)
         {
           'name': key,
-          'params': [for (final p in value.params) p.toJson()],
+          'params': [for (final p in value.params) paramJson(p)],
         },
     ],
     'plugins': [

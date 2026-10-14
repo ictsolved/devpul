@@ -1,5 +1,6 @@
 import 'package:devpul/devpul.dart';
 import 'package:devpul/src/devpul.dart' show debugOnPost;
+import 'package:devpul/src/http.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -118,7 +119,7 @@ void main() {
         ],
         files: [MapEntry('avatar', 'me.png'), MapEntry('tag', 'z.txt')],
       );
-      expect(form.flatten(), {
+      expect(normalizeBody(form), {
         'name': 'a',
         'tag': ['x', 'y', 'z.txt'],
         'avatar': 'me.png',

@@ -25,24 +25,26 @@ final class DevpulParam {
   final List<String> options;
 
   Object? get _initial => initial ?? (options.isEmpty ? null : options.first);
+}
 
-  Map<String, Object?> toJson() => {
-    'name': name,
-    'type': type,
-    'initial': _initial,
-    if (type == 'choice') 'options': options,
+Map<String, Object?> paramJson(DevpulParam param) => {
+  'name': param.name,
+  'type': param.type,
+  'initial': param._initial,
+  if (param.type == 'choice') 'options': param.options,
+};
+
+/// [value] as [param]'s type, or the initial value when null.
+Object? readParam(DevpulParam param, Object? value) {
+  if (value == null) return param._initial;
+  final ok = switch (param.type) {
+    'text' => value is String,
+    'number' => value is num,
+    'flag' => value is bool,
+    _ => param.options.contains(value),
   };
-
-  /// [value] as this param's type, or the initial value when null.
-  Object? read(Object? value) {
-    if (value == null) return _initial;
-    final ok = switch (type) {
-      'text' => value is String,
-      'number' => value is num,
-      'flag' => value is bool,
-      _ => options.contains(value),
-    };
-    if (!ok) throw ArgumentError.value(value, name, 'not a valid $type');
-    return value;
+  if (!ok) {
+    throw ArgumentError.value(value, param.name, 'not a valid ${param.type}');
   }
+  return value;
 }

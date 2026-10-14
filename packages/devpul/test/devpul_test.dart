@@ -6,6 +6,7 @@ import 'package:devpul/src/devpul.dart'
         debugPluginSource,
         debugRunAction,
         debugRunCall;
+import 'package:devpul/src/encode.dart' show truncatedKey;
 import 'package:devpul/src/version.dart';
 import 'package:test/test.dart';
 

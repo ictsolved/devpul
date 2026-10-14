@@ -62,10 +62,4 @@ final class DevpulConfig {
 
   /// Defaults to a counter per isolate.
   final Object Function()? idGenerator;
-
-  bool ignores(String method, Uri url) {
-    if (ignoreMethods.contains(method.toUpperCase())) return true;
-    final text = url.toString();
-    return ignoreUrls.any((p) => p.allMatches(text).isNotEmpty);
-  }
 }
