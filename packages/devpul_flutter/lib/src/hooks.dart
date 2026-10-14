@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:devpul/devpul.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -7,7 +9,8 @@ import 'inspector.dart';
 import 'navigator.dart';
 import 'simulator.dart' if (dart.library.io) 'simulator_io.dart';
 
-/// Reports Flutter framework errors and uncaught platform errors to DevPul.
+/// Reports Flutter framework errors, uncaught platform errors and app
+/// lifecycle changes to DevPul.
 abstract final class DevpulFlutter {
   static bool _installed = false;
   static bool _capturing = false;
@@ -33,6 +36,17 @@ abstract final class DevpulFlutter {
       Devpul.error(error, stack, source: 'platform');
       return platformPrevious?.call(error, stack) ?? false;
     };
+    _watchLifecycle();
+  }
+
+  // Creating the binding here would break an app or test that creates its
+  // own later, so this waits for runApp to create it.
+  static void _watchLifecycle() {
+    try {
+      WidgetsBinding.instance.addObserver(_Lifecycle());
+    } catch (_) {
+      Timer(const Duration(milliseconds: 100), _watchLifecycle);
+    }
   }
 
   /// Sends every `debugPrint` line to the Logs tab as well.
@@ -101,4 +115,10 @@ abstract final class DevpulFlutter {
       return null;
     }
   }
+}
+
+class _Lifecycle with WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) =>
+      Devpul.emit('lifecycle', {'state': state.name});
 }

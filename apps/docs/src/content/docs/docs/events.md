@@ -49,6 +49,7 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 | `error`         | `source`, `type`, `message`, `library`, `context`, `information`, `widget`, `location` (`file`, `line`, `column`), `route`, `silent`, `stack` |
 | `log`           | `level`, `message`, `name`, `error`, `stack`                                                                                                  |
 | `route`         | `action` (`push`, `pop`, `replace`, `remove`), `route`, `previous`, `arguments`                                                               |
+| `lifecycle`     | `state` (`resumed`, `inactive`, `hidden`, `paused`, `detached`)                                                                               |
 | anything else   | custom, shown in Events or a plugin tab                                                                                                       |
 
 HTTP events pair on `session` + `id`. A response may arrive before its request; the UI pairs them either way. `finalUrl` is present only when a redirect ended somewhere else.

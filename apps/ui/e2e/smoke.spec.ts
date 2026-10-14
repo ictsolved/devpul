@@ -153,6 +153,9 @@ test('opens breadcrumbs from an error and goes back to the error', async ({ page
   const crumbs = detail.getByRole('list', { name: 'Breadcrumbs' });
   await expect(crumbs.getByRole('button')).toHaveText([
     /route\s*push Cart/,
+    /GET.*example\.com\/slow/,
+    /event\s*lifecycle state: resumed/,
+    /event\s*lifecycle state: inactive/,
     /POST.*example\.com\/items/,
     /route\s*pop \/checkout/,
     /log\s*error Sync failed/,
@@ -479,9 +482,9 @@ test('copies a widget location when no IDE listens', async ({ page, vm, context 
   await page.getByRole('tab', { name: /^Errors/ }).click();
   await page.getByRole('row', { name: /Bad state: layout/ }).click();
   const widget = page.getByRole('complementary', { name: 'Detail' }).locator('section', { hasText: 'Widget' }).first();
-  await widget.getByRole('button', { name: /contract_test\.dart:48:64/ }).click();
-  await expect(page.getByRole('status')).toHaveText('No IDE is attached. Copied /app/test/contract_test.dart:48:64.');
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('/app/test/contract_test.dart:48:64');
+  await widget.getByRole('button', { name: /contract_test\.dart:51:64/ }).click();
+  await expect(page.getByRole('status')).toHaveText('No IDE is attached. Copied /app/test/contract_test.dart:51:64.');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('/app/test/contract_test.dart:51:64');
   expect(vm.callsTo('postEvent')).toHaveLength(1);
 });
 

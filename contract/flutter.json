@@ -59,12 +59,36 @@
     }
   },
   {
-    "kind": "devpul.route",
+    "kind": "devpul.lifecycle",
     "data": {
       "v": 1,
       "session": "f1",
       "seq": 6,
       "ts": 1767225600006,
+      "data": {
+        "state": "inactive"
+      }
+    }
+  },
+  {
+    "kind": "devpul.lifecycle",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 7,
+      "ts": 1767225600007,
+      "data": {
+        "state": "resumed"
+      }
+    }
+  },
+  {
+    "kind": "devpul.route",
+    "data": {
+      "v": 1,
+      "session": "f1",
+      "seq": 8,
+      "ts": 1767225600008,
       "data": {
         "action": "push",
         "route": "Cart",
@@ -77,20 +101,20 @@
     "data": {
       "v": 1,
       "session": "f1",
-      "seq": 7,
-      "ts": 1767225600007,
+      "seq": 9,
+      "ts": 1767225600009,
       "data": {
         "source": "flutter",
         "type": "StateError",
         "message": "Bad state: layout",
         "library": "rendering library",
         "context": "during layout",
-        "information": "The relevant error-causing widget was:\n  Cart\n  Cart:file:///app/test/contract_test.dart:48:64",
+        "information": "The relevant error-causing widget was:\n  Cart\n  Cart:file:///app/test/contract_test.dart:51:64",
         "widget": "Cart",
         "route": "Cart",
         "location": {
           "file": "file:///app/test/contract_test.dart",
-          "line": 48,
+          "line": 51,
           "column": 64
         },
         "stack": "#0      build (file:///app.dart:1:1)"

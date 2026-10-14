@@ -5,7 +5,7 @@ What the Dart packages send and the UI reads, with session ids, times, durations
 | File                |                                                                                                                                      |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `events.json`       | Every kind `devpul` posts, as `ext.devpul.backlog` serves them.                                                                      |
-| `flutter.json`      | Route and Flutter error events from `devpul_flutter`.                                                                                |
+| `flutter.json`      | Route, lifecycle and Flutter error events from `devpul_flutter`.                                                                     |
 | `info.json`         | The `ext.devpul.info` handshake.                                                                                                     |
 | `call.json`         | An `ext.devpul.call` request, its result and a writes refusal.                                                                       |
 | `logging.json`      | `developer.log` records from the Logging stream, and the `getObject` and `invoke` answers that read the rest.                        |

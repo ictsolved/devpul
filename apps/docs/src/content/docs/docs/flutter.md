@@ -3,7 +3,7 @@ title: Flutter
 description: devpul_flutter reports Flutter errors with diagnostics, captures debugPrint, records navigation and overrides platform settings in DevPul.
 ---
 
-[devpul_flutter](https://pub.dev/packages/devpul_flutter) reports Flutter errors, `debugPrint` output and route changes, and overrides platform settings while the app runs.
+[devpul_flutter](https://pub.dev/packages/devpul_flutter) reports Flutter errors, app lifecycle changes, `debugPrint` output and route changes, and overrides platform settings while the app runs.
 
 ```yaml
 dependencies:
@@ -30,6 +30,10 @@ runZonedGuarded(
   (e, s) => Devpul.error(e, s, source: 'zone'),
 );
 ```
+
+## Lifecycle
+
+`install()` also sends each app lifecycle change as a `lifecycle` event with `state`: `resumed`, `inactive`, `hidden`, `paused` or `detached`, as Flutter reports them, so the breadcrumbs before an error show whether the app had just come back from the background. On desktop and web the app goes `inactive` whenever its window or tab loses focus. `-kind:lifecycle` hides them in Events.
 
 ## debugPrint
 

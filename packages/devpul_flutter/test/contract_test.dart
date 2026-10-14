@@ -16,7 +16,7 @@ void main() {
   testWidgets('events match contract/flutter.json', (tester) async {
     final events = <Map<String, Object?>>[];
     debugOnPost = (kind, event) {
-      if (kind == 'route' || kind == 'error') {
+      if (kind == 'route' || kind == 'lifecycle' || kind == 'error') {
         events.add({'kind': 'devpul.$kind', 'data': event});
       }
     };
@@ -43,6 +43,9 @@ void main() {
     await tester.pumpAndSettle();
     key.currentState!.pop();
     await tester.pumpAndSettle();
+    tester.binding
+      ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+      ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     unawaited(
       key.currentState!.push(
         PageRouteBuilder<void>(pageBuilder: (_, _, _) => const Cart()),

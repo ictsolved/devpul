@@ -50,6 +50,8 @@ describe('contract', () => {
     expect(store.logs).toHaveLength(2);
     expect(store.other.map((e) => e.kind)).toEqual([
       'route',
+      'lifecycle',
+      'lifecycle',
       'route',
       'route',
       'route',
@@ -113,6 +115,9 @@ describe('contract', () => {
     expect(store.errors.map(crumbs)).toEqual([
       [
         'push Cart',
+        'GET failed https://example.com/slow',
+        'lifecycle state: resumed',
+        'lifecycle state: inactive',
         'POST 201 https://example.com/items?page=1&tag=a&tag=b',
         'pop /checkout',
         'error Sync failed',

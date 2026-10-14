@@ -1,5 +1,5 @@
-/// Flutter error hooks, debugPrint capture, route events and app overrides
-/// for DevPul.
+/// Flutter error hooks, lifecycle and route events, debugPrint capture and
+/// app overrides for DevPul.
 library;
 
 export 'src/hooks.dart';
