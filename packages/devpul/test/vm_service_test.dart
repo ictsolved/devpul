@@ -152,14 +152,27 @@ void main() {
     },
   );
 
-  test('prints the connect link once', () async {
-    final link =
-        'https://ui.example.com/#connect='
-        '${Uri.encodeComponent(serviceUri.toString())}';
-    while (!output.contains('DevPul $link')) {
+  test('prints a DevTools link once', () async {
+    while (!output.any((l) => l.startsWith('DevPul '))) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
-    expect(output.where((l) => l.startsWith('DevPul ')), ['DevPul $link']);
+    final links = output.where((l) => l.startsWith('DevPul ')).toList();
+    expect(links, [
+      matches(r'^DevPul http://127\.0\.0\.1:\d+/[^/]+=/\?page=devpul_ext$'),
+    ]);
+    // getInfo returns the VM's own URL from Dart 3.14, DDS's before; both
+    // redirect to DevTools on DDS.
+    final client = HttpClient();
+    addTearDown(client.close);
+    final request = await client.getUrl(Uri.parse(links.single.substring(7)));
+    request.followRedirects = false;
+    final response = await request.close();
+    await response.drain<void>();
+    expect(response.statusCode, HttpStatus.found);
+    expect(
+      response.headers.value(HttpHeaders.locationHeader),
+      startsWith('${serviceUri}devtools/'),
+    );
   });
 
   test('serves the backlog', () async {

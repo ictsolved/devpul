@@ -1,9 +1,9 @@
-import 'version.dart';
-
 enum ConsoleMode { off, summary, verbose }
 
 // `devpul run` passes its own server.
-const _uiUrl = String.fromEnvironment('DEVPUL_UI', defaultValue: siteUrl);
+const _uiUrl = bool.hasEnvironment('DEVPUL_UI')
+    ? String.fromEnvironment('DEVPUL_UI')
+    : null;
 
 typedef HeaderRedactor =
     Map<String, Object?> Function(Uri url, Map<String, Object?> headers);
@@ -15,6 +15,7 @@ final class DevpulConfig {
     this.enabled = true,
     this.console = ConsoleMode.summary,
     this.ansiColors,
+    this.printLink = true,
     this.uiUrl = _uiUrl,
     this.maxValueLength = 1024 * 1024,
     this.backlogSize = 16 * 1024 * 1024,
@@ -34,8 +35,12 @@ final class DevpulConfig {
   /// on except in Flutter on iOS.
   final bool? ansiColors;
 
-  /// The app prints `<uiUrl>#connect=<VM service URL>` at startup and when
-  /// the URL changes, unless [console] is off. Null prints nothing.
+  /// The app prints a link to DevPul at startup and when the VM service URL
+  /// changes, unless [console] is off.
+  final bool printLink;
+
+  /// The link is `<uiUrl>#connect=<VM service URL>`. Null links the DevPul
+  /// tab of DevTools, served by the app's VM service.
   final String? uiUrl;
 
   /// Characters of encoded JSON per top-level event field. Longer values are

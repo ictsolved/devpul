@@ -71,7 +71,7 @@ void main() {
         (await capture(() => Devpul.error('x', null))).single;
 
     test('follow the default when the config leaves them unset', () async {
-      Devpul.configure(const DevpulConfig(uiUrl: null));
+      Devpul.configure(const DevpulConfig(printLink: false));
       expect(await errorLine(), startsWith(ansiRed));
       Devpul.ansiColorsByDefault = false;
       expect(await errorLine(), 'error [app] String: x');
@@ -79,7 +79,7 @@ void main() {
 
     test('config overrides the default', () async {
       Devpul.ansiColorsByDefault = false;
-      Devpul.configure(const DevpulConfig(uiUrl: null, ansiColors: true));
+      Devpul.configure(const DevpulConfig(printLink: false, ansiColors: true));
       expect(await errorLine(), startsWith(ansiRed));
     });
   });

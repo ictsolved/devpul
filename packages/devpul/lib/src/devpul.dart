@@ -361,7 +361,7 @@ abstract final class Devpul {
   }
 
   static bool get _linking =>
-      !_web && _config.uiUrl != null && _config.console != ConsoleMode.off;
+      !_web && _config.printLink && _config.console != ConsoleMode.off;
 
   // A Flutter app starts before `flutter run` or `flutter attach` puts DDS in
   // front of the VM service, and the VM's own URL then redirects, which
@@ -385,18 +385,30 @@ abstract final class Devpul {
   }
 
   static Future<void> _printLink() async {
-    final base = _config.uiUrl;
-    if (!_linking || base == null) return;
+    if (!_linking) return;
     try {
       final uri = (await developer.Service.getInfo()).serverUri;
       if (uri == null) return;
-      final link = '$base#connect=${Uri.encodeComponent(uri.toString())}';
+      final link = _linkTo(uri);
       if (link == _link) return;
       _link = link;
       DevpulConsole.write('DevPul', link);
     } catch (_) {
       // No VM service.
     }
+  }
+
+  // Dart 3.14 DDS refuses websockets from non-loopback origins, so the
+  // default link opens DevTools, which DDS serves. Outside Flutter, getInfo
+  // returns the VM's own URL there, which redirects `/?<query>` to DevTools
+  // on DDS and has no `/devtools/` of its own.
+  static String _linkTo(Uri vm) {
+    final base = _config.uiUrl;
+    if (base != null) return '$base#connect=${Uri.encodeComponent('$vm')}';
+    if (!_flutter) return '${vm.replace(query: 'page=devpul_ext')}';
+    final ws = vm.replace(scheme: 'ws', path: '${vm.path}ws');
+    return '${vm.resolve('devtools/devpul_ext')}'
+        '?uri=${Uri.encodeComponent('$ws')}';
   }
 
   static void _emit(String kind, Map<String, Object?> data, int now) {
