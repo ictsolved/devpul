@@ -7,6 +7,7 @@ import Default from '@astrojs/starlight/components/ThemeProvider.astro';
   try {
     const t = JSON.parse(localStorage.getItem('devpul:theme'));
     localStorage.setItem('starlight-theme', t === 'light' || t === 'dark' ? t : '');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.themeChoice = t;
   } catch {}
 </script>
 <Default />
