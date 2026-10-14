@@ -860,5 +860,5 @@ export function App() {
 }
 
 export const ICON = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0f766e"/><path d="M5 21c4-8 18-8 22 0" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M5 21h22M10 17v4M16 15v6M22 17v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>',
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0f766e"/><path d="M0 14H6.5Q16 21 25.5 14H32V18H26.81Q16 25.97 5.19 18H0Z" fill="#ffffff"/><path d="M5.25 9H7.75L9.5 23H3.5Z" fill="#ffffff"/><path d="M24.25 9H26.75L28.5 23H22.5Z" fill="#ffffff"/></svg>',
 )}`;
