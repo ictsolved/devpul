@@ -1,3 +1,7 @@
+## 1.0.0
+
+- `add`, `sync` and `upgrade` warn about `plugin.json` fields they do not know and install the plugin; `check` and the registry reject them.
+
 ## 1.0.0-dev.1
 
 - First release: `devpul [vm-url]`, `devpul run`, `--plugin`.

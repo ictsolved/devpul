@@ -1,3 +1,9 @@
+## 1.0.0
+
+- Stable: event envelope `v` 1, handshake `protocol` 1 and plugin API 1.
+- Removed `curl`, `shellQuote`, `normalizeBody`, `normalizeHeaders`, `truncatedKey`, `DevpulConfig.ignores`, `DevpulForm.flatten`, `DevpulParam.read` and `DevpulParam.toJson` from the public API.
+- The UI waits between reconnect attempts with the connection closed.
+
 ## 1.0.0-dev.1
 
 - Requires Dart 3.8.

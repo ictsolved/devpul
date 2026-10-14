@@ -6,8 +6,8 @@
 
 ```yaml
 dependencies:
-  devpul: ^1.0.0-dev.1
-  devpul_http: ^1.0.0-dev.1
+  devpul: ^1.0.0
+  devpul_http: ^1.0.0
 ```
 
 ## Usage

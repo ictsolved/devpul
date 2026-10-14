@@ -1,6 +1,6 @@
 name: devpul_cli
 description: "Command line for DevPul: serves the UI on 127.0.0.1, runs the app with it connected, adds plugins and serves the app's events to agents over MCP."
-version: 1.0.0-dev.1
+version: 1.0.0
 homepage: https://devpul.saradgajurel.com.np
 documentation: https://devpul.saradgajurel.com.np/docs/connecting/
 repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_cli
@@ -27,7 +27,7 @@ dependencies:
   crypto: ^3.0.7
   dart_mcp: ^0.5.2
   # Holds the UI build.
-  devpul: ^1.0.0-dev.1
+  devpul: ^1.0.0
   path: ^1.9.0
   pub_semver: ^2.2.1
   stack_trace: ^1.12.1

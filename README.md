@@ -25,10 +25,10 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
 
    ```yaml
    dependencies:
-     devpul: ^1.0.0-dev.1
-     devpul_dio: ^1.0.0-dev.1 # Dio
-     devpul_http: ^1.0.0-dev.1 # package:http
-     devpul_flutter: ^1.0.0-dev.1 # Flutter errors, debugPrint and routes
+     devpul: ^1.0.0
+     devpul_dio: ^1.0.0 # Dio
+     devpul_http: ^1.0.0 # package:http
+     devpul_flutter: ^1.0.0 # Flutter errors, debugPrint and routes
    ```
 
 2. Hook them up:

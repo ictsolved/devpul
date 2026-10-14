@@ -6,7 +6,7 @@ Core of [DevPul](https://devpul.saradgajurel.com.np): streams HTTP calls, errors
 
 ```yaml
 dependencies:
-  devpul: ^1.0.0-dev.1
+  devpul: ^1.0.0
 ```
 
 Add [devpul_dio](https://pub.dev/packages/devpul_dio) for Dio, [devpul_http](https://pub.dev/packages/devpul_http) for package:http and [devpul_flutter](https://pub.dev/packages/devpul_flutter) for Flutter errors, `debugPrint` and routes.
