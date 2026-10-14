@@ -35,4 +35,4 @@ What it records:
 - status, reason, headers, body and duration of the response, and the final URL when the platform reports redirects
 - exceptions such as `ClientException` as errors, rethrown unchanged
 
-Response bodies are read in full before your code gets them, which suits API calls. `text/event-stream` responses pass through untouched and show as `<stream>`, as do `StreamedRequest` bodies. Binary bodies show their size.
+Response bodies are read in full before your code gets them, which suits API calls. `text/event-stream` responses pass through untouched and show as `<stream>`, as do `StreamedRequest` bodies. Images show as previews while their base64 fits `maxValueLength`; other binary bodies show their size.

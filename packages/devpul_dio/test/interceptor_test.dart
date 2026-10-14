@@ -65,6 +65,22 @@ void main() {
     expect(res['headers'], {'content-type': 'application/json'});
   });
 
+  test('sends image bytes as a data URL', () async {
+    await dio(
+      (_) => ResponseBody.fromBytes(
+        [71, 73, 70],
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['image/gif'],
+        },
+      ),
+    ).get<List<int>>(
+      '/logo.gif',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    expect(events.last.$2['body'], 'data:image/gif;base64,R0lG');
+  });
+
   test('ids keep counting across Dio instances', () async {
     await dio((_) => _json({}, 200)).get<Object?>('/a');
     await dio((_) => _json({}, 200)).get<Object?>('/b');

@@ -691,11 +691,20 @@ int _bodySize(DevEvent e) {
     null => 0,
     final String s => switch (RegExp(r'^<(\d+) bytes>$').firstMatch(s)) {
       final m? => int.parse(m[1]!),
-      _ => utf8.encode(s).length,
+      _ => _imageBytes(s) ?? utf8.encode(s).length,
     },
     {'devpul.truncated': {'size': final num size}} => size.toInt(),
     final body => utf8.encode(jsonEncode(body)).length,
   };
+}
+
+final _base64Image = RegExp(r'^data:image/[\w.+-]+(;[^,;]*)*;base64,');
+
+int? _imageBytes(String s) {
+  final m = _base64Image.firstMatch(s);
+  if (m == null) return null;
+  final pad = s.endsWith('==') ? 2 : (s.endsWith('=') ? 1 : 0);
+  return (s.length - m.end) * 3 ~/ 4 - pad;
 }
 
 /// [data] without null fields, long strings cut and any value whose JSON

@@ -62,7 +62,7 @@ abstract final class DevpulHttp {
         'url': url.toString(),
         'params': _params(url),
         'headers': h,
-        'body': normalizeBody(b),
+        'body': normalizeBody(b, type: _contentType(h)),
         'curl': curl(upper, url, h, b),
       });
       call._print('>', '$upper $url', ansiCyan, h, b);
@@ -122,7 +122,7 @@ final class DevpulHttpCall {
         if (landed != null && landed != url) 'finalUrl': landed.toString(),
         'durationMs': ms,
         'headers': h,
-        'body': normalizeBody(b),
+        'body': normalizeBody(b, type: _contentType(h)),
       });
       final color = switch (status ?? 0) {
         < 300 => ansiGreen,
@@ -156,7 +156,7 @@ final class DevpulHttpCall {
         'message': message,
         'durationMs': ms,
         'headers': h,
-        'body': normalizeBody(b),
+        'body': normalizeBody(b, type: _contentType(h)),
       });
       final code = status == null ? '' : '$status ';
       _print(
@@ -206,10 +206,27 @@ Map<String, Object?> normalizeHeaders(Map<String, Object?> headers) => {
     },
 };
 
-/// Forms become maps, JSON strings are decoded, bytes are summarised.
-Object? normalizeBody(Object? body) {
+String? _contentType(Map<String, Object?> headers) {
+  for (final MapEntry(:key, :value) in headers.entries) {
+    if (key.toLowerCase() != 'content-type') continue;
+    return switch (value) {
+      final List<Object?> l => l.firstOrNull?.toString(),
+      _ => value?.toString(),
+    };
+  }
+  return null;
+}
+
+final _imageType = RegExp(r'^image/[\w.+-]+$');
+
+/// Forms become maps, JSON strings are decoded, bytes of an image [type]
+/// become a `data:` URL when it fits the config's `maxValueLength`, other
+/// bytes are summarised.
+Object? normalizeBody(Object? body, {String? type}) {
   if (body is DevpulForm) return body.flatten();
-  if (body is List<int>) return '<${body.length} bytes>';
+  if (body is List<int>) {
+    return _dataUrl(body, type) ?? '<${body.length} bytes>';
+  }
   if (body is String) {
     final trimmed = body.trimLeft();
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
@@ -221,6 +238,15 @@ Object? normalizeBody(Object? body) {
     }
   }
   return body;
+}
+
+String? _dataUrl(List<int> bytes, String? type) {
+  final mime = type?.split(';').first.trim().toLowerCase();
+  if (mime == null || !_imageType.hasMatch(mime)) return null;
+  // `"data:<mime>;base64,<base64>"` as JSON, measured before encoding.
+  final length = 15 + mime.length + (bytes.length + 2) ~/ 3 * 4;
+  if (length > Devpul.config.maxValueLength) return null;
+  return 'data:$mime;base64,${base64Encode(bytes)}';
 }
 
 /// A single-line curl command. Single quotes, embedded `'` written as `'\''`.

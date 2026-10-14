@@ -30,4 +30,4 @@ What it records:
 - status, headers, body and duration of the response
 - `DioException`s as errors with their type, such as `connectionTimeout`, `badResponse` or `cancel`, plus any response that came with them
 
-Streamed request and response bodies show as `<stream>`. Ignore rules, redaction, size limits and console output come from [`Devpul.configure`](/docs/api/#configuration).
+Streamed request and response bodies show as `<stream>`. Image responses show as previews when read with `ResponseType.bytes`; other response types decode them as text. Ignore rules, redaction, size limits and console output come from [`Devpul.configure`](/docs/api/#configuration).

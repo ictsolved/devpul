@@ -138,6 +138,35 @@ void main() {
 
     test('summarises bytes', () {
       expect(normalizeBody(<int>[1, 2, 3]), '<3 bytes>');
+      expect(
+        normalizeBody(<int>[1, 2, 3], type: 'application/pdf'),
+        '<3 bytes>',
+      );
+    });
+
+    test('sends image bytes as a data URL while they fit', () {
+      expect(
+        normalizeBody(<int>[1, 2, 3], type: 'Image/PNG; q=1'),
+        'data:image/png;base64,AQID',
+      );
+      // 15 + 9 + 4 characters.
+      Devpul.configure(const DevpulConfig(maxValueLength: 28));
+      expect(
+        normalizeBody(<int>[1, 2, 3], type: 'image/png'),
+        'data:image/png;base64,AQID',
+      );
+      expect(normalizeBody(<int>[1, 2, 3, 4], type: 'image/png'), '<4 bytes>');
+    });
+
+    test('reads the type from the call headers', () {
+      DevpulHttp.request(method: 'GET', url: url)!.response(
+        status: 200,
+        headers: {
+          'Content-Type': ['image/gif'],
+        },
+        body: <int>[71, 73, 70],
+      );
+      expect(events.last.$2['body'], 'data:image/gif;base64,R0lG');
     });
   });
 

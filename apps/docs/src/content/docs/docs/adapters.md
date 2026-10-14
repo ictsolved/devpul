@@ -43,7 +43,7 @@ Duration is measured from `request` to `response` or `error`.
 ## Bodies
 
 - Strings that look like JSON are decoded, so the UI shows them as trees.
-- `List<int>` shows as `<N bytes>`.
+- `List<int>` shows as `<N bytes>`, or as a `data:` URL when the call's `content-type` is `image/*` and the URL fits `maxValueLength`; the UI previews it.
 - `DevpulForm(fields: [...], files: [MapEntry('file', 'photo.png')])` shows multipart forms as a map and builds `-F` curl arguments.
 - Anything else goes through `toJsonSafe`: maps and lists as they are, other objects as `toString()`.
 - Values longer than `maxValueLength` are cut, with a preview.

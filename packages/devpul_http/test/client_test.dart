@@ -67,16 +67,22 @@ void main() {
     expect(events.last.$2['body'], isNull);
   });
 
-  test('binary bodies show as a byte count', () async {
+  test('binary bodies show as a byte count, images as a data URL', () async {
     final c = client(
-      (_) async => http.Response.bytes(
+      (r) async => http.Response.bytes(
         [0xff, 0xfe, 0x00],
         200,
-        headers: {'content-type': 'image/png'},
+        headers: {
+          'content-type': r.url.path.endsWith('.png')
+              ? 'image/png'
+              : 'application/octet-stream',
+        },
       ),
     );
     final res = await c.get(Uri.parse('https://example.com/i.png'));
     expect(res.bodyBytes, [0xff, 0xfe, 0x00]);
+    expect(events.last.$2['body'], 'data:image/png;base64,//4A');
+    await c.get(Uri.parse('https://example.com/i.bin'));
     expect(events.last.$2['body'], '<3 bytes>');
   });
 
