@@ -69,7 +69,7 @@ The [example app](examples/devpul_example) uses every package.
 
 ## In the browser
 
-- HTTP table with live pending rows, sortable columns, a filter syntax (`status:4xx ms:>500 host:api -word`), JSON trees, copy as curl or fetch, HAR export.
+- HTTP table with live pending rows, sortable columns, a filter syntax (`status:4xx ms:>500 host:api -word`), tree or raw JSON, copy as curl or fetch, HAR export.
 - Errors with stack traces and Flutter diagnostics, grouped by repeat, with the requests made just before.
 - Logs, custom events, app actions you trigger from the UI, and plugins for your own tabs.
 - Several apps at once, history across reloads, session files to share, keyboard navigation.

@@ -1,7 +1,7 @@
 import { type RefObject, useCallback } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type Facet, type ListSelection } from '../../components/EventList';
-import { JsonView } from '../../components/JsonView';
+import { JsonModeToggle, JsonView } from '../../components/JsonView';
 import { type DevEvent, preview } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
 
@@ -52,12 +52,13 @@ export function EventsTab({ events, runLabel, filterRef, selected, onSelect, onB
           <span className="font-mono font-semibold">{e.kind}</span>
           <span className="text-muted-foreground">{formatTime(e.ts)}</span>
           <span className="flex-1" />
+          <JsonModeToggle />
           <CopyButton text={() => pretty(e.data)} />
         </>
       )}
       body={(e) => (
         <div className="px-3 py-2">
-          <JsonView value={e.data} mode="tree" />
+          <JsonView value={e.data} />
           <p className="my-[1em] text-muted-foreground">{runLabel(e.run)}</p>
         </div>
       )}

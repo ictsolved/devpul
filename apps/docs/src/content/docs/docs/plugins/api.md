@@ -26,16 +26,16 @@ A module may also export `icon`, SVG markup used by each of its plugins that set
 
 ## Plugin
 
-| Field       | Type                                           |                                                                                                                                    |
-| ----------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `api`       | `1`                                            | The plugin API it was written for. A UI with another API refuses it with a message.                                                |
-| `id`        | string                                         | Unique. Registering the same id again replaces the plugin.                                                                         |
-| `label`     | string                                         | Tab name, up to 32 characters; a longer one fails to load.                                                                         |
-| `icon`      | string                                         | Optional. SVG markup shown in the tab; `stroke="currentColor"` follows the theme. Defaults to the module's `icon` export.          |
-| `kinds`     | string[] or `(kind) => boolean`                | Optional. Event kinds the tab takes. Claimed kinds leave the Events tab.                                                           |
-| `summarize` | `(event) => string`                            | Optional. One line in the list.                                                                                                    |
-| `render`    | `(el, event, context) => void \| (() => void)` | Optional. Fills `el` for the selected event. May return a cleanup function. Without it, the detail shows the event as a JSON tree. |
-| `renderTab` | `(el, context) => void \| (() => void)`        | Optional. Fills the whole tab in place of the event list. May return a cleanup function.                                           |
+| Field       | Type                                           |                                                                                                                                          |
+| ----------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`       | `1`                                            | The plugin API it was written for. A UI with another API refuses it with a message.                                                      |
+| `id`        | string                                         | Unique. Registering the same id again replaces the plugin.                                                                               |
+| `label`     | string                                         | Tab name, up to 32 characters; a longer one fails to load.                                                                               |
+| `icon`      | string                                         | Optional. SVG markup shown in the tab; `stroke="currentColor"` follows the theme. Defaults to the module's `icon` export.                |
+| `kinds`     | string[] or `(kind) => boolean`                | Optional. Event kinds the tab takes. Claimed kinds leave the Events tab.                                                                 |
+| `summarize` | `(event) => string`                            | Optional. One line in the list.                                                                                                          |
+| `render`    | `(el, event, context) => void \| (() => void)` | Optional. Fills `el` for the selected event. May return a cleanup function. Without it, the detail shows the event as JSON, tree or raw. |
+| `renderTab` | `(el, context) => void \| (() => void)`        | Optional. Fills the whole tab in place of the event list. May return a cleanup function.                                                 |
 
 ## Event
 

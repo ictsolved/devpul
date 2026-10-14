@@ -70,7 +70,7 @@ export interface DevpulPlugin {
   kinds?: string[] | ((kind: string) => boolean);
   /** One line in the list. */
   summarize?: (event: PluginEvent) => string;
-  /** Fills `el` for the selected event. Without it the detail shows the event as a JSON tree. */
+  /** Fills `el` for the selected event. Without it the detail shows the event as JSON. */
   render?: (el: HTMLElement, event: PluginEvent, context: PluginContext) => Cleanup;
   /** Fills the whole tab in place of the event list. */
   renderTab?: (el: HTMLElement, context: PluginContext) => Cleanup;

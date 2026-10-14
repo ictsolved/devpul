@@ -8,7 +8,7 @@ DevPul shows anything the app sends, not only HTTP. Extending it takes up to thr
 | Piece | Where   | How                                                                                                                                   |
 | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Send  | App     | `Devpul.emit(kind, data)` from wherever the data appears: an observer, a listener, a wrapper.                                         |
-| Show  | Browser | Events land in the Events tab with kind chips, filters and a JSON tree. A [plugin](/docs/plugins/) gives them their own tab and view. |
+| Show  | Browser | Events land in the Events tab with kind chips, filters and a JSON view. A [plugin](/docs/plugins/) gives them their own tab and view. |
 | Act   | Both    | [`Devpul.action`](/docs/actions/) adds an item to the Actions menu. A plugin calls handlers the app registers with `Devpul.handle`.   |
 
 [HTTP adapters](/docs/adapters/) are for HTTP clients only: they feed the HTTP tab. State, analytics, database calls and everything else go through `Devpul.emit`.

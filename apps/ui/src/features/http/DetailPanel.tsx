@@ -1,9 +1,8 @@
 import { cn } from 'cn';
-import { Braces, ListTree, SquareTerminal } from 'lucide-react';
+import { SquareTerminal } from 'lucide-react';
 import { memo } from 'react';
-import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
-import { type BodyMode, isEmptyValue, JsonView, KeyValues, kvClass } from '../../components/JsonView';
+import { isEmptyValue, JsonModeToggle, JsonView, KeyValues, kvClass } from '../../components/JsonView';
 import { BackButton, Detail } from '../../components/Panes';
 import { Section } from '../../components/Section';
 import { Tip } from '../../components/Tip';
@@ -13,7 +12,6 @@ import { DART_IO } from '../../core/profile';
 import { formatBytes, formatDateTime, formatTime, pretty } from '../../core/json';
 import { bearerJwt, expiry, type Jwt, TIME_CLAIMS } from '../../core/jwt';
 import type { HttpRow } from '../../core/store';
-import { useStored } from '../../lib/storage';
 
 const count = (v: unknown): string | undefined => {
   if (Array.isArray(v)) return `${v.length} items`;
@@ -35,7 +33,6 @@ interface Props {
 }
 
 function DetailPanelInner({ row, onClose, onBack }: Props) {
-  const [mode, setMode] = useStored<BodyMode>('bodyMode', 'raw');
   const req = row.request?.data;
   const end = (row.response ?? row.error)?.data;
   const curl = str(req?.curl);
@@ -62,12 +59,7 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
           )}
           <span className="text-muted-foreground">{formatTime(row.ts)}</span>
           <span className="flex-1" />
-          <Tip content="Switch between tree and raw JSON">
-            <Button type="button" variant="outline" size="xs" onClick={() => setMode(mode === 'tree' ? 'raw' : 'tree')}>
-              {mode === 'tree' ? <Braces /> : <ListTree />}
-              {mode === 'tree' ? 'Raw' : 'Tree'}
-            </Button>
-          </Tip>
+          <JsonModeToggle />
           {curl && <CopyButton text={() => curl} label="curl" icon={<SquareTerminal />} />}
           {fetchCode && <CopyButton text={() => fetchCode} label="fetch" />}
         </>
@@ -93,7 +85,7 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
       <Part id="params" title="Params" value={req?.params} summary={count(req?.params)} table />
       <Part id="req-headers" title="Request headers" value={req?.headers} summary={count(req?.headers)} table />
       {jwt && <Token jwt={jwt} sentAt={row.ts} />}
-      <Part id="req-body" title="Request body" value={req?.body} summary={size(req?.body)} mode={mode} />
+      <Part id="req-body" title="Request body" value={req?.body} summary={size(req?.body)} />
       <Part
         id="res-headers"
         title="Response headers"
@@ -106,21 +98,13 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
         title="Response body"
         value={end?.body}
         summary={end ? (row.size === undefined ? size(end.body) : formatBytes(row.size)) : 'pending'}
-        mode={mode}
       />
     </Detail>
   );
 }
 
-function Part(props: {
-  id: string;
-  title: string;
-  value: unknown;
-  summary?: string;
-  table?: boolean;
-  mode?: BodyMode;
-}) {
-  const { id, title, value, summary, table, mode } = props;
+function Part(props: { id: string; title: string; value: unknown; summary?: string; table?: boolean }) {
+  const { id, title, value, summary, table } = props;
   const empty = isEmptyValue(value);
   return (
     <Section
@@ -129,7 +113,7 @@ function Part(props: {
       summary={summary}
       actions={empty ? undefined : <CopyButton text={() => pretty(value)} />}
     >
-      {table ? <KeyValues value={value} /> : <JsonView value={value} mode={mode} />}
+      {table ? <KeyValues value={value} /> : <JsonView value={value} />}
     </Section>
   );
 }

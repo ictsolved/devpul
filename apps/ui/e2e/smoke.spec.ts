@@ -89,6 +89,37 @@ test('opens HTTP detail', async ({ page, vm }) => {
   await expect(detail.getByRole('button', { name: 'curl' })).toBeVisible();
 });
 
+test('shares the tree and raw switch across details and reloads', async ({ page, vm }) => {
+  await connect(page, vm);
+  await page.getByRole('row', { name: /example\.com\/items/ }).click();
+  const detail = page.getByRole('complementary', { name: 'Request detail' });
+  const tree = detail.getByRole('group', { name: 'JSON view' }).getByRole('button', { name: 'Tree' });
+  await expect(tree).toHaveAttribute('aria-pressed', 'false');
+  await tree.click();
+  await expect(tree).toHaveAttribute('aria-pressed', 'true');
+  await expect(detail).toContainText('ok: true');
+
+  await page.getByRole('tab', { name: /^Events/ }).click();
+  await page
+    .getByRole('grid', { name: 'Events' })
+    .getByRole('row', { name: /cart\.updated/ })
+    .click();
+  const event = page.getByRole('complementary', { name: 'Detail' });
+  await expect(event).toContainText('items: 3');
+  const raw = event.getByRole('group', { name: 'JSON view' }).getByRole('button', { name: 'Raw' });
+  await raw.press('Enter');
+  await expect(raw).toHaveAttribute('aria-pressed', 'true');
+  await expect(event).toContainText('"items": 3');
+
+  await page.reload();
+  await page.getByRole('tab', { name: /^Events/ }).click();
+  await page
+    .getByRole('grid', { name: 'Events' })
+    .getByRole('row', { name: /cart\.updated/ })
+    .click();
+  await expect(event).toContainText('"items": 3');
+});
+
 test('decodes a bearer JWT in HTTP detail', async ({ page, vm }) => {
   await connect(page, vm);
   const part = (v: object) => Buffer.from(JSON.stringify(v)).toString('base64url');

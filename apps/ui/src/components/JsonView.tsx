@@ -1,10 +1,11 @@
 import { cn } from 'cn';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { Braces, ChevronDown, ChevronRight, ListTree } from 'lucide-react';
+import { memo, useMemo, useState, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { isObject, type Json, TRUNCATED } from '../core/events';
 import { headerValue } from '../core/fetch';
 import { chunkLines, formatBytes, highlight, pretty } from '../core/json';
+import { load, save } from '../lib/storage';
 
 const LIMIT = 100_000;
 const CHUNK = 50_000;
@@ -33,7 +34,53 @@ export const kvClass = {
   value: 'border-b py-0.5 pr-2 text-left align-top wrap-anywhere',
 };
 
-export type BodyMode = 'tree' | 'raw';
+type BodyMode = 'tree' | 'raw';
+
+// One setting for every JsonView, so a switch in one detail holds in the others.
+let bodyMode: BodyMode | undefined;
+const modeListeners = new Set<() => void>();
+const getBodyMode = (): BodyMode => (bodyMode ??= load<BodyMode>('bodyMode', 'raw') === 'tree' ? 'tree' : 'raw');
+const subscribeBodyMode = (listener: () => void) => {
+  modeListeners.add(listener);
+  return () => modeListeners.delete(listener);
+};
+const setBodyMode = (next: BodyMode) => {
+  bodyMode = next;
+  save('bodyMode', next);
+  for (const listener of modeListeners) listener();
+};
+
+const MODES = [
+  ['tree', 'Tree', ListTree],
+  ['raw', 'Raw', Braces],
+] as const;
+
+export function JsonModeToggle() {
+  const mode = useSyncExternalStore(subscribeBodyMode, getBodyMode);
+  return (
+    <div
+      role="group"
+      aria-label="JSON view"
+      className="inline-flex shrink-0 rounded-md border bg-background p-px shadow-xs dark:border-input dark:bg-input/30"
+    >
+      {MODES.map(([value, label, Icon]) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={mode === value}
+          onClick={() => setBodyMode(value)}
+          className={cn(
+            'inline-flex h-5 cursor-pointer items-center gap-1 rounded-[5px] px-1.5 text-xs font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-3',
+            mode === value ? 'bg-primary-soft text-foreground' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Icon />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export const isEmptyValue = (value: unknown): boolean =>
   value === undefined ||
@@ -53,7 +100,8 @@ function Truncated({ marker }: { marker: Json }) {
   );
 }
 
-function JsonViewInner({ value, mode = 'raw' }: { value: unknown; mode?: BodyMode }) {
+function JsonViewInner({ value }: { value: unknown }) {
+  const mode = useSyncExternalStore(subscribeBodyMode, getBodyMode);
   if (isEmptyValue(value)) return <div className="text-muted-foreground">empty</div>;
   if (isObject(value) && value[TRUNCATED] !== undefined) return <Truncated marker={value[TRUNCATED]} />;
   if (mode === 'tree' && (isObject(value) || Array.isArray(value))) {

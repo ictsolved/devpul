@@ -1,7 +1,7 @@
 import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { CopyButton } from '../../components/Copy';
 import { EventList, type ListSelection } from '../../components/EventList';
-import { JsonView } from '../../components/JsonView';
+import { JsonModeToggle, JsonView } from '../../components/JsonView';
 import type { DevEvent } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
 import { pluginUi } from './pluginUi';
@@ -147,6 +147,7 @@ function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSel
           <span className="font-mono font-semibold">{e.kind}</span>
           <span className="text-muted-foreground">{formatTime(e.ts)}</span>
           <span className="flex-1" />
+          {!plugin.render && <JsonModeToggle />}
           <CopyButton text={() => pretty(e.data)} />
         </>
       )}
@@ -155,7 +156,7 @@ function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSel
           <PluginView key={e.key} plugin={plugin} event={e} events={events} call={call} />
         ) : (
           <div className="px-3 py-2">
-            <JsonView value={e.data} mode="tree" />
+            <JsonView value={e.data} />
           </div>
         )
       }
