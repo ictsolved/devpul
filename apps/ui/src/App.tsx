@@ -23,6 +23,7 @@ import { appName, sessionFields } from './core/session';
 import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl, toWsUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction } from './features/actions/ActionsMenu';
+import { RunNotice } from './features/connections/RunNotice';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
 import { ErrorsTab } from './features/errors/ErrorsTab';
 import { EventsTab } from './features/events/EventsTab';
@@ -715,6 +716,7 @@ export function App() {
               </MoreMenu>
             </nav>
           </header>
+          <RunNotice />
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
             <div className="flex min-h-9 items-center border-b bg-card px-3">
               <TabsList variant="line" className="w-full justify-start p-0">
