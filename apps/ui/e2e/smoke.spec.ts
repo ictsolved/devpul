@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { connect, expect, test } from './fixtures.ts';
-import { FakeDtd, fixtureEvents, PLUGIN } from './vm.ts';
+import { FakeDtd, FakeVm, fixtureEvents, PLUGIN } from './vm.ts';
 
 const site = JSON.parse(readFileSync(join(import.meta.dirname, '../../../site.json'), 'utf8')) as {
   url: string;
@@ -36,6 +36,23 @@ test('connects from a #connect= link and shows the fixture events in each tab', 
     await expect(events.getByRole('row', { name: new RegExp(kind) }).first()).toBeVisible();
   }
   await expect(events.getByRole('row', { name: /route/ })).toHaveCount(5);
+});
+
+test('connects another app from the header', async ({ page, vm }) => {
+  const other = await FakeVm.start({ token: 'otherToken=' });
+  await connect(page, vm);
+  await expect(page.getByRole('textbox', { name: 'VM service URL' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Connect another app' }).click();
+  const field = page.getByRole('textbox', { name: 'VM service URL' });
+  await expect(field).toBeFocused();
+  await field.fill('not a url');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Not a VM service URL.')).toBeVisible();
+  await field.fill(other.url);
+  await page.keyboard.press('Enter');
+  await expect(field).toHaveCount(0);
+  await expect(page.getByRole('list', { name: 'Connections' }).getByRole('listitem')).toHaveCount(2);
+  await other.close();
 });
 
 test('shows developer.log records and reads a cut message in full', async ({ page, vm }) => {
@@ -683,7 +700,7 @@ test('runs as a DevTools extension', async ({ page, vm, context }) => {
     ext.getByRole('button', { name: 'Open in window' }).click(),
   ]);
   await expect(popup.getByRole('list', { name: 'Connections' })).toContainText('Shop');
-  await expect(popup.getByRole('textbox', { name: 'VM service URL' })).toBeVisible();
+  await expect(popup.getByRole('button', { name: 'Connect another app' })).toBeVisible();
   await popup.close();
 
   await page.evaluate(() => {

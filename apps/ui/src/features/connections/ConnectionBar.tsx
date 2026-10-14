@@ -1,8 +1,9 @@
 import { cn } from 'cn';
-import { Globe, Plug, X } from 'lucide-react';
+import { Globe, Plug, Plus, X } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tip } from '../../components/Tip';
 import type { ConnState } from '../../core/rpc';
 import { connectionLabel, toWsUrl } from '../../core/url';
@@ -44,15 +45,16 @@ export function ConnectionBar(props: Props) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const add = (value: string) => {
+  const add = (value: string): boolean => {
     const ws = toWsUrl(value);
     if (!ws) {
       setError('Not a VM service URL. Paste the http://127.0.0.1:PORT/TOKEN=/ line your run prints.');
-      return;
+      return false;
     }
     setError(null);
     setText('');
     onAdd(ws);
+    return true;
   };
 
   // At least one attempt failed and none ever succeeded.
@@ -61,51 +63,47 @@ export function ConnectionBar(props: Props) {
     return s?.status === 'closed' && !s.everOpened;
   });
 
-  // In the header grid: the URL field between logo and nav, the rows below it running to the right edge.
+  const [adding, setAdding] = useState(false);
+  const form = (
+    <form
+      className={cn('flex gap-1.5', hero && 'w-full flex-wrap justify-center')}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (add(text)) setAdding(false);
+      }}
+    >
+      <Input
+        type="text"
+        className={cn('flex-1 font-mono text-xs', hero && 'h-auto flex-[1_1_320px] rounded-lg px-3 py-[9px] text-sm')}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="http://127.0.0.1:41234/AbCdEf12=/"
+        // Low on the site's landing page, where focus would scroll to it.
+        autoFocus={!hero || !onSite}
+        aria-label="VM service URL"
+        spellCheck={false}
+        autoComplete="off"
+      />
+      <Button type="submit" size="sm" className={cn(hero && 'h-auto rounded-lg px-3.5 py-2 has-[>svg]:px-3.5')}>
+        <Plug />
+        Connect
+      </Button>
+    </form>
+  );
+
+  // In the header grid: chips between logo and nav, the rows below them running to the right edge.
   const row = hero ? undefined : 'col-[2/-1] max-[860px]:col-span-full';
   const first = 'col-start-2 row-start-1 max-[860px]:col-span-full max-[860px]:row-start-2';
   return (
     <div className={hero ? 'flex w-full flex-col items-center gap-1.5' : 'contents'}>
-      {!managed && (
-        <form
-          className={cn('flex gap-1.5', hero ? 'w-full flex-wrap justify-center' : first)}
-          onSubmit={(e) => {
-            e.preventDefault();
-            add(text);
-          }}
-        >
-          <Input
-            type="text"
-            className={cn(
-              'flex-1 font-mono text-xs',
-              hero && 'h-auto flex-[1_1_320px] rounded-lg px-3 py-[9px] text-sm',
-            )}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={
-              hero
-                ? 'http://127.0.0.1:41234/AbCdEf12=/'
-                : 'Paste VM service URL, e.g. http://127.0.0.1:41234/AbCdEf12=/'
-            }
-            // Low on the site's landing page, where focus would scroll to it.
-            autoFocus={hero && !onSite}
-            aria-label="VM service URL"
-            spellCheck={false}
-            autoComplete="off"
-          />
-          <Button type="submit" size="sm" className={cn(hero && 'h-auto rounded-lg px-3.5 py-2 has-[>svg]:px-3.5')}>
-            <Plug />
-            Connect
-          </Button>
-        </form>
-      )}
+      {hero && !managed && form}
       {(connections.length > 0 || controls) && (
-        <div className={cn('flex min-w-0 items-center gap-3 max-[560px]:gap-1.5', managed && !hero ? first : row)}>
+        <div className={cn('flex min-w-0 items-center gap-3 max-[560px]:gap-1.5', hero ? row : first)}>
           {connections.length > 0 && (
             <ul
               className={cn(
                 'flex gap-1.5',
-                hero ? 'flex-wrap justify-center' : 'min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]',
+                hero ? 'flex-wrap justify-center' : 'min-w-0 overflow-x-auto [scrollbar-width:none]',
               )}
               aria-label="Connections"
             >
@@ -162,10 +160,31 @@ export function ConnectionBar(props: Props) {
               })}
             </ul>
           )}
+          {!hero && !managed && (
+            <Popover open={adding} onOpenChange={setAdding}>
+              <Tip content="Connect another app">
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="-ml-1.5"
+                    aria-label="Connect another app"
+                  >
+                    <Plus />
+                  </Button>
+                </PopoverTrigger>
+              </Tip>
+              <PopoverContent align="start" className="w-[420px] max-w-[calc(100vw-2rem)]">
+                {form}
+                {error && <div className={cn(ERROR, 'mt-1.5')}>{error}</div>}
+              </PopoverContent>
+            </Popover>
+          )}
           {controls && <div className="ml-auto flex flex-none items-center gap-1.5">{controls}</div>}
         </div>
       )}
-      {error && <div className={cn(ERROR, row)}>{error}</div>}
+      {hero && error && <div className={ERROR}>{error}</div>}
       {connections.map((c) => {
         const side = states[c.id]?.incompatible;
         if (!side) return null;
