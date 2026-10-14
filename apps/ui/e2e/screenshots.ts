@@ -6,7 +6,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { chromium, type Locator, type Page } from '@playwright/test';
-import { preview } from 'vite';
+import { type Plugin, preview } from 'vite';
 import { backlog, session, start, vmOptions } from './scene.ts';
 import { FakeVm } from './vm.ts';
 
@@ -27,10 +27,24 @@ for (const tool of ['cwebp', 'img2webp']) {
 rmSync(dir, { recursive: true, force: true });
 mkdirSync(dir, { recursive: true });
 
+// The home as devpul serves it; the site's own home shows these shots. Served here, not through a
+// Playwright route: Chromium blocks websockets to 127.0.0.1 from a page it does not know came from there.
+const packaged: Plugin = {
+  name: 'devpul-package',
+  configurePreviewServer: (server) => {
+    server.middlewares.use((req, res, next) => {
+      if (req.url !== '/') return next();
+      const html = readFileSync(join(import.meta.dirname, '../dist/index.html'), 'utf8');
+      res.setHeader('content-type', 'text/html');
+      res.end(html.replace('<head>', '<head><meta name="devpul-package" />'));
+    });
+  },
+};
 const server = await preview({
   root: join(import.meta.dirname, '..'),
   logLevel: 'warn',
   preview: { host: '127.0.0.1', port: 4175 },
+  plugins: [packaged],
 });
 const base = server.resolvedUrls?.local[0] ?? 'http://127.0.0.1:4175/';
 const browser = await chromium.launch();
@@ -112,7 +126,7 @@ async function shot(page: Page, name: string) {
 // A pointer drawn into the page, since screenshots leave the real one out.
 const POINTER = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#111" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 
-/** Frames of a session: connect, requests arriving, a request opened, an error. */
+/** Frames of a session: requests arriving, a request opened, an error. */
 async function animation(scheme: Scheme) {
   const first = start();
   const vm = await FakeVm.start(vmOptions(first));
@@ -162,16 +176,16 @@ async function animation(scheme: Scheme) {
   };
 
   try {
-    await point(at.x, at.y);
-    await frame(1200);
-    await page.getByLabel('VM service URL').fill(vm.url);
-    await frame(500);
-    await click(page.getByRole('button', { name: 'Connect' }));
+    // Opened connected, as devpul run opens it. A hash change alone stays on the same document.
+    await page.goto('about:blank');
+    await page.goto(`${base}#connect=${encodeURIComponent(vm.url)}`);
     // The offers are for the stills; the animation shows the core tabs.
     const notNow = page.getByRole('alert').getByRole('button', { name: 'Not now' });
     await notNow.first().waitFor();
     while ((await notNow.count()) > 0) await notNow.first().click();
-    await frame(600);
+    await page.mouse.move(0, 0);
+    await point(at.x, at.y);
+    await frame(1200);
     const steps = session(first.length);
     for (const events of steps.slice(0, -1)) {
       for (const e of events) vm.post(e);
