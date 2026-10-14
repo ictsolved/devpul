@@ -11,7 +11,7 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
 
-**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [IDE setup](https://devpul.saradgajurel.com.np/docs/ide/), [command line](https://devpul.saradgajurel.com.np/docs/cli/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/), [security](https://devpul.saradgajurel.com.np/docs/security/), [limits](https://devpul.saradgajurel.com.np/docs/limits/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).** Sources in [apps/docs](apps/docs).
+**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [IDE setup](https://devpul.saradgajurel.com.np/docs/ide/), [command line](https://devpul.saradgajurel.com.np/docs/cli/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/), [agents (MCP)](https://devpul.saradgajurel.com.np/docs/mcp/), [security](https://devpul.saradgajurel.com.np/docs/security/), [limits](https://devpul.saradgajurel.com.np/docs/limits/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).** Sources in [apps/docs](apps/docs).
 
 ## How it works
 
@@ -59,20 +59,22 @@ The [example app](examples/devpul_example) uses every package.
 
 ## Packages
 
-| Package                                                   | What it does                                                                                                                   |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| [devpul](https://pub.dev/packages/devpul)                 | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible. |
-| [devpul_dio](https://pub.dev/packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                |
-| [devpul_http](https://pub.dev/packages/devpul_http)       | `DevpulClient` for package:http.                                                                                               |
-| [devpul_flutter](https://pub.dev/packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`, `DevpulApp` overrides.                       |
-| [devpul_cli](https://pub.dev/packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1.                                                   |
+| Package                                                   | What it does                                                                                                                                           |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [devpul](https://pub.dev/packages/devpul)                 | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible.                         |
+| [devpul_dio](https://pub.dev/packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                                        |
+| [devpul_http](https://pub.dev/packages/devpul_http)       | `DevpulClient` for package:http.                                                                                                                       |
+| [devpul_flutter](https://pub.dev/packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`, `DevpulApp` overrides.                                               |
+| [devpul_cli](https://pub.dev/packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1; `devpul add` copies plugins into the app; `devpul mcp` for coding agents. |
 
 ## In the browser
 
 - HTTP table with live pending rows, sortable columns, a filter syntax (`status:4xx ms:>500 host:api -word`), tree or raw JSON, copy as curl or fetch, HAR export.
 - Errors with stack traces and Flutter diagnostics, grouped by repeat, with the requests made just before.
-- Logs, custom events, app actions you trigger from the UI, and plugins for your own tabs.
+- Logs, custom events, app actions you trigger from the UI, and plugins with tabs for app state, storage, databases and your own events.
 - Several apps at once, history across reloads, session files to share, keyboard navigation.
+
+`devpul mcp` gives coding agents the same requests, logs, errors and actions over [MCP](https://devpul.saradgajurel.com.np/docs/mcp/).
 
 ## Limits
 
