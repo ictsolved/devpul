@@ -3,7 +3,7 @@ title: Getting started
 description: Add DevPul to a Dart or Flutter app, run it with devpul run or open the link it prints, and see its HTTP calls, errors, logs and events live in your browser.
 ---
 
-DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls with headers and bodies, errors with stack traces, logs, route changes and your own events. The app posts them on the VM service that every debug run already has, and the browser reads them over `127.0.0.1`.
+DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls with headers and bodies, errors with stack traces, logs, route changes and your own events. The app posts them on the VM service that every debug run already has, and the browser reads them over `127.0.0.1`. Pul (पुल) means bridge in Nepali, so DevPul is the bridge between you and your running app.
 
 > Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab and are never sent to a server. History is kept in the browser's own storage, and you can turn that off.
 
