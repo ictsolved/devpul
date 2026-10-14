@@ -1,0 +1,49 @@
+name: Ceiling
+
+# Flutter beta and master with every dependency on its latest major. Gates nothing;
+# a failure opens one issue, later failures comment on it.
+on:
+  schedule:
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [beta, master]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ matrix.channel }}
+      - run: flutter pub upgrade --major-versions
+      - run: tool/check_dart.sh
+      - run: dart ../../packages/devpul_cli/bin/devpul.dart outdated
+        working-directory: examples/devpul_example
+
+  report:
+    needs: check
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - run: |
+          title='Ceiling job failing'
+          number=$(gh issue list --state open --limit 500 --json number,title \
+            --jq "map(select(.title == \"$title\"))[0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$RUN_URL"
+          else
+            gh issue create --title "$title" --body "Flutter beta or master, dependencies on their latest majors: $RUN_URL"
+          fi
