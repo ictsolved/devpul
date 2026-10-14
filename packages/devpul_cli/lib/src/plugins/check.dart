@@ -109,7 +109,9 @@ Checked checkFolder(String dir) {
   } on ManifestException catch (e) {
     return failed([for (final problem in e.problems) 'plugin.json: $problem']);
   }
-  final problems = <String>[];
+  final problems = [
+    for (final key in manifest.unknown) 'plugin.json: $key: unknown field',
+  ];
   final files = {'plugin.json': text};
   for (final path in manifest.files) {
     final file = File(p.joinAll([dir, ...p.posix.split(path)]));

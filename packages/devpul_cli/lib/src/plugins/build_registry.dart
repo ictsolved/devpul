@@ -41,6 +41,11 @@ Future<BuiltRegistry> buildRegistry(
     String fetchUrl,
   ) async {
     final fetched = await fetcher.listed(id, fetchUrl, path);
+    if (fetched.manifest.unknown case final unknown when unknown.isNotEmpty) {
+      throw PluginException(
+        unknown.map((key) => 'plugin.json: $key: unknown field').join(', '),
+      );
+    }
     entries[id] = _entry(fetched, url, path);
     if (await fetcher.readme(fetched) case final readme?) readmes[id] = readme;
   }

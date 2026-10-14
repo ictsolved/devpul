@@ -101,7 +101,6 @@ void main() {
           }),
         ),
         [
-          'extra: unknown field',
           'id: a lowercase letter, then up to 31 lowercase letters, digits or _',
           'version: "1" does not parse',
           'devpul: "^x" does not parse',
@@ -117,6 +116,10 @@ void main() {
           'icon: icon.svg is not in files',
         ],
       );
+    });
+
+    test('keeps unknown fields apart from problems', () {
+      expect(Manifest.parse(manifest({'x': 1, 'y': true})).unknown, ['x', 'y']);
     });
 
     test('names missing and mistyped fields', () {

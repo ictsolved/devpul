@@ -55,7 +55,7 @@ cart/
 | `dart`        |               | A `.dart` library in `files`, exported by the generated file.                                                               |
 | `files`       | yes           | Every file copied into the app besides `plugin.json`: relative paths with `/`, no `.` or `..` segments and no hidden files. |
 
-Other fields are rejected.
+`devpul check` and the registry reject other fields. `devpul add`, `sync` and `upgrade` warn and ignore them, so a plugin that uses a field from a later devpul still installs.
 
 The id names the folder, the `Devpul.plugin` id the UI keeps approvals for, and the plugin's git tags: `<id>-v<version>`, such as `cart-v1.2.0`.
 

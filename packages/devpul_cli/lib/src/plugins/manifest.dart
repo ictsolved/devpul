@@ -50,6 +50,7 @@ final class Manifest {
     required this.source,
     required this.dart,
     required this.files,
+    required this.unknown,
   });
 
   /// Throws a [ManifestException] with every problem in [json].
@@ -59,10 +60,6 @@ final class Manifest {
     }
     final problems = <String>[];
     void problem(String key, String message) => problems.add('$key: $message');
-
-    for (final key in json.keys) {
-      if (!manifestFields.contains(key)) problem(key, 'unknown field');
-    }
 
     T? read<T>(String key, String type, {bool required = true}) {
       final value = json[key];
@@ -210,6 +207,10 @@ final class Manifest {
       source: source,
       dart: dart,
       files: files,
+      unknown: [
+        for (final key in json.keys)
+          if (!manifestFields.contains(key)) key,
+      ],
     );
   }
 
@@ -240,6 +241,11 @@ final class Manifest {
 
   /// Every file copied into the app besides `plugin.json`.
   final List<String> files;
+
+  /// Fields this version does not know. `check` and the registry reject
+  /// them; `add`, `sync` and `upgrade` warn, so a plugin written for a later
+  /// devpul still installs.
+  final List<String> unknown;
 }
 
 final class ManifestException implements Exception {

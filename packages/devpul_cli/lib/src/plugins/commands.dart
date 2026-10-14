@@ -61,6 +61,7 @@ Future<void> add(
   final id = manifest.id;
   final name = '$id ${manifest.version}';
   _supports(packages, manifest);
+  _unknown(console, manifest);
   final dir = p.relative(app.pluginDir(id).path, from: app.root);
   if (lock.plugins[id] case final entry?) {
     if (vendored[id] case final files? when filesHash(files) != entry.hash) {
@@ -130,6 +131,14 @@ void _wiring(Console console, List<String> usage) {
   for (final line in usage) {
     console.out.writeln('  $line');
   }
+}
+
+void _unknown(Console console, Manifest manifest) {
+  if (manifest.unknown.isEmpty) return;
+  console.err.writeln(
+    '${manifest.id} ${manifest.version}: this devpul ignores plugin.json '
+    '${manifest.unknown.join(', ')}; devpul update may read them.',
+  );
 }
 
 void _supports(Packages packages, Manifest manifest) {
@@ -364,6 +373,7 @@ Future<void> upgrade(
   final packages = app.packages();
   for (final MapEntry(key: id, value: fetched) in changed.entries) {
     _supports(packages, fetched.manifest);
+    _unknown(console, fetched.manifest);
     final from = lock.plugins[id]!;
     final to = fetched.entry;
     console.out.writeln(
@@ -623,6 +633,7 @@ Future<bool> sync(App app, Console console, {bool check = false}) async {
     final packages = app.packages();
     for (final fetched in changed.values) {
       _supports(packages, fetched.manifest);
+      _unknown(console, fetched.manifest);
       await _requires(
         app,
         packages,

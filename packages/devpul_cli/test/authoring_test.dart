@@ -164,6 +164,10 @@ void main() {
         (dir) => _edit(dir, 'plugin.json', '"0.1.0"', '"x"'),
         'plugin.json: version: "x" does not parse',
       ),
+      'an unknown field': (
+        (dir) => _edit(dir, 'plugin.json', '"api": 1,', '"api": 1,\n  "x": 1,'),
+        'plugin.json: x: unknown field',
+      ),
       'an icon that is not SVG': (
         (dir) => File(p.join(dir, 'icon.svg')).writeAsStringSync('PNG'),
         'icon.svg: not an SVG',
@@ -233,6 +237,13 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('add takes an unknown field', () async {
+      create(dir(), devpul: devpul);
+      _edit(dir(), 'plugin.json', '"api": 1,', '"api": 1,\n  "x": 1,');
+      final fetched = await fetchFolder(temp.path, dir());
+      expect(fetched.manifest.unknown, ['x']);
     });
 
     test('devpul check exits 1 and lists problems', () async {

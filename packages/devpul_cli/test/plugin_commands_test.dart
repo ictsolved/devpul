@@ -578,6 +578,21 @@ void main() {
         expect(await sync(app, output.console(), check: true), isTrue);
       });
 
+      test('with a warning on fields this devpul does not know', () async {
+        final json = File(p.join(folder, 'plugin.json'));
+        json.writeAsStringSync(
+          json.readAsStringSync().replaceFirst('{', '{\n  "x": 1,'),
+        );
+        expect(await sync(app, output.console()), isTrue);
+        expect(
+          output.err.toString(),
+          contains(
+            'cart 1.2.0: this devpul ignores plugin.json x; '
+            'devpul update may read them.',
+          ),
+        );
+      });
+
       test('when the copy is missing', () async {
         app.pluginDir('cart').deleteSync(recursive: true);
         expect(await sync(app, output.console()), isTrue);
