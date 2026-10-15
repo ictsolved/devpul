@@ -4,6 +4,7 @@ import 'config.dart';
 import 'console.dart';
 import 'devpul.dart';
 import 'encode.dart';
+import 'mock.dart';
 
 /// A multipart body. Adapters convert their client's form type into this.
 final class DevpulForm {
@@ -41,11 +42,14 @@ abstract final class DevpulHttp {
   static int _counter = 0;
 
   /// Returns null when disabled or ignored; skip the call's later events then.
+  /// An adapter passes [mockable] when it acts on [DevpulHttpCall.mock];
+  /// other calls never see mock rules.
   static DevpulHttpCall? request({
     required String method,
     required Uri url,
     Map<String, Object?> headers = const {},
     Object? body,
+    bool mockable = false,
   }) {
     if (!Devpul.enabled) return null;
     try {
@@ -54,18 +58,16 @@ abstract final class DevpulHttp {
       if (_ignores(config, upper, url)) return null;
       final id = config.idGenerator?.call() ?? ++_counter;
       final call = DevpulHttpCall._(id, upper, url);
-      final h = _headers(config, url, normalizeHeaders(headers));
-      final b = _body(config, url, body);
-      Devpul.emit('http.request', {
-        'id': id,
-        'method': upper,
-        'url': url.toString(),
-        'params': _params(url),
-        'headers': h,
-        'body': normalizeBody(b, type: _contentType(h)),
-        'curl': curl(upper, url, h, b),
-      });
-      call._print('>', '$upper $url', ansiCyan, h, b);
+      call._headers = normalizeHeaders(headers);
+      call._body = body;
+      final mock = mockable ? Mocks.match(upper, url) : null;
+      call._mock = mock;
+      if (mock == null || mock.mode != DevpulMockMode.pause) {
+        call._acted = mock?.mode.name;
+        call._postRequest();
+      } else if (!mock.pausesRequest || !Mocks.listening) {
+        call._postRequest();
+      }
       return call;
     } catch (_) {
       return null;
@@ -96,13 +98,166 @@ abstract final class DevpulHttp {
 }
 
 final class DevpulHttpCall {
-  DevpulHttpCall._(this.id, this.method, this.url)
+  DevpulHttpCall._(this.id, this._method, this._url)
     : _watch = Stopwatch()..start();
 
   final Object id;
-  final String method;
-  final Uri url;
+  String _method;
+  Uri _url;
   final Stopwatch _watch;
+  Map<String, Object?> _headers = const {};
+  Object? _body;
+  bool _posted = false;
+  // The mode of the rule that changed this call, for the events.
+  String? _acted;
+
+  String get method => _method;
+  Uri get url => _url;
+
+  /// The mock rule that matched, for adapters that passed `mockable`.
+  DevpulMock? get mock => _mock;
+  DevpulMock? _mock;
+
+  void _postRequest() {
+    _posted = true;
+    final config = Devpul.config;
+    final h = DevpulHttp._headers(config, url, _headers);
+    final b = DevpulHttp._body(config, url, _body);
+    Devpul.emit('http.request', {
+      'id': id,
+      'method': method,
+      'url': url.toString(),
+      'params': DevpulHttp._params(url),
+      'headers': h,
+      'body': normalizeBody(b, type: _contentType(h)),
+      'curl': curl(method, url, h, b),
+      'mock': ?_acted,
+    });
+    _print('>', '$method $url', ansiCyan, h, b);
+  }
+
+  /// Holds the request at a pause rule until the UI lets it go, then posts
+  /// it as sent. [body] is what the adapter can rebuild from an edit: a
+  /// string, or a map or list it sends as JSON; null shows the body passed
+  /// to [DevpulHttp.request] read-only.
+  Future<DevpulHttpEdit> pauseRequest({Object? body}) async {
+    if (_posted) return const DevpulHttpEdit();
+    try {
+      final config = Devpul.config;
+      final shown = DevpulHttp._headers(config, url, _headers);
+      final editable = editableBody(body);
+      final result = await Mocks.hold(id, {
+        'stage': 'request',
+        'method': method,
+        'url': url.toString(),
+        'headers': shown,
+        ..._shownBody(editable, body ?? _body, shown),
+      });
+      final edit = _edit(result, _headers, shown, editable);
+      if (result != null) _acted = DevpulMockMode.pause.name;
+      if (edit.method != null) _method = edit.method!.toUpperCase();
+      if (edit.url != null) _url = edit.url!;
+      if (edit.headers != null) _headers = edit.headers!;
+      if (edit.body != null) _body = edit.body;
+      _postRequest();
+      return edit;
+    } catch (_) {
+      if (!_posted) _postRequest();
+      return const DevpulHttpEdit();
+    }
+  }
+
+  /// Holds the response at a pause rule until the UI lets it go. Call it
+  /// before [response] or [error], and pass those what it returns.
+  Future<DevpulHttpEdit> pauseResponse({
+    int? status,
+    String? statusMessage,
+    Map<String, Object?> headers = const {},
+    Object? body,
+  }) async {
+    final rule = _mock;
+    if (rule == null ||
+        rule.mode != DevpulMockMode.pause ||
+        !rule.pausesResponse ||
+        !Mocks.listening) {
+      return const DevpulHttpEdit();
+    }
+    try {
+      final config = Devpul.config;
+      final original = normalizeHeaders(headers);
+      final shown = DevpulHttp._headers(config, url, original);
+      final editable = editableBody(body);
+      final result = await Mocks.hold(id, {
+        'stage': 'response',
+        'method': method,
+        'url': url.toString(),
+        'status': status,
+        'statusMessage': statusMessage,
+        'headers': shown,
+        ..._shownBody(editable, body, shown),
+      });
+      if (result != null) _acted = DevpulMockMode.pause.name;
+      return _edit(result, original, shown, editable);
+    } catch (_) {
+      return const DevpulHttpEdit();
+    }
+  }
+
+  Map<String, Object?> _shownBody(
+    String? editable,
+    Object? body,
+    Map<String, Object?> headers,
+  ) {
+    final redacted = DevpulHttp._body(Devpul.config, url, body);
+    // A redacted body cannot be edited: sending it back would send the mask.
+    final canEdit = editable != null && identical(redacted, body);
+    return {
+      'body': canEdit
+          ? editable
+          : normalizeBody(redacted, type: _contentType(headers)),
+      'editable': canEdit,
+      if (canEdit && body is! String) 'json': true,
+    };
+  }
+
+  static DevpulHttpEdit _edit(
+    Map<Object?, Object?>? result,
+    Map<String, Object?> original,
+    Map<String, Object?> shown,
+    String? editable,
+  ) {
+    if (result == null) return const DevpulHttpEdit();
+    if (result['abort'] == true) return const DevpulHttpEdit(abort: true);
+    final method = result['method'];
+    final url = result['url'];
+    final headers = result['headers'];
+    final body = result['body'];
+    final status = result['status'];
+    final statusMessage = result['statusMessage'];
+    return DevpulHttpEdit(
+      method: method is String && method.isNotEmpty ? method : null,
+      url: url is String && url.isNotEmpty ? Uri.parse(url) : null,
+      headers: headers is Map
+          ? {
+              for (final MapEntry(:key, :value) in headers.entries)
+                // A redacted value sent back as shown keeps the real one.
+                '$key': _headerText(
+                  shown[key] == value && original.containsKey(key)
+                      ? original[key]
+                      : value,
+                ),
+            }
+          : null,
+      body: body is String && editable != null && body != editable
+          ? body
+          : null,
+      status: status is num ? status.toInt() : null,
+      statusMessage: statusMessage is String ? statusMessage : null,
+    );
+  }
+
+  static String _headerText(Object? value) =>
+      value is List ? value.join(', ') : '${value ?? ''}';
 
   /// [finalUrl] is where redirects ended, if the client followed any.
   void response({
@@ -129,13 +284,14 @@ final class DevpulHttpCall {
         'durationMs': ms,
         'headers': h,
         'body': normalizeBody(b, type: _contentType(h)),
+        'mock': ?_acted,
       });
       final color = switch (status ?? 0) {
         < 300 => ansiGreen,
         < 500 => ansiYellow,
         _ => ansiRed,
       };
-      _print('<', '$status $method $url ${ms}ms', color, h, b);
+      _print('<', '$status $method $url ${ms}ms$_mark', color, h, b);
     } catch (_) {
       // Tooling errors must never reach the app.
     }
@@ -163,11 +319,12 @@ final class DevpulHttpCall {
         'durationMs': ms,
         'headers': h,
         'body': normalizeBody(b, type: _contentType(h)),
+        'mock': ?_acted,
       });
       final code = status == null ? '' : '$status ';
       _print(
         'x',
-        '$code$method $url ${ms}ms $errorType'
+        '$code$method $url ${ms}ms$_mark $errorType'
             '${message == null ? '' : ': ${message.split('\n').first}'}',
         ansiRed,
         h,
@@ -177,6 +334,8 @@ final class DevpulHttpCall {
       // Tooling errors must never reach the app.
     }
   }
+
+  String get _mark => _acted == null ? '' : ' (mock: $_acted)';
 
   void _print(
     String arrow,

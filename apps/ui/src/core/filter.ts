@@ -134,7 +134,7 @@ export function matchesStatus(row: HttpRow, status: string): boolean {
   const code = row.status ?? 0;
   switch (status.toLowerCase()) {
     case 'pending':
-      return row.state === 'pending';
+      return row.state === 'pending' || row.state === 'paused';
     case 'err':
     case 'error':
       return row.state === 'error';

@@ -1,3 +1,10 @@
+## 1.1.0
+
+- Mock rules for HTTP calls, set from the UI or by agents through the `http.mocks.set` handler: respond with a status, headers and body, fail as a network error, delay, or pause the request or response to edit it before it goes on. Rules live in the app until it restarts; the UI can keep them per app and send them to the next run.
+- `DevpulHttp.request(mockable: true)` opts an adapter's calls in; `DevpulHttpCall.mock`, `pauseRequest` and `pauseResponse` are what it acts on.
+- `http.paused`, `http.resumed` and `http.mocks` events; HTTP events of a call a rule changed carry `mock`.
+- The UI's HTTP tab has Mocks: a rule from a captured call, rules turned on and off, and paused calls edited in the detail panel.
+
 ## 1.0.0
 
 - Stable: event envelope `v` 1, handshake `protocol` 1 and plugin API 1.

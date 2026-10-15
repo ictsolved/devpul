@@ -48,6 +48,24 @@
   ],
   "handlers": [
     {
+      "name": "http.mocks",
+      "description": "The mock rules for HTTP calls made through devpul_http and devpul_dio, first match wins."
+    },
+    {
+      "name": "http.mocks.set",
+      "description": "Replaces the mock rules and returns them. Args: rules, a list of {url (whole URL, * for any run of characters), method (null for any), on, mode (respond, fail, delay, pause), delayMs; respond: status, headers, body (text); fail: message; pause: request, response (booleans)}. Rules last until the app restarts.",
+      "sensitive": true
+    },
+    {
+      "name": "http.paused",
+      "description": "HTTP calls held at a pause rule, request or response."
+    },
+    {
+      "name": "http.resume",
+      "description": "Lets a paused call go on. Args: id, and to change it: method, url, headers (all of them), body (text) at the request; status, statusMessage, headers, body at the response; abort: true fails it as a network error.",
+      "sensitive": true
+    },
+    {
       "name": "my_plugin.items",
       "description": "Items in the cart."
     },

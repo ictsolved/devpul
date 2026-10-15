@@ -2,7 +2,9 @@
 library;
 
 import 'package:devpul/devpul.dart';
-import 'package:devpul/src/devpul.dart' show debugInfo, debugOnPost;
+import 'package:devpul/src/devpul.dart'
+    show debugInfo, debugOnPost, debugRunCall;
+import 'package:devpul/src/mock.dart' show debugListening;
 import 'package:test/test.dart';
 
 import 'golden.dart';
@@ -92,6 +94,67 @@ void main() {
         files: [MapEntry('file', 'photo.png')],
       ),
     )?.response(status: 500, body: '<3 bytes>');
+
+    debugListening = () => true;
+    await debugRunCall('http.mocks.set', {
+      'rules': [
+        {
+          'id': 'flags',
+          'method': 'GET',
+          'url': 'https://example.com/flags*',
+          'headers': {'content-type': 'application/json'},
+          'body': '{"beta":true}',
+        },
+        {'id': 'offline', 'on': false, 'url': '*', 'mode': 'fail'},
+        {
+          'id': 'checkout',
+          'url': '*/checkout',
+          'mode': 'pause',
+          'response': true,
+        },
+      ],
+    });
+    DevpulHttp.request(
+      method: 'GET',
+      url: Uri.parse('https://example.com/flags'),
+      mockable: true,
+    )?.response(
+      status: 200,
+      headers: {'content-type': 'application/json'},
+      body: '{"beta":true}',
+    );
+    final checkout = DevpulHttp.request(
+      method: 'POST',
+      url: Uri.parse('https://example.com/checkout'),
+      headers: {'content-type': 'application/json'},
+      body: '{"cart":1}',
+      mockable: true,
+    )!;
+    final sent = checkout.pauseRequest(body: '{"cart":1}');
+    await pumpEventQueue();
+    await debugRunCall('http.resume', {
+      'id': checkout.id,
+      'body': '{"cart":2}',
+    });
+    await sent;
+    final returned = checkout.pauseResponse(
+      status: 402,
+      headers: {'content-type': 'application/json'},
+      body: '{"error":"card"}',
+    );
+    await pumpEventQueue();
+    await debugRunCall('http.resume', {
+      'id': checkout.id,
+      'status': 200,
+      'body': '{"ok":true}',
+    });
+    final edit = await returned;
+    checkout.response(
+      status: edit.status,
+      headers: {'content-type': 'application/json'},
+      body: edit.body,
+    );
+    await debugRunCall('http.mocks.set', {'rules': <Object?>[]});
 
     Devpul.emit('cart.updated', {
       'items': 3,

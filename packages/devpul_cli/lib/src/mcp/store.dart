@@ -17,7 +17,13 @@ final class HttpRow {
   DevEvent? response;
   DevEvent? error;
 
-  DevEvent get first => (request ?? response ?? error)!;
+  /// The latest `http.paused` event.
+  DevEvent? paused;
+
+  /// `seq` of the latest `http.resumed` event.
+  int resumed = 0;
+
+  DevEvent get first => (request ?? response ?? error ?? paused)!;
   DevEvent? get end => response ?? error;
   int get ts => request?.ts ?? first.ts;
   int get seq => request?.seq ?? first.seq;
@@ -28,10 +34,20 @@ final class HttpRow {
   num? get durationMs => end?.data['durationMs'] as num?;
   String? get source => _field('source');
 
+  /// The mode of the mock rule that changed the call.
+  String? get mock => switch (end?.data['mock'] ?? request?.data['mock']) {
+    final String s => s,
+    _ => null,
+  };
+
+  bool get held => paused != null && paused!.seq > resumed;
+
   String get state => error != null
       ? 'failed'
       : response != null
       ? 'done'
+      : held
+      ? 'paused'
       : 'pending';
 
   String? _field(String name) => switch (first.data[name]) {
@@ -151,6 +167,19 @@ final class Store {
       _ => '?',
     };
     final key = '${e.session}|$id';
+    if (e.kind == 'http.resumed') {
+      final row = _http[key];
+      if (row != null && e.seq > row.resumed) row.resumed = e.seq;
+      return;
+    }
+    if (!const {
+      'http.request',
+      'http.response',
+      'http.error',
+      'http.paused',
+    }.contains(e.kind)) {
+      return;
+    }
     final row = _http.putIfAbsent(key, () {
       return HttpRow(key, e.run, e.session, id)..number = e.id;
     });
@@ -161,6 +190,8 @@ final class Store {
         row.response = e;
       case 'http.error':
         row.error = e;
+      case 'http.paused':
+        if (row.paused == null || e.seq > row.paused!.seq) row.paused = e;
     }
   }
 
@@ -261,6 +292,7 @@ List<Crumb> breadcrumbs(Store store, DevEvent error, [int max = maxCrumbs]) {
       switch (row.state) {
         'failed' => 'failed',
         'pending' => 'pending',
+        'paused' => 'paused',
         _ => row.status?.toString(),
       },
       row.url,

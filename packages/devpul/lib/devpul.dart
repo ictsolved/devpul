@@ -7,3 +7,4 @@ export 'src/config.dart';
 export 'src/devpul.dart' show Devpul;
 export 'src/encode.dart' show toJsonSafe;
 export 'src/http.dart' show DevpulForm, DevpulHttp, DevpulHttpCall;
+export 'src/mock.dart' show DevpulHttpEdit, DevpulMock, DevpulMockMode;

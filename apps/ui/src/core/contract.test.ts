@@ -4,6 +4,7 @@ import { breadcrumbs } from './breadcrumbs';
 import { type DevEvent, fromVm, type JsonObject } from './events';
 import { fromSession, toSession } from './export';
 import { parseInfo } from './info';
+import { describeRule, parsePaused, parseRules } from './mocks';
 import { readLocation } from './location';
 import { parseRegistry } from './registry';
 import { Store } from './store';
@@ -37,12 +38,19 @@ describe('contract', () => {
     const store = new Store();
     store.add(events);
     expect(store.size).toBe(events.length);
-    expect(store.httpRows.map((r) => [r.method, r.state, r.status])).toEqual([
-      ['POST', 'done', 500],
-      ['GET', 'error', undefined],
-      ['POST', 'done', 201],
+    expect(store.httpRows.map((r) => [r.method, r.state, r.status, r.mock])).toEqual([
+      ['POST', 'done', 200, 'pause'],
+      ['GET', 'done', 200, 'respond'],
+      ['POST', 'done', 500, undefined],
+      ['GET', 'error', undefined, undefined],
+      ['POST', 'done', 201, undefined],
     ]);
-    expect(store.httpRows[2]?.size).toBe(11);
+    expect(store.httpRows[0]?.paused && parsePaused(store.httpRows[0].paused)).toMatchObject({
+      stage: 'response',
+      status: 402,
+      editable: true,
+    });
+    expect(store.httpRows[4]?.size).toBe(11);
     expect(store.errors.map((e) => e.data.source)).toEqual(['flutter', 'zone']);
     expect(store.errors[0]?.data.widget).toBe('Cart');
     expect(store.errors.map((e) => e.data.route)).toEqual(['Cart', '/cart']);
@@ -63,6 +71,16 @@ describe('contract', () => {
     const run = [...store.runs.values()][0];
     expect(run?.session?.data.name).toBe('Shop');
     expect(run?.info && parseInfo(run.info.data).actions.map((a) => a.name)).toEqual(['Clear cache', 'Seed']);
+    expect(run?.mocks && parseRules(run.mocks.data)).toEqual([]);
+  });
+
+  it('reads mock rules', () => {
+    const set = events.find((e) => e.kind === 'http.mocks');
+    expect(parseRules(set?.data).map((r) => [r.id, r.on, r.method, r.mode, describeRule(r)])).toEqual([
+      ['flags', true, 'GET', 'respond', 'respond 200'],
+      ['offline', false, null, 'fail', 'fail: Mocked network failure'],
+      ['checkout', true, null, 'pause', 'pause the request and response'],
+    ]);
   });
 
   it('reads the handshake', () => {

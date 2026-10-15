@@ -75,6 +75,24 @@
         ],
         "handlers": [
           {
+            "name": "http.mocks",
+            "description": "The mock rules for HTTP calls made through devpul_http and devpul_dio, first match wins."
+          },
+          {
+            "name": "http.mocks.set",
+            "description": "Replaces the mock rules and returns them. Args: rules, a list of {url (whole URL, * for any run of characters), method (null for any), on, mode (respond, fail, delay, pause), delayMs; respond: status, headers, body (text); fail: message; pause: request, response (booleans)}. Rules last until the app restarts.",
+            "sensitive": true
+          },
+          {
+            "name": "http.paused",
+            "description": "HTTP calls held at a pause rule, request or response."
+          },
+          {
+            "name": "http.resume",
+            "description": "Lets a paused call go on. Args: id, and to change it: method, url, headers (all of them), body (text) at the request; status, statusMessage, headers, body at the response; abort: true fails it as a network error.",
+            "sensitive": true
+          },
+          {
             "name": "my_plugin.items",
             "description": "Items in the cart."
           },
@@ -308,12 +326,259 @@
     }
   },
   {
-    "kind": "devpul.cart.updated",
+    "kind": "devpul.http.mocks",
     "data": {
       "v": 1,
       "session": "s1",
       "seq": 12,
       "ts": 1767225600012,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "rules": [
+          {
+            "id": "flags",
+            "on": true,
+            "method": "GET",
+            "url": "https://example.com/flags*",
+            "mode": "respond",
+            "delayMs": 0,
+            "status": 200,
+            "headers": {
+              "content-type": "application/json"
+            },
+            "body": "{\"beta\":true}"
+          },
+          {
+            "id": "offline",
+            "on": false,
+            "method": null,
+            "url": "*",
+            "mode": "fail",
+            "delayMs": 0,
+            "message": "Mocked network failure"
+          },
+          {
+            "id": "checkout",
+            "on": true,
+            "method": null,
+            "url": "*/checkout",
+            "mode": "pause",
+            "delayMs": 0,
+            "request": true,
+            "response": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.request",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 13,
+      "ts": 1767225600013,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 4,
+        "method": "GET",
+        "url": "https://example.com/flags",
+        "params": {},
+        "headers": {},
+        "body": null,
+        "curl": "curl 'https://example.com/flags'",
+        "mock": "respond"
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.response",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 14,
+      "ts": 1767225600014,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 4,
+        "method": "GET",
+        "url": "https://example.com/flags",
+        "status": 200,
+        "statusMessage": null,
+        "durationMs": 5,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "beta": true
+        },
+        "mock": "respond"
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.paused",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 15,
+      "ts": 1767225600015,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 5,
+        "stage": "request",
+        "method": "POST",
+        "url": "https://example.com/checkout",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": "{\"cart\":1}",
+        "editable": true,
+        "timeoutMs": 300000
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.resumed",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 16,
+      "ts": 1767225600016,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 5,
+        "how": "resumed"
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.request",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 17,
+      "ts": 1767225600017,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 5,
+        "method": "POST",
+        "url": "https://example.com/checkout",
+        "params": {},
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "cart": 2
+        },
+        "curl": "curl -X POST 'https://example.com/checkout' -H 'content-type: application/json' --data-raw '{\"cart\":2}'",
+        "mock": "pause"
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.paused",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 18,
+      "ts": 1767225600018,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 5,
+        "stage": "response",
+        "method": "POST",
+        "url": "https://example.com/checkout",
+        "status": 402,
+        "statusMessage": null,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": "{\"error\":\"card\"}",
+        "editable": true,
+        "timeoutMs": 300000
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.resumed",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 19,
+      "ts": 1767225600019,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 5,
+        "how": "resumed"
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.response",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 20,
+      "ts": 1767225600020,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 5,
+        "method": "POST",
+        "url": "https://example.com/checkout",
+        "status": 200,
+        "statusMessage": null,
+        "durationMs": 5,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "ok": true
+        },
+        "mock": "pause"
+      }
+    }
+  },
+  {
+    "kind": "devpul.http.mocks",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 21,
+      "ts": 1767225600021,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "rules": []
+      }
+    }
+  },
+  {
+    "kind": "devpul.cart.updated",
+    "data": {
+      "v": 1,
+      "session": "s1",
+      "seq": 22,
+      "ts": 1767225600022,
       "tags": {
         "env": "dev"
       },
@@ -329,8 +594,8 @@
     "data": {
       "v": 1,
       "session": "s1",
-      "seq": 13,
-      "ts": 1767225600013,
+      "seq": 23,
+      "ts": 1767225600023,
       "tags": {
         "env": "dev"
       },

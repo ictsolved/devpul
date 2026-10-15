@@ -2,7 +2,7 @@ import { type DevEvent, isObject, type JsonObject, num, str, TRUNCATED } from '.
 import { dataImage } from './image';
 import type { ProfileLookup } from './profile';
 
-export type HttpState = 'pending' | 'done' | 'error';
+export type HttpState = 'pending' | 'paused' | 'done' | 'error';
 
 export interface HttpRow {
   key: string;
@@ -24,6 +24,12 @@ export interface HttpRow {
   state: HttpState;
   /** `dart:io` for a request read from the HTTP profile; adapters send none. */
   source?: string;
+  /** The latest `http.paused` event while the call is held. */
+  paused?: DevEvent;
+  /** `seq` of the latest `http.resumed` event. */
+  resumed?: number;
+  /** The mode of the mock rule that changed the call. */
+  mock?: string;
 }
 
 export interface RunInfo {
@@ -34,6 +40,8 @@ export interface RunInfo {
   session?: DevEvent;
   /** Latest `app.info` event of the run. */
   info?: DevEvent;
+  /** Latest `http.mocks` event of the run: the rules set. */
+  mocks?: DevEvent;
   /** Event kinds seen, in order of arrival. */
   kinds: string[];
 }
@@ -291,10 +299,13 @@ export class Store implements ProfileLookup {
     if (e.kind === 'app.info' && (!run.info || byNewest(e, run.info) <= 0)) {
       run.info = e;
     }
+    if (e.kind === 'http.mocks' && (!run.mocks || byNewest(e, run.mocks) <= 0)) {
+      run.mocks = e;
+    }
     this.runMap.set(e.run, run);
     this.runsSnapshot = null;
 
-    if (e.kind === 'app.session' || e.kind === 'app.info') {
+    if (e.kind === 'app.session' || e.kind === 'app.info' || e.kind === 'http.mocks') {
       return;
     } else if (e.kind === 'log') {
       this.logList.push(e);
@@ -342,10 +353,14 @@ export class Store implements ProfileLookup {
       row.response = e;
     } else if (e.kind === 'http.error') {
       row.error = e;
+    } else if (e.kind === 'http.paused') {
+      if (!row.paused || e.seq > row.paused.seq) row.paused = e;
+    } else if (e.kind === 'http.resumed') {
+      row.resumed = Math.max(row.resumed ?? 0, e.seq);
     } else {
       return;
     }
-    const src = row.request ?? row.response ?? row.error;
+    const src = row.request ?? row.response ?? row.error ?? row.paused;
     row.method = str(src?.data.method) ?? row.method;
     row.url = str(src?.data.url) ?? row.url;
     row.host = hostOf(row.url);
@@ -354,7 +369,9 @@ export class Store implements ProfileLookup {
     row.status = num(end?.data.status);
     row.durationMs = num(end?.data.durationMs);
     row.size = end ? bodySize(end.data) : undefined;
-    row.state = row.error ? 'error' : row.response ? 'done' : 'pending';
+    row.mock = str(end?.data.mock) ?? str(row.request?.data.mock);
+    const held = row.paused && row.paused.seq > (row.resumed ?? 0);
+    row.state = row.error ? 'error' : row.response ? 'done' : held ? 'paused' : 'pending';
     this.http.set(key, row);
     this.httpSorted = null;
   }

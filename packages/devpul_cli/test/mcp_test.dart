@@ -27,11 +27,14 @@ void main() {
   test('reads every contract event as the UI does', () {
     final store = Store()..add(events);
     expect(store.all, hasLength(events.length));
-    expect(store.requests.map((r) => [r.method, r.state, r.status]), [
-      ['POST', 'done', 500],
-      ['GET', 'failed', null],
-      ['POST', 'done', 201],
+    expect(store.requests.map((r) => [r.method, r.state, r.status, r.mock]), [
+      ['POST', 'done', 200, 'pause'],
+      ['GET', 'done', 200, 'respond'],
+      ['POST', 'done', 500, null],
+      ['GET', 'failed', null, null],
+      ['POST', 'done', 201, null],
     ]);
+    expect(store.requests.first.held, false);
     final kinds = store.all.map((e) => e.kind);
     expect(kinds.where((k) => k == 'error'), hasLength(2));
     expect(kinds.where((k) => k == 'log'), hasLength(2));
@@ -41,6 +44,40 @@ void main() {
     expect(run.session?.data['name'], 'Shop');
     expect(run.info?.data['protocol'], protocol);
     expect(store.add(events), 0, reason: 'a backlog repeats events');
+  });
+
+  test('shows a held call until it is resumed', () {
+    var seq = 0;
+    DevEvent event(String kind, Map<String, Object?> data) => fromVm({
+      'extensionKind': 'devpul.$kind',
+      'extensionData': {
+        'v': 1,
+        'session': 's',
+        'seq': ++seq,
+        'ts': seq,
+        'data': data,
+      },
+      'isolate': {'id': 'isolates/1', 'name': 'main'},
+      'isolateGroup': {'id': 'isolateGroups/1'},
+    }, 'c1')!;
+    final store = Store()
+      ..add([
+        event('http.mocks', {'rules': <Object?>[]}),
+        event('http.resumed', {'id': 9, 'how': 'timeout'}),
+        event('http.paused', {
+          'id': 7,
+          'stage': 'request',
+          'method': 'POST',
+          'url': 'https://example.com/c',
+        }),
+      ]);
+    expect(store.requests.map((r) => [r.method, r.url, r.state]), [
+      ['POST', 'https://example.com/c', 'paused'],
+    ]);
+    store.add([
+      event('http.resumed', {'id': 7, 'how': 'resumed'}),
+    ]);
+    expect(store.requests.single.state, 'pending');
   });
 
   test('builds breadcrumbs as the UI does, matching contract/'

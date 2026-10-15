@@ -188,6 +188,7 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
         if (r.durationMs case final ms?) '${ms.round()}ms',
         if (size.isNotEmpty) size,
         if (r.source case final source?) '[$source]',
+        if (r.mock case final mock?) '[mock: $mock]',
         r.url,
       ].join(' ');
     });
@@ -215,7 +216,10 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
       'status': ?row.status,
       'durationMs': ?row.durationMs,
       'source': ?row.source,
+      'mock': ?row.mock,
       'started': _time(row.ts, full: true),
+      if (row.held)
+        'paused': {'id': row.paused!.data['id'], ...?part(row.paused)},
       'request': ?part(row.request),
       'response': ?part(row.response),
       'error': ?part(row.error),
@@ -453,8 +457,9 @@ final _getSession = Tool(
 final _listRequests = Tool(
   name: 'list_requests',
   description:
-      'HTTP requests: id, time, method, status (or pending, failed), '
-      'duration, response size, URL.',
+      'HTTP requests: id, time, method, status (or pending, paused, failed), '
+      'duration, response size, [mock: mode] when a mock rule changed it, '
+      'URL.',
   annotations: _readOnly,
   inputSchema: Schema.object(
     properties: {
@@ -464,9 +469,10 @@ final _listRequests = Tool(
       'status_max': Schema.int(description: 'Highest status, such as 599.'),
       'state': EnumSchema.untitledSingleSelect(
         description:
-            'pending (no response yet), done (a response) or failed (no '
+            'pending (no response yet), paused (held at a pause rule; '
+            'http.resume lets it go), done (a response) or failed (no '
             'response: connection error, timeout, cancel).',
-        values: ['pending', 'done', 'failed'],
+        values: ['pending', 'paused', 'done', 'failed'],
       ),
       ..._pageParams,
     },
@@ -477,7 +483,8 @@ final _getRequest = Tool(
   name: 'get_request',
   description:
       'One HTTP request with headers and bodies of request and response, or '
-      'its error.',
+      'its error. A paused one has paused: the request or response held, '
+      'with the id http.resume takes.',
   annotations: _readOnly,
   inputSchema: Schema.object(
     properties: {

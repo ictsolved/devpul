@@ -1,3 +1,7 @@
+## 1.1.0
+
+- On devpul 1.1.0.
+
 ## 1.0.0
 
 - Stable, on devpul 1.0.0.

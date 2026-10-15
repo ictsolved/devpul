@@ -5,7 +5,7 @@ import 'dart:io';
 // strings left in them: service extensions, event kinds, plugin modules.
 // Native profile builds keep them only with DEVPUL_PROFILE.
 
-const _core = ['ext.devpul.', 'app.session'];
+const _core = ['ext.devpul.', 'app.session', 'http.mocks.set', 'http.paused'];
 
 // A line that dart2js and AOT store as written: no quotes or escapes.
 final _plain = RegExp(r'^[A-Za-z0-9 .,:;/(){}\[\]_=-]{16,}$');

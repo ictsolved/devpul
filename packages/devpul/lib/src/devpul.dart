@@ -9,6 +9,7 @@ import 'config.dart';
 import 'console.dart';
 import 'encode.dart';
 import 'limits.dart';
+import 'mock.dart';
 import 'sha256.dart';
 import 'version.dart';
 
@@ -35,6 +36,10 @@ Future<Object?> debugRunCall(
   Map<String, Object?>? args,
   bool writes = false,
 ]) => Devpul._runCall(name, args, writes: writes);
+
+/// Posts past the limits, for events a waiting call depends on.
+void emitUnlimited(String kind, Map<String, Object?> data) =>
+    Devpul._post(kind, data, limited: false);
 
 /// What `ext.devpul.info` returns. Tests only.
 Map<String, Object?> debugInfo() => Devpul._info();
@@ -106,11 +111,18 @@ abstract final class Devpul {
   static final _handlers = <String, _Handler>{};
   static final _plugins = <String, _Plugin>{};
 
-  static void emit(String kind, Map<String, Object?> data) {
+  static void emit(String kind, Map<String, Object?> data) =>
+      _post(kind, data, limited: !kind.startsWith('app.'));
+
+  static void _post(
+    String kind,
+    Map<String, Object?> data, {
+    required bool limited,
+  }) {
     if (!enabled) return;
     try {
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (!kind.startsWith('app.') && !_limits.allow(kind, now)) return;
+      if (limited && !_limits.allow(kind, now)) return;
       _emit(kind, data, now);
       if (_config.console == ConsoleMode.verbose &&
           !kind.startsWith('app.') &&
@@ -244,14 +256,28 @@ abstract final class Devpul {
     String? description,
   }) {
     if (!enabled) return;
-    _handlers[name] = (
+    _addHandler(
+      name,
+      run,
       writes: writes,
       sensitive: sensitive,
       description: description,
-      run: run,
     );
     _infoChanged();
   }
+
+  static void _addHandler(
+    String name,
+    FutureOr<Object?> Function(Map<String, Object?> args) run, {
+    bool writes = false,
+    bool sensitive = false,
+    String? description,
+  }) => _handlers[name] = (
+    writes: writes,
+    sensitive: sensitive,
+    description: description,
+    run: run,
+  );
 
   /// Offers a browser plugin to the UI, which runs it after the user
   /// approves it. [id] is the plugin id; approvals are kept per id and
@@ -520,6 +546,8 @@ final class _Backlog {
       );
       return Devpul._info();
     });
+    // Before the handshake, so no app.info for them.
+    Mocks.register(Devpul._addHandler);
     _extension('info', (_) => Devpul._info());
     return true;
   }

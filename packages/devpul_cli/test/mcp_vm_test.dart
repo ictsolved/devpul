@@ -131,9 +131,21 @@ void main() {
         ],
       },
     ]);
-    expect(session['handlers'], [
-      {'name': 'flags.list', 'tool': 'call_plugin'},
-    ]);
+    expect(
+      [
+        for (final h
+            in (session['handlers'] as List<Object?>)
+                .cast<Map<String, Object?>>())
+          [h['name'], h['tool']],
+      ],
+      [
+        ['http.mocks', 'call_plugin'],
+        ['http.mocks.set', 'call_plugin_write'],
+        ['http.paused', 'call_plugin'],
+        ['http.resume', 'call_plugin_write'],
+        ['flags.list', 'call_plugin'],
+      ],
+    );
     expect(session['runs'], [containsPair('run', 1)]);
 
     final requests = (await text(server, 'list_requests')).split('\n');

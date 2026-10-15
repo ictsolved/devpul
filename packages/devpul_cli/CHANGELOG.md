@@ -1,3 +1,7 @@
+## 1.1.0
+
+- `devpul mcp`: `list_requests` and `get_request` show calls paused at a breakpoint and the mock rule that changed a call.
+
 ## 1.0.0
 
 - `add`, `sync` and `upgrade` warn about `plugin.json` fields they do not know and install the plugin; `check` and the registry reject them.

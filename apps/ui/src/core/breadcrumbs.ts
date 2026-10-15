@@ -76,7 +76,7 @@ const TEXT_MAX = 200;
 const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim().slice(0, TEXT_MAX);
 
 const rowText = (r: HttpRow) =>
-  [r.method, r.state === 'error' ? 'failed' : r.state === 'pending' ? 'pending' : r.status, r.url]
+  [r.method, r.state === 'error' ? 'failed' : r.state === 'pending' || r.state === 'paused' ? r.state : r.status, r.url]
     .filter((x) => x !== undefined && x !== '')
     .join(' ');
 

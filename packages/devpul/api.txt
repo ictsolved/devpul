@@ -44,13 +44,41 @@ package:devpul/devpul.dart:
     fields (getter: List<MapEntry<String, String>>)
     files (getter: List<MapEntry<String, String>>)
   DevpulHttp (class extends Object, abstract, final):
-    request (static method: DevpulHttpCall? Function({Object? body, Map<String, Object?> headers, required String method, required Uri url}))
+    request (static method: DevpulHttpCall? Function({Object? body, Map<String, Object?> headers, required String method, bool mockable, required Uri url}))
   DevpulHttpCall (class extends Object, final):
     id (getter: Object)
     method (getter: String)
+    mock (getter: DevpulMock?)
     url (getter: Uri)
     error (method: void Function({Object? body, required String errorType, Map<String, Object?> headers, String? message, int? status}))
+    pauseRequest (method: Future<DevpulHttpEdit> Function({Object? body}))
+    pauseResponse (method: Future<DevpulHttpEdit> Function({Object? body, Map<String, Object?> headers, int? status, String? statusMessage}))
     response (method: void Function({Object? body, Uri? finalUrl, Map<String, Object?> headers, int? status, String? statusMessage}))
+  DevpulHttpEdit (class extends Object, final):
+    new (const constructor: DevpulHttpEdit Function({bool abort, String? body, Map<String, String>? headers, String? method, int? status, String? statusMessage, Uri? url}))
+    abort (getter: bool)
+    body (getter: String?)
+    changed (getter: bool)
+    headers (getter: Map<String, String>?)
+    method (getter: String?)
+    status (getter: int?)
+    statusMessage (getter: String?)
+    url (getter: Uri?)
+  DevpulMock (class extends Object, final):
+    body (getter: String)
+    delay (getter: Duration)
+    headers (getter: Map<String, String>)
+    message (getter: String)
+    mode (getter: DevpulMockMode)
+    pausesRequest (getter: bool)
+    pausesResponse (getter: bool)
+    status (getter: int)
+  DevpulMockMode (enum):
+    delay (enum constant: DevpulMockMode)
+    fail (enum constant: DevpulMockMode)
+    pause (enum constant: DevpulMockMode)
+    respond (enum constant: DevpulMockMode)
+    values (static const getter: List<DevpulMockMode>)
   DevpulParam (class extends Object, final):
     choice (const constructor: DevpulParam Function(String, List<String>, {String? initial}))
     flag (const constructor: DevpulParam Function(String, {bool initial}))
@@ -63,8 +91,10 @@ package:devpul/devpul.dart:
   BodyRedactor (type alias for Object? Function(Uri, Object?))
   HeaderRedactor (type alias for Map<String, Object?> Function(Uri, Map<String, Object?>))
 dart:async:
+  Future (referenced)
   FutureOr (referenced)
 dart:core:
+  Duration (referenced)
   List (referenced)
   Map (referenced)
   MapEntry (referenced)

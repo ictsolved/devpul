@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Acts on mock rules: answers, fails, delays or pauses calls, as the UI or an agent sets them. Mocked responses and failures pass through every interceptor, and a status that fails `validateStatus` throws as a real one does.
+
 ## 1.0.0
 
 - Stable, on devpul 1.0.0.
