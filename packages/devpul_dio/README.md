@@ -21,6 +21,8 @@ final dio = Dio()..interceptors.add(DevpulDioInterceptor());
 
 Add it last so it sees headers set by other interceptors. Ignore rules, redaction, size limits and console output come from `Devpul.configure` in [devpul](https://pub.dev/packages/devpul). See the [Dio page](https://devpul.saradgajurel.com.np/docs/dio/).
 
+Mock rules and breakpoints set in the UI answer, fail, delay or pause its calls: see [Mocks and breakpoints](https://devpul.saradgajurel.com.np/docs/mocking/).
+
 ## Limits
 
 Debug builds, and profile builds built with `DEVPUL_PROFILE`. Streamed request and response bodies show as `<stream>`.

@@ -19,7 +19,7 @@ description: Filter syntax, sorting, keyboard shortcuts, grouping, export to HAR
 
 ## Status bar
 
-The bar at the bottom shows the connection state, the latest `Devpul.session` fields, the result of the last action or hot reload, Writes on while Allow writes is on, muted and rate-limited kinds, plugin load errors, and stored events against the limit. Pick the session fields in Settings; those that do not fit sit behind "+N", and hovering shows them all. Click Writes on to turn writes off, the limits to open Settings, or the errors to open the Plugins tab.
+The bar at the bottom shows the connection state, the latest `Devpul.session` fields, the result of the last action or hot reload, Writes on while Allow writes is on, [mock rules](/docs/mocking/) turned on and calls held at a breakpoint, muted and rate-limited kinds, plugin load errors, and stored events against the limit. Pick the session fields in Settings; those that do not fit sit behind "+N", and hovering shows them all. Click Writes on to turn writes off, the mocks to open them, the paused calls to edit the first, the limits to open Settings, or the errors to open the Plugins tab.
 
 ## Filtering
 

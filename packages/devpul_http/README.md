@@ -22,6 +22,8 @@ Future<String> items() => client.read(Uri.parse('https://example.com/items'));
 
 `DevpulClient` wraps any `Client`, `Client()` by default, so it works with `IOClient`, `BrowserClient`, `cupertino_http` and `cronet_http`. Ignore rules, redaction, size limits and console output come from `Devpul.configure` in [devpul](https://pub.dev/packages/devpul). See the [package:http page](https://devpul.saradgajurel.com.np/docs/http/).
 
+Mock rules and breakpoints set in the UI answer, fail, delay or pause its calls: see [Mocks and breakpoints](https://devpul.saradgajurel.com.np/docs/mocking/).
+
 ## Limits
 
 Debug builds, and profile builds built with `DEVPUL_PROFILE`. Response bodies are read in full before your code gets them; `text/event-stream` responses pass through untouched and show as `<stream>`, as do `StreamedRequest` bodies.

@@ -31,3 +31,5 @@ What it records:
 - `DioException`s as errors with their type, such as `connectionTimeout`, `badResponse` or `cancel`, plus any response that came with them
 
 Streamed request and response bodies show as `<stream>`. Image responses show as previews when read with `ResponseType.bytes`; other response types decode them as text. Ignore rules, redaction, size limits and console output come from [`Devpul.configure`](/docs/api/#configuration).
+
+[Mock rules and breakpoints](/docs/mocking/) apply to its calls. A mocked response or failure passes through every interceptor, as a real one does.

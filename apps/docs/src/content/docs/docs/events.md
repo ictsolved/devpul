@@ -44,6 +44,9 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 | `http.request`  | `id`, `method`, `url`, `params`, `headers`, `body`, `curl`                                                                                    |
 | `http.response` | `id`, `method`, `url`, `status`, `statusMessage`, `finalUrl`, `durationMs`, `headers`, `body`                                                 |
 | `http.error`    | `id`, `method`, `url`, `status`, `errorType`, `message`, `durationMs`, `headers`, `body`                                                      |
+| `http.paused`   | `id`, `stage` (`request`, `response`), `method`, `url`, `headers`, `body`, `editable`, `json`, `status`, `statusMessage`, `timeoutMs`         |
+| `http.resumed`  | `id`, `how` (`resumed`, `aborted`, `timeout`, `unwatched`)                                                                                    |
+| `http.mocks`    | `rules`, as the `http.mocks` handler returns them; posted when they change                                                                    |
 | `app.session`   | free-form                                                                                                                                     |
 | `app.info`      | the handshake, below; posted when actions, plugins, handlers or limits change                                                                 |
 | `error`         | `source`, `type`, `message`, `library`, `context`, `information`, `widget`, `location` (`file`, `line`, `column`), `route`, `silent`, `stack` |
@@ -52,7 +55,7 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 | `lifecycle`     | `state` (`resumed`, `inactive`, `hidden`, `paused`, `detached`)                                                                               |
 | anything else   | custom, shown in Events or a plugin tab                                                                                                       |
 
-HTTP events pair on `session` + `id`. A response may arrive before its request; the UI pairs them either way. `finalUrl` is present only when a redirect ended somewhere else.
+HTTP events pair on `session` + `id`. A response may arrive before its request; the UI pairs them either way. `finalUrl` is present only when a redirect ended somewhere else. `mock` is present on the HTTP events of a call a [mock rule](/docs/mocking/) changed: `respond`, `fail`, `delay` or `pause`. Limits never drop `http.paused`, `http.resumed` and `http.mocks`.
 
 ## Service extensions
 

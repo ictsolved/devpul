@@ -78,3 +78,56 @@ Future<Response> send(Request request) async {
 ```
 
 Keep the adapter free of side effects on the request: read bodies without consuming streams the client still needs, and rethrow what you catch. The `devpul_http` [source](%REPO_URL%/tree/main/packages/devpul_http) shows buffering a streamed response and handing it on unchanged.
+
+## Mock rules
+
+An adapter that passes `mockable: true` gets the rule that matches the call on `call.mock`, and acts on it. Without it, rules never apply to its calls.
+
+```dart
+final call = DevpulHttp.request(
+  method: request.method,
+  url: request.url,
+  headers: request.headers,
+  body: request.body,
+  mockable: true,
+);
+final mock = call?.mock;
+if (call != null && mock != null) {
+  await Future<void>.delayed(mock.delay);
+  switch (mock.mode) {
+    case DevpulMockMode.respond:
+      call.response(
+        status: mock.status,
+        headers: mock.headers,
+        body: mock.body,
+      );
+      return Response(mock.body, mock.status, headers: mock.headers);
+    case DevpulMockMode.fail:
+      call.error(errorType: 'ClientException', message: mock.message);
+      throw ClientException(mock.message, request.url);
+    case DevpulMockMode.delay:
+      break;
+    case DevpulMockMode.pause:
+      final edit = await call.pauseRequest(body: request.body);
+      if (edit.abort) {
+        call.error(errorType: 'ClientException', message: 'Aborted');
+        throw ClientException('Aborted', request.url);
+      }
+      request = copy(request, edit);
+  }
+}
+```
+
+`pauseRequest` holds the call until the UI lets it go and posts `http.request` with what is sent; with a pause rule, `request` does not post it. Pass it the body as text, or as a map or list you send as JSON, to make it editable. Its `DevpulHttpEdit` has the fields that changed, or `abort`.
+
+`pauseResponse` does the same for the response; call it before `response` and pass that what it returns:
+
+```dart
+final edit = await call.pauseResponse(
+  status: response.statusCode,
+  headers: response.headers,
+  body: response.body,
+);
+```
+
+Both return at once, unchanged, when the rule does not pause that side or no UI is connected.
