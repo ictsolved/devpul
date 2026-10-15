@@ -27,8 +27,9 @@ void main(List<String> args) {
       'contract/app',
       'apps/docs/samples',
     ])
+      // Flutter's .plugin_symlinks point into the pub cache.
       ...Directory(dir)
-          .listSync(recursive: true)
+          .listSync(recursive: true, followLinks: false)
           .whereType<File>()
           .where(
             (f) =>
