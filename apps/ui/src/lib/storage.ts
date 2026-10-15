@@ -57,6 +57,8 @@ export interface Settings {
   pluginUrls: string[];
   /** Plugins the user allowed, one per plugin id. */
   plugins: Approval[];
+  /** Save mock rules per app and send them to its next run. */
+  keepMocks: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -68,4 +70,5 @@ export const defaultSettings: Settings = {
   statusFields: [],
   pluginUrls: [],
   plugins: [],
+  keepMocks: false,
 };

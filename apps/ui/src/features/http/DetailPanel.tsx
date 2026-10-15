@@ -1,6 +1,7 @@
 import { cn } from 'cn';
-import { SquareTerminal } from 'lucide-react';
+import { FlaskConical, SquareTerminal } from 'lucide-react';
 import { memo } from 'react';
+import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
 import { ImagePreview, isEmptyValue, JsonModeToggle, JsonView, KeyValues, kvClass } from '../../components/JsonView';
 import { BackButton, Detail } from '../../components/Panes';
@@ -12,7 +13,9 @@ import { type DataImage, dataImage, svgImage } from '../../core/image';
 import { DART_IO } from '../../core/profile';
 import { formatBytes, formatDateTime, formatTime, pretty } from '../../core/json';
 import { bearerJwt, expiry, type Jwt, TIME_CLAIMS } from '../../core/jwt';
+import { parsePaused } from '../../core/mocks';
 import type { HttpRow } from '../../core/store';
+import { Breakpoint } from './Breakpoint';
 
 const count = (v: unknown): string | undefined => {
   if (Array.isArray(v)) return `${v.length} items`;
@@ -33,9 +36,13 @@ interface Props {
   row: HttpRow;
   onClose: () => void;
   onBack?: () => void;
+  /** Opens a mock rule made from this call; set while its app takes rules. */
+  onMock?: () => void;
+  /** Lets the call go on from a breakpoint; set while its app is connected. */
+  onResume?: (args: JsonObject) => Promise<void>;
 }
 
-function DetailPanelInner({ row, onClose, onBack }: Props) {
+function DetailPanelInner({ row, onClose, onBack, onMock, onResume }: Props) {
   const req = row.request?.data;
   const endEvent = row.response ?? row.error;
   const end = endEvent?.data;
@@ -62,13 +69,25 @@ function DetailPanelInner({ row, onClose, onBack }: Props) {
             <span className="text-muted-foreground">#{row.id}</span>
           )}
           <span className="text-muted-foreground">{formatTime(row.ts)}</span>
+          {row.mock && <MockMark mode={row.mock} />}
           <span className="flex-1" />
           <JsonModeToggle />
+          {onMock && (
+            <Tip content="Mock this call: a rule that answers it with this response, to edit">
+              <Button type="button" variant="ghost" size="sm" onClick={onMock}>
+                <FlaskConical />
+                Mock
+              </Button>
+            </Tip>
+          )}
           {curl && <CopyButton text={() => curl} label="curl" icon={<SquareTerminal />} />}
           {fetchCode && <CopyButton text={() => fetchCode} label="fetch" />}
         </>
       }
     >
+      {row.state === 'paused' && row.paused && onResume && (
+        <Breakpoint key={row.paused.key} paused={parsePaused(row.paused)} onResume={onResume} />
+      )}
       <Section id="url" title="URL" actions={<CopyButton text={() => row.url} />}>
         <div className={breakClass}>{row.url}</div>
         {finalUrl && finalUrl !== row.url && (
@@ -199,8 +218,27 @@ function Claims({ value }: { value: JsonObject }) {
 const STATUS = 'font-mono text-xs font-semibold';
 const PENDING = 'font-mono text-xs text-muted-foreground';
 
+const MOCK_TIPS: Record<string, string> = {
+  respond: 'Answered by a mock rule; nothing was sent.',
+  fail: 'Failed by a mock rule; nothing was sent.',
+  delay: 'Delayed by a mock rule.',
+  pause: 'Held at a breakpoint and let go.',
+};
+
+export function MockMark({ mode }: { mode: string }) {
+  return (
+    <Tip content={MOCK_TIPS[mode] ?? 'Changed by a mock rule.'}>
+      <span className="inline-flex items-center gap-0.5 text-xs text-warning">
+        <FlaskConical size={12} aria-hidden />
+        {mode}
+      </span>
+    </Tip>
+  );
+}
+
 export function StatusBadge({ row }: { row: HttpRow }) {
   if (row.state === 'pending') return <span className={PENDING}>pending</span>;
+  if (row.state === 'paused') return <span className={cn(STATUS, 'text-warning')}>paused</span>;
   const code = row.status;
   if (row.state === 'error' && !code && str(row.error?.data.errorType) === 'cancel') {
     return <span className={PENDING}>cancel</span>;

@@ -20,7 +20,7 @@ import { type SourceLocation, shortPath } from './core/location';
 import { Persist } from './core/persist';
 import { type ConnState, Connection, isPaused, rpcMessage } from './core/rpc';
 import { appName, sessionFields } from './core/session';
-import { latestRuns, type RunInfo, type Selection, Store } from './core/store';
+import { type HttpRow, latestRuns, type RunInfo, type Selection, Store } from './core/store';
 import { connectionLabel, connectParam, hasToken, isLoopback, pastedUrl, toWsUrl } from './core/url';
 import { ActionsMenu, appActions, type RunAction } from './features/actions/ActionsMenu';
 import { RunNotice } from './features/connections/RunNotice';
@@ -30,6 +30,9 @@ import { EventsTab } from './features/events/EventsTab';
 import { ExportItems } from './features/export/ExportItems';
 import { Home } from './features/home/Home';
 import { HttpTab } from './features/http/HttpTab';
+import { MocksDialog } from './features/http/MocksDialog';
+import { useMocks } from './features/http/useMocks';
+import { bodyLost, type MockRule, ruleFromRow } from './core/mocks';
 import { LogsTab } from './features/logs/LogsTab';
 import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOffers';
 import { PluginsView } from './features/plugins/PluginsView';
@@ -84,6 +87,7 @@ export function App() {
   const [tab, setTabState] = useState(() => load('tab', 'http'));
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mocksOpen, setMocksOpen] = useState<{ run?: string; draft?: MockRule; note?: string } | null>(null);
   const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [seenData, setSeenData] = useState(false);
@@ -468,6 +472,21 @@ export function App() {
     })),
   );
 
+  const mocks = useMocks({ runs: openRuns, name: runName, call: callApp, keep: settings.keepMocks });
+  const mockRuns = useMemo(() => new Set(mocks.apps.map((a) => a.run.run)), [mocks.apps]);
+  const mocksOn = mocks.apps.reduce((n, a) => n + (a.rules?.filter((r) => r.on).length ?? 0), 0);
+  const pausedRows = store.httpRows.filter((r) => r.state === 'paused' && mockRuns.has(r.run));
+  const openMocks = (row?: HttpRow) =>
+    setMocksOpen(
+      row
+        ? {
+            run: row.run,
+            draft: ruleFromRow(row),
+            note: bodyLost(row) ? 'The captured body is binary or was cut at the size limit; add it here.' : undefined,
+          }
+        : {},
+    );
+
   const errors = store.errors;
   const logs = store.logs;
   const allOther = store.other;
@@ -743,6 +762,10 @@ export function App() {
                     filterRef={filterRef}
                     {...selection('http')}
                     onBack={backFrom('http')}
+                    mockCount={mocks.apps.length ? mocksOn : undefined}
+                    mockRuns={mockRuns}
+                    onMocks={openMocks}
+                    onResume={mocks.resume}
                   />
                 )}
                 {activeTab === 'errors' && (
@@ -816,7 +839,17 @@ export function App() {
             limited={limited}
             pluginErrors={pluginOffers.errors}
             writes={writesOn}
+            mocks={mocksOn}
+            paused={pausedRows.length}
             onWritesOff={() => writes.set(false)}
+            onOpenMocks={() => {
+              setTab('http');
+              openMocks();
+            }}
+            onOpenPaused={() => {
+              const first = pausedRows.at(-1);
+              if (first) openIn('http', first.key);
+            }}
             onOpenSettings={openSettings}
             onOpenPlugins={() => setTab('plugins')}
           />
@@ -843,6 +876,17 @@ export function App() {
         }}
       />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <MocksDialog
+        open={mocksOpen !== null}
+        apps={mocks.apps}
+        run={mocksOpen?.run}
+        draft={mocksOpen?.draft}
+        draftNote={mocksOpen?.note}
+        keep={settings.keepMocks}
+        onKeep={(keepMocks) => setSettings({ ...latest.current.settings, keepMocks })}
+        onSet={mocks.set}
+        onClose={() => setMocksOpen(null)}
+      />
       <SettingsDialog
         open={settingsOpen}
         settings={settings}

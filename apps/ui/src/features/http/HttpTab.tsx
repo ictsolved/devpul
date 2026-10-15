@@ -1,6 +1,8 @@
 import { cn } from 'cn';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, FlaskConical } from 'lucide-react';
 import { memo, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Split } from '../../components/Panes';
 import { VirtualList } from '../../components/VirtualList';
@@ -25,6 +27,7 @@ import {
   type StatusFilter,
 } from '../../core/filter';
 import { formatBytes, formatTime } from '../../core/json';
+import type { JsonObject } from '../../core/events';
 import type { HttpRow, Store } from '../../core/store';
 import { type Settings, useStored } from '../../lib/storage';
 import { DetailPanel, Method, StatusBadge } from './DetailPanel';
@@ -63,9 +66,18 @@ interface Props {
   onSelect: (key: string | null) => void;
   /** Set when the selected request was opened from an error. */
   onBack?: () => void;
+  /** Mock rules turned on across connected apps; undefined when none takes rules. */
+  mockCount?: number;
+  /** Opens the Mocks dialog, with a rule made from [row] if given. */
+  onMocks: (row?: HttpRow) => void;
+  /** Runs of connected apps that take mock rules. */
+  mockRuns: ReadonlySet<string>;
+  onResume: (run: string, args: JsonObject) => Promise<void>;
 }
 
-export function HttpTab({ store, settings, runLabel, filterRef, selected, onSelect, onBack }: Props) {
+export function HttpTab(props: Props) {
+  const { store, settings, runLabel, filterRef, selected, onSelect, onBack } = props;
+  const { mockCount, onMocks, mockRuns, onResume } = props;
   const [filter, setFilter] = useStored<HttpFilter>('httpFilter', emptyFilter);
   const [sort, setSort] = useStored<Sort>('httpSort', defaultSort);
 
@@ -116,7 +128,16 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
     <Split
       detail={
         selectedRow && (
-          <DetailPanel key={selectedRow.key} row={selectedRow} onClose={() => onSelect(null)} onBack={onBack} />
+          <DetailPanel
+            key={selectedRow.key}
+            row={selectedRow}
+            onClose={() => onSelect(null)}
+            onBack={onBack}
+            onMock={
+              mockRuns.has(selectedRow.run) && selectedRow.source === undefined ? () => onMocks(selectedRow) : undefined
+            }
+            onResume={mockRuns.has(selectedRow.run) ? (args) => onResume(selectedRow.run, args) : undefined}
+          />
         )
       }
     >
@@ -161,6 +182,15 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
           max={4}
         />
         <span className="flex-1" />
+        {mockCount !== undefined && (
+          <Tip content="Answer, fail, delay or pause calls in the app">
+            <Button type="button" variant="outline" size="sm" onClick={() => onMocks()}>
+              <FlaskConical />
+              Mocks
+              {mockCount > 0 && <Badge variant="secondary">{mockCount}</Badge>}
+            </Button>
+          </Tip>
+        )}
         <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
       </div>
       <VirtualList
@@ -229,8 +259,9 @@ export function HttpTab({ store, settings, runLabel, filterRef, selected, onSele
 const Cells = memo(function Cells({ row, slow }: { row: HttpRow; slow?: string }) {
   return (
     <>
-      <span role="gridcell" className="truncate text-muted-foreground">
+      <span role="gridcell" className="flex items-center gap-0.5 truncate text-muted-foreground">
         {row.source ?? row.id}
+        {row.mock && <FlaskConical size={11} className="flex-none text-warning" aria-label={`mock: ${row.mock}`} />}
       </span>
       <span role="gridcell" className="text-muted-foreground">
         {formatTime(row.ts)}

@@ -758,3 +758,102 @@ test('lands on the site with setup steps and links the docs next to the app', as
   await expect(shot).toHaveJSProperty('complete', true);
   expect(await shot.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1440);
 });
+
+const lastSet = (vm: FakeVm) => {
+  const call = vm
+    .callsTo('ext.devpul.call')
+    .filter((p) => p.name === 'http.mocks.set')
+    .at(-1);
+  return (JSON.parse(String(call?.args)) as { rules: Record<string, unknown>[] }).rules;
+};
+
+test.describe('with mock handlers', () => {
+  // The app posts http.mocks when its rules change; the handler needs the test's VM for that.
+  let app: FakeVm | undefined;
+  test.use({
+    vmOptions: {
+      handlers: {
+        'http.mocks.set': (args) => {
+          app?.emit('http.mocks', { rules: args.rules ?? [] });
+          return { rules: args.rules ?? [] };
+        },
+        'http.resume': () => null,
+      },
+    },
+  });
+
+  test('makes a rule from a request and turns it off and on', async ({ page, vm }) => {
+    app = vm;
+    await connect(page, vm);
+    await page.getByRole('row', { name: /example\.com\/items/ }).click();
+    await page
+      .getByRole('complementary', { name: 'Request detail' })
+      .getByRole('button', { name: 'Mock', exact: true })
+      .click();
+    const dialog = page.getByRole('dialog', { name: 'Mocks' });
+    const form = dialog.getByRole('form', { name: 'Mock rule' });
+    await expect(form.getByLabel(/^URL/)).toHaveValue('https://example.com/items?page=1&tag=a&tag=b');
+    await expect(form.getByLabel('Body')).toHaveValue('{\n  "ok": true\n}');
+    await form.getByLabel('Status').fill('503');
+    await form.getByRole('button', { name: 'Save rule' }).click();
+    await expect(dialog.getByRole('list', { name: 'Mock rules' })).toContainText('respond 503');
+    expect(lastSet(vm)).toEqual([
+      expect.objectContaining({
+        on: true,
+        method: 'POST',
+        url: 'https://example.com/items?page=1&tag=a&tag=b',
+        mode: 'respond',
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+        body: '{\n  "ok": true\n}',
+      }),
+    ]);
+
+    await dialog.getByRole('switch').click();
+    await expect.poll(() => lastSet(vm)[0]?.on).toBe(false);
+    await page.keyboard.press('Escape');
+    const status = page.getByRole('contentinfo');
+    await expect(status.getByRole('button', { name: /mock/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Mocks' }).click();
+    await dialog.getByRole('switch').click();
+    await page.keyboard.press('Escape');
+    await expect(status.getByRole('button', { name: '1 mock' })).toBeVisible();
+  });
+
+  test('edits a paused request and lets it go', async ({ page, vm }) => {
+    app = vm;
+    await connect(page, vm);
+    vm.emit('http.paused', {
+      id: 99,
+      stage: 'request',
+      method: 'POST',
+      url: 'https://example.com/pay',
+      headers: { 'content-type': 'application/json' },
+      body: '{"n":1}',
+      editable: true,
+      json: true,
+      timeoutMs: 300_000,
+    });
+    const status = page.getByRole('contentinfo');
+    await status.getByRole('button', { name: '1 paused' }).click();
+    const breakpoint = page.getByRole('region', { name: 'Breakpoint' });
+    await expect(breakpoint).toContainText('Paused before sending');
+    const body = breakpoint.getByLabel(/^Body/);
+    await body.fill('{"n":');
+    await breakpoint.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(breakpoint).toContainText('The body is not valid JSON.');
+    await body.fill('{"n":2}');
+    await breakpoint.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect
+      .poll(() =>
+        vm
+          .callsTo('ext.devpul.call')
+          .filter((p) => p.name === 'http.resume')
+          .map((p) => p.args),
+      )
+      .toEqual([JSON.stringify({ id: 99, body: '{"n":2}' })]);
+    vm.emit('http.resumed', { id: 99, how: 'resumed' });
+    await expect(breakpoint).toHaveCount(0);
+    await expect(status.getByRole('button', { name: /paused/ })).toHaveCount(0);
+  });
+});

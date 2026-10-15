@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { Gauge, PencilLine, Puzzle } from 'lucide-react';
+import { CirclePause, FlaskConical, Gauge, PencilLine, Puzzle } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Tip } from '../../components/Tip';
 import type { DevEvent } from '../../core/events';
@@ -26,7 +26,13 @@ interface Props {
   limited: Limited[];
   pluginErrors: Record<string, string>;
   writes: boolean;
+  /** Mock rules turned on in connected apps. */
+  mocks: number;
+  /** Calls held at breakpoints in connected apps. */
+  paused: number;
   onWritesOff: () => void;
+  onOpenMocks: () => void;
+  onOpenPaused: () => void;
   onOpenSettings: () => void;
   onOpenPlugins: () => void;
 }
@@ -36,7 +42,7 @@ const BUTTON = cn(ITEM, 'cursor-pointer rounded-sm px-1 hover:bg-secondary hover
 
 export function StatusBar(props: Props) {
   const { session, fields, states, runs, notice, memory, limited, pluginErrors, writes, onWritesOff } = props;
-  const { onOpenSettings, onOpenPlugins } = props;
+  const { mocks, paused, onOpenSettings, onOpenPlugins, onOpenMocks, onOpenPaused } = props;
   const errors = Object.entries(pluginErrors);
   const muted = limited.filter((l) => l.perSecond === 0).length;
   return (
@@ -60,6 +66,22 @@ export function StatusBar(props: Props) {
           <button type="button" className={cn(BUTTON, 'text-warning')} onClick={onWritesOff}>
             <PencilLine size={12} />
             Writes on
+          </button>
+        </Tip>
+      )}
+      {paused > 0 && (
+        <Tip content="Calls held at a breakpoint. Click to edit the first." side="top" align="end">
+          <button type="button" className={cn(BUTTON, 'text-warning')} onClick={onOpenPaused}>
+            <CirclePause size={12} />
+            {paused} paused
+          </button>
+        </Tip>
+      )}
+      {mocks > 0 && (
+        <Tip content="Mock rules change calls in the app. Click to see them." side="top" align="end">
+          <button type="button" className={cn(BUTTON, 'text-warning')} onClick={onOpenMocks}>
+            <FlaskConical size={12} />
+            {mocks === 1 ? '1 mock' : `${mocks} mocks`}
           </button>
         </Tip>
       )}
