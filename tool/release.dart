@@ -5,7 +5,7 @@ const _usage = 'Usage: dart run tool/release.dart <version>';
 
 final _semver = RegExp(r'^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$');
 
-void main(List<String> args) {
+Future<void> main(List<String> args) async {
   if (args.length != 1 || !_semver.hasMatch(args.single)) {
     stderr.writeln(_usage);
     exit(64);
@@ -77,17 +77,13 @@ const packageVersion = '$version';
     exit(1);
   }
 
+  await _checkSemver({
+    for (final MapEntry(:key, :value) in packages.entries)
+      if (File('$value/api.txt').existsSync()) key: value,
+  });
+
   // The UI shows its version, so it is built after the bump.
-  final build = Process.runSync('npm', [
-    'run',
-    'build:extension',
-  ], runInShell: true);
-  if (build.exitCode != 0) {
-    stderr
-      ..write(build.stdout)
-      ..write(build.stderr);
-    exit(1);
-  }
+  _run('npm', ['run', 'build:extension']);
 
   stdout.writeln('''
 Versions set to $version and the UI built into packages/devpul. Next:
@@ -98,6 +94,67 @@ Versions set to $version and the UI built into packages/devpul. Next:
 ${[for (final name in _publishOrder(packages)) '  (cd ${packages[name]} && ${name == 'devpul_flutter' ? 'flutter' : 'dart'} pub publish)'].join('\n')}
   git tag v$version
   git push origin main v$version''');
+}
+
+/// Fails when a package's new version is a smaller bump than dart_apitool's
+/// verdict against its latest version on pub.dev.
+Future<void> _checkSemver(Map<String, String> packages) async {
+  const tool = 'dart_apitool';
+  const toolVersion = '0.23.2';
+  final active = Process.runSync('dart', ['pub', 'global', 'list']).stdout;
+  if (!(active as String).split('\n').contains('$tool $toolVersion')) {
+    _run('dart', ['pub', 'global', 'activate', tool, toolVersion]);
+  }
+  final client = HttpClient();
+  final failed = <String>[];
+  for (final MapEntry(key: name, value: path) in packages.entries) {
+    final request = await client.getUrl(
+      Uri.https('pub.dev', '/api/packages/$name'),
+    );
+    request.headers.set('accept', 'application/vnd.pub.v2+json');
+    final response = await request.close();
+    final body = await response.transform(utf8.decoder).join();
+    if (response.statusCode == 404) continue;
+    if (response.statusCode != 200) {
+      stderr.writeln('pub.dev answered ${response.statusCode} for $name');
+      exit(1);
+    }
+    final json = jsonDecode(body) as Map<String, Object?>;
+    final last = (json['latest'] as Map<String, Object?>)['version'];
+    stdout.writeln('Checking $name against $last');
+    final diff = Process.runSync('dart', [
+      'pub',
+      'global',
+      'run',
+      '$tool:main',
+      'diff',
+      '--old',
+      'pub://$name/$last',
+      '--new',
+      path,
+    ]);
+    if (diff.exitCode != 0) {
+      stderr
+        ..write(diff.stdout)
+        ..write(diff.stderr);
+      failed.add(name);
+    }
+  }
+  client.close();
+  if (failed.isNotEmpty) {
+    stderr.writeln('Version check failed for: ${failed.join(', ')}');
+    exit(1);
+  }
+}
+
+void _run(String executable, List<String> args) {
+  final result = Process.runSync(executable, args, runInShell: true);
+  if (result.exitCode != 0) {
+    stderr
+      ..write(result.stdout)
+      ..write(result.stderr);
+    exit(1);
+  }
 }
 
 void _bumpPubspec(File file, String version, Iterable<String> packages) {
