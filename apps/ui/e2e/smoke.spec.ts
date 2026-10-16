@@ -444,7 +444,7 @@ test('lists offers and approvals in the Plugins view, with no app connected too'
 
   await page.getByRole('button', { name: /^Remove (ws|http)/ }).click();
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
-  await page.getByRole('button', { name: 'Plugins', exact: true }).click();
+  await page.getByRole('button', { name: 'My plugins', exact: true }).click();
   const item = page.getByRole('region', { name: 'Plugins' }).getByRole('listitem').filter({ hasText: 'my_plugin' });
   await item.getByRole('switch', { name: 'Enable my_plugin' }).click();
   await expect(item).toContainText('Disabled');

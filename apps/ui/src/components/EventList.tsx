@@ -6,7 +6,18 @@ import { Input } from '@/components/ui/input';
 import { useStored } from '../lib/storage';
 import { BackButton, Detail, Split } from './Panes';
 import { VirtualList } from './VirtualList';
-import { Chip, filterClass, PauseButton, rowClass, toolbarClass, useListKeys, usePause, ValueChips } from './list';
+import {
+  Chip,
+  filterClass,
+  filtersClass,
+  PauseButton,
+  rowClass,
+  toolbarClass,
+  toolbarEndClass,
+  useListKeys,
+  usePause,
+  ValueChips,
+} from './list';
 
 const ROW = 26;
 
@@ -46,6 +57,8 @@ interface Props extends ListSelection {
   keys?: readonly string[];
   field?: (e: DevEvent, key: string, value: string) => boolean;
   facets?: Facet[];
+  /** Toolbar controls before Pause. */
+  actions?: ReactNode;
   /** Offers a toggle that folds events with the same key into one row. */
   groupBy?: (e: DevEvent) => string;
   columns: string;
@@ -150,34 +163,38 @@ export function EventList(props: Props) {
       }
     >
       <div className={toolbarClass}>
-        <Input
-          ref={filterRef}
-          className={filterClass}
-          type="search"
-          placeholder={placeholder}
-          value={state.text}
-          onChange={(e) => setState({ ...state, text: e.target.value })}
-          aria-label="Filter"
-        />
-        {facets.map((f) => (
-          <ValueChips
-            key={f.id}
-            label={f.label}
-            values={values(f)}
-            selected={state.facets[f.id] ?? []}
-            onChange={(v) => setState({ ...state, facets: { ...state.facets, [f.id]: v } })}
-            render={f.render}
-            max={f.max}
-            prefix={f.prefix}
+        <div className={filtersClass}>
+          <Input
+            ref={filterRef}
+            className={filterClass}
+            type="search"
+            placeholder={placeholder}
+            value={state.text}
+            onChange={(e) => setState({ ...state, text: e.target.value })}
+            aria-label="Filter"
           />
-        ))}
-        <span className="flex-1" />
-        {groupBy && (
-          <Chip on={state.grouped} onClick={() => setState({ ...state, grouped: !state.grouped })}>
-            Group repeats
-          </Chip>
-        )}
-        <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
+          {facets.map((f) => (
+            <ValueChips
+              key={f.id}
+              label={f.label}
+              values={values(f)}
+              selected={state.facets[f.id] ?? []}
+              onChange={(v) => setState({ ...state, facets: { ...state.facets, [f.id]: v } })}
+              render={f.render}
+              max={f.max}
+              prefix={f.prefix}
+            />
+          ))}
+        </div>
+        <div className={toolbarEndClass}>
+          {props.actions}
+          {groupBy && (
+            <Chip on={state.grouped} onClick={() => setState({ ...state, grouped: !state.grouped })}>
+              Group repeats
+            </Chip>
+          )}
+          <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
+        </div>
       </div>
       <VirtualList
         label={props.label}

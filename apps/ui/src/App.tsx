@@ -1,8 +1,9 @@
 import { cn } from 'cn';
-import { Ban, RotateCcw, Settings as SettingsIcon, SquareArrowOutUpRight, Zap } from 'lucide-react';
+import { Ban, Puzzle, RotateCcw, Settings as SettingsIcon, SquareArrowOutUpRight, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { copyText } from './components/Copy';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
+import { fadeClass, HiddenTabs, useOverflow } from './components/TabOverflow';
 import { MoreMenu } from './components/MoreMenu';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Tip } from './components/Tip';
@@ -42,7 +43,7 @@ import { SettingsDialog } from './features/settings/SettingsDialog';
 import { type Limited, StatusBar } from './features/status/StatusBar';
 import { cli, listenCli } from './lib/cli';
 import { devtools, hostDtd, hostUri, listenHost } from './lib/devtools';
-import { pageUrl } from './lib/links';
+import { onSite, pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings, useStored } from './lib/storage';
 
 const MB = 1024 * 1024;
@@ -103,6 +104,7 @@ export function App() {
   const live = useRef(new Map<string, Connection>());
   const filterRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
   // Read by handlers that are registered once.
   const latest = useRef({ settings, connections, states });
   latest.current = { settings, connections, states };
@@ -499,9 +501,16 @@ export function App() {
   const errors = store.errors;
   const logs = store.logs;
   const allOther = store.other;
-  const other = useMemo(
+  const unclaimed = useMemo(
     () => (plugins.length ? allOther.filter((e) => !registry.claims(e.kind)) : allOther),
     [allOther, plugins],
+  );
+  // Desktop and web apps go inactive on every focus change; breadcrumbs keep lifecycle events either way.
+  const [lifecycleOn, setLifecycleOn] = useStored('eventsLifecycle', false);
+  const lifecycleCount = useMemo(() => unclaimed.filter((e) => e.kind === 'lifecycle').length, [unclaimed]);
+  const other = useMemo(
+    () => (lifecycleOn ? unclaimed : unclaimed.filter((e) => e.kind !== 'lifecycle')),
+    [unclaimed, lifecycleOn],
   );
   const pluginEvents = useMemo(
     () => Object.fromEntries(plugins.map(({ plugin: p }) => [p.id, allOther.filter((e) => matches(p, e.kind))])),
@@ -534,6 +543,7 @@ export function App() {
   const pluginFallback = activeLoaded ? offeredBy(runs, activeLoaded.origin) : undefined;
   const activeTab = tabs.some((t) => t.id === tab) ? tab : 'http';
   const tabIds = tabs.map((t) => t.id).join('|');
+  const stripTabs = tabs.filter((t) => t !== pluginsTab);
   const tabTrigger = (t: TabInfo, className?: string) => (
     <TabsTrigger
       key={t.id}
@@ -546,6 +556,7 @@ export function App() {
         className,
       )}
     >
+      {t.id === 'plugins' && <Puzzle aria-hidden />}
       {t.icon && <span className="inline-flex" aria-hidden dangerouslySetInnerHTML={{ __html: t.icon }} />}
       {t.id.startsWith('plugin:') ? (
         <Tip content={t.label} whenCut>
@@ -593,6 +604,10 @@ export function App() {
     else if (!connections.length) setSeenData(false);
   }, [hasData, connections.length]);
   const showMain = hasData || (seenData && connections.length > 0) || browsing;
+  const stripEdges = useOverflow(stripRef, `${showMain}|${tabIds}`);
+  useEffect(() => {
+    stripRef.current?.querySelector('[data-state="active"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [activeTab, showMain]);
 
   useEffect(() => {
     document.body.classList.toggle('has-data', showMain);
@@ -616,6 +631,7 @@ export function App() {
     const owner = plugins.find(({ plugin: p }) => matches(p, kind))?.plugin;
     const to =
       crumb.kind === 'request' ? 'http' : crumb.kind === 'log' ? 'logs' : owner ? `plugin:${owner.id}` : 'events';
+    if (to === 'events' && kind === 'lifecycle') setLifecycleOn(true);
     openIn(to, crumb.key, error && { tab: 'errors', key: error.key });
   };
 
@@ -714,10 +730,14 @@ export function App() {
           tools={tools}
           waiting={devtools || connections.some((c) => states[c.id]?.status === 'open')}
           onOpenFile={() => fileRef.current?.click()}
-          onOpenPlugins={() => {
-            setTab('plugins');
-            setBrowsing(true);
-          }}
+          onOpenPlugins={
+            onSite && !settings.plugins.length
+              ? undefined
+              : () => {
+                  setTab('plugins');
+                  setBrowsing(true);
+                }
+          }
         />
       ) : (
         <>
@@ -748,10 +768,21 @@ export function App() {
           <Tabs value={activeTab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
             <div className="flex min-h-9 items-center border-b bg-card px-3">
               <TabsList variant="line" className="w-full justify-start p-0">
-                <div className="flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
-                  {tabs.filter((t) => t !== pluginsTab).map((t) => tabTrigger(t))}
+                <div
+                  ref={stripRef}
+                  className={cn(
+                    'flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]',
+                    fadeClass(stripEdges),
+                  )}
+                >
+                  {stripTabs.map((t) => tabTrigger(t))}
                 </div>
-                {tabTrigger(pluginsTab, 'ml-auto')}
+                <div className="ml-auto flex h-full flex-none items-center gap-1">
+                  {(stripEdges.start || stripEdges.end) && (
+                    <HiddenTabs strip={stripRef} tabs={stripTabs} onSelect={setTab} />
+                  )}
+                  <div className="flex h-full items-center border-l pl-1">{tabTrigger(pluginsTab)}</div>
+                </div>
               </TabsList>
             </div>
             {activeTab !== 'plugins' && (
@@ -803,6 +834,9 @@ export function App() {
                   <EventsTab
                     events={other}
                     runLabel={runLabel}
+                    multiRun={runs.size > 1}
+                    lifecycle={{ on: lifecycleOn, count: lifecycleCount }}
+                    onLifecycle={setLifecycleOn}
                     filterRef={filterRef}
                     {...selection('events')}
                     onBack={backFrom('events')}
@@ -831,6 +865,7 @@ export function App() {
                     events={pluginEvents[activePlugin.id] ?? []}
                     fallback={pluginFallback}
                     runLabel={runLabel}
+                    multiRun={runs.size > 1}
                     filterRef={filterRef}
                     call={callApp}
                   />

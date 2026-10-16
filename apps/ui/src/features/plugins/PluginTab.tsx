@@ -16,6 +16,8 @@ interface Props extends ListSelection {
   /** Where `renderTab` calls go when the plugin has no events yet. */
   fallback?: DevEvent;
   runLabel: (run: string) => string;
+  /** Events from more than one app run are listed. */
+  multiRun: boolean;
   filterRef: RefObject<HTMLInputElement | null>;
   call: AppCall;
 }
@@ -108,7 +110,7 @@ export function PluginTab(props: Props) {
   return <PluginList {...props} />;
 }
 
-function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSelect, onBack }: Props) {
+function PluginList({ plugin, events, runLabel, multiRun, filterRef, call, selected, onSelect, onBack }: Props) {
   const cells = useCallback(
     (e: DevEvent) => (
       <>
@@ -118,15 +120,17 @@ function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSel
         <span role="gridcell" className="truncate font-semibold">
           {e.kind}
         </span>
-        <span role="gridcell" className="truncate text-muted-foreground">
-          {runLabel(e.run)}
-        </span>
+        {multiRun && (
+          <span role="gridcell" className="truncate text-muted-foreground">
+            {runLabel(e.run)}
+          </span>
+        )}
         <span role="gridcell" className="truncate">
           {summary(plugin, e)}
         </span>
       </>
     ),
-    [plugin, runLabel],
+    [plugin, runLabel, multiRun],
   );
   return (
     <EventList
@@ -139,7 +143,7 @@ function PluginList({ plugin, events, runLabel, filterRef, call, selected, onSel
       events={events}
       filterRef={filterRef}
       placeholder="Filter, e.g. words -word kind: tag:k=v"
-      columns="96px minmax(120px, 200px) minmax(0, 160px) minmax(0, 1fr)"
+      columns={`96px minmax(120px, 200px)${multiRun ? ' minmax(0, 160px)' : ''} minmax(0, 1fr)`}
       empty={`No events for ${plugin.label} yet.`}
       cells={cells}
       head={(e) => (

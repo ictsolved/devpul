@@ -4,7 +4,7 @@ import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
 import { codeClass } from '../../components/JsonView';
-import { onSite, pageUrl, repoUrl } from '../../lib/links';
+import { marketUrl, onSite, pageUrl, repoUrl } from '../../lib/links';
 
 interface Props {
   icon: string;
@@ -12,7 +12,8 @@ interface Props {
   tools: ReactNode;
   waiting: boolean;
   onOpenFile: () => void;
-  onOpenPlugins: () => void;
+  /** Opens the Plugins view; on the site only while plugins are allowed, the header's Plugins being the marketplace. */
+  onOpenPlugins?: () => void;
 }
 
 // index.html repeats these for the page before the script runs.
@@ -79,9 +80,16 @@ export function Home({ icon, connect, tools, waiting, onOpenFile, onOpenPlugins 
         <a className={NAV_LINK} href={pageUrl('docs/')}>
           Docs
         </a>
-        <button type="button" className={`${NAV_LINK} cursor-pointer`} onClick={onOpenPlugins}>
-          Plugins
-        </button>
+        {onSite && (
+          <a className={NAV_LINK} href={marketUrl}>
+            Plugins
+          </a>
+        )}
+        {onOpenPlugins && (
+          <button type="button" className={`${NAV_LINK} cursor-pointer`} onClick={onOpenPlugins}>
+            {onSite ? 'My plugins' : 'Plugins'}
+          </button>
+        )}
         <a className={NAV_LINK} href={pageUrl('docs/help/')}>
           Help
         </a>

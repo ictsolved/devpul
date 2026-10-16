@@ -13,7 +13,7 @@ export function Split({ detail, children }: { detail: ReactNode; children: React
           'grid-cols-[minmax(0,1fr)_minmax(320px,45%)] max-[860px]:relative max-[860px]:grid-cols-[minmax(0,1fr)]',
       )}
     >
-      <div className="flex min-h-0 min-w-0 flex-col">{children}</div>
+      <div className="@container flex min-h-0 min-w-0 flex-col">{children}</div>
       {detail}
     </div>
   );

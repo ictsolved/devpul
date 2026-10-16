@@ -8,9 +8,11 @@ import { Split } from '../../components/Panes';
 import { VirtualList } from '../../components/VirtualList';
 import {
   filterClass,
+  filtersClass,
   PauseButton,
   rowClass,
   toolbarClass,
+  toolbarEndClass,
   useListKeys,
   usePause,
   ValueChips,
@@ -21,6 +23,7 @@ import {
   emptyFilter,
   filterRows,
   type HttpFilter,
+  matchesStatus,
   type Sort,
   type SortKey,
   sortRows,
@@ -51,9 +54,9 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: 'url', label: 'url' },
 ];
 const ASCENDING_FIRST: SortKey[] = ['method', 'url'];
-// Narrow windows drop the time and size columns.
+// A narrow list, such as beside a detail, drops the time and size columns.
 const GRID =
-  'grid grid-cols-[52px_96px_64px_64px_60px_72px_minmax(0,1fr)] items-center gap-2 px-3 max-[860px]:grid-cols-[40px_64px_52px_60px_minmax(0,1fr)] max-[860px]:[&>:nth-child(2)]:hidden max-[860px]:[&>:nth-child(6)]:hidden';
+  'grid grid-cols-[52px_96px_64px_64px_60px_72px_minmax(0,1fr)] items-center gap-2 px-3 @max-[720px]:grid-cols-[40px_64px_52px_60px_minmax(0,1fr)] @max-[720px]:[&>:nth-child(2)]:hidden @max-[720px]:[&>:nth-child(6)]:hidden';
 
 type Item = { type: 'row'; row: HttpRow } | { type: 'divider'; run: string; key: string };
 
@@ -104,6 +107,10 @@ export function HttpTab(props: Props) {
   const keys = useMemo(() => items.flatMap((i) => (i.type === 'row' ? [i.row.key] : [])), [items]);
   useListKeys(keys, selected, onSelect);
 
+  const statuses = useMemo(
+    () => STATUSES.filter((s) => filter.statuses.includes(s) || rows.some((r) => matchesStatus(r, s))),
+    [rows, filter.statuses],
+  );
   const methods = useMemo(() => [...new Set(rows.map((r) => r.method))].toSorted(), [rows]);
   const hosts = useMemo(() => [...new Set(rows.map((r) => r.host).filter(Boolean))].toSorted(), [rows]);
   const runs = useMemo(
@@ -142,56 +149,59 @@ export function HttpTab(props: Props) {
       }
     >
       <div className={toolbarClass}>
-        <Tip content={SYNTAX} code>
-          <Input
-            ref={filterRef}
-            className={filterClass}
-            type="search"
-            placeholder="Filter, e.g. login -health status:4xx ms:>500"
-            value={filter.text}
-            onChange={(e) => setFilter({ ...filter, text: e.target.value })}
-            aria-label="Filter requests"
-          />
-        </Tip>
-        <ValueChips
-          label="Status"
-          values={STATUSES}
-          selected={filter.statuses}
-          onChange={(v) => setFilter({ ...filter, statuses: v as StatusFilter[] })}
-        />
-        <ValueChips
-          label="Method"
-          values={methods}
-          selected={filter.methods}
-          onChange={(v) => setFilter({ ...filter, methods: v })}
-        />
-        <ValueChips
-          label="Host"
-          values={hosts}
-          selected={filter.hosts}
-          onChange={(v) => setFilter({ ...filter, hosts: v })}
-          max={6}
-        />
-        <TagChips tags={store.tags} selected={filter.tags} onChange={(tags) => setFilter({ ...filter, tags })} />
-        <ValueChips
-          label="App run"
-          values={runs}
-          selected={filter.runs}
-          onChange={(v) => setFilter({ ...filter, runs: v })}
-          render={runLabel}
-          max={4}
-        />
-        <span className="flex-1" />
-        {mockCount !== undefined && (
-          <Tip content="Answer, fail, delay or pause calls in the app">
-            <Button type="button" variant="outline" size="sm" onClick={() => onMocks()}>
-              <FlaskConical />
-              Mocks
-              {mockCount > 0 && <Badge variant="secondary">{mockCount}</Badge>}
-            </Button>
+        <div className={filtersClass}>
+          <Tip content={SYNTAX} code>
+            <Input
+              ref={filterRef}
+              className={filterClass}
+              type="search"
+              placeholder="Filter, e.g. login -health status:4xx ms:>500"
+              value={filter.text}
+              onChange={(e) => setFilter({ ...filter, text: e.target.value })}
+              aria-label="Filter requests"
+            />
           </Tip>
-        )}
-        <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
+          <ValueChips
+            label="Status"
+            values={statuses}
+            selected={filter.statuses}
+            onChange={(v) => setFilter({ ...filter, statuses: v as StatusFilter[] })}
+          />
+          <ValueChips
+            label="Method"
+            values={methods}
+            selected={filter.methods}
+            onChange={(v) => setFilter({ ...filter, methods: v })}
+          />
+          <ValueChips
+            label="Host"
+            values={hosts}
+            selected={filter.hosts}
+            onChange={(v) => setFilter({ ...filter, hosts: v })}
+            max={6}
+          />
+          <TagChips tags={store.tags} selected={filter.tags} onChange={(tags) => setFilter({ ...filter, tags })} />
+          <ValueChips
+            label="App run"
+            values={runs}
+            selected={filter.runs}
+            onChange={(v) => setFilter({ ...filter, runs: v })}
+            render={runLabel}
+            max={4}
+          />
+        </div>
+        <div className={toolbarEndClass}>
+          {mockCount !== undefined && (
+            <Tip content="Answer, fail, delay or pause calls in the app">
+              <Button type="button" variant="outline" size="sm" onClick={() => onMocks()}>
+                <FlaskConical />
+                Mocks
+                {mockCount > 0 && <Badge variant="secondary">{mockCount}</Badge>}
+              </Button>
+            </Tip>
+          )}
+          <PauseButton paused={paused} newCount={newCount} onClick={toggle} />
+        </div>
       </div>
       <VirtualList
         label="Requests"

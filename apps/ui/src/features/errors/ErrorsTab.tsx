@@ -27,6 +27,12 @@ interface Props extends ListSelection {
 const sourceOf = (e: DevEvent) => str(e.data.source) ?? 'error';
 const typeOf = (e: DevEvent) => str(e.data.type) ?? 'Error';
 const routeOf = (e: DevEvent) => str(e.data.route);
+// The type has its own cell; Dart's toString often repeats it.
+const messageOf = (e: DevEvent) => {
+  const message = str(e.data.message) ?? '';
+  const prefix = `${typeOf(e)}: `;
+  return message.startsWith(prefix) ? message.slice(prefix.length) : message;
+};
 const groupKey = (e: DevEvent) => `${typeOf(e)}|${str(e.data.message) ?? ''}`;
 const FACETS: Facet[] = [{ id: 'source', label: 'Source', of: sourceOf }];
 
@@ -89,7 +95,7 @@ function Widget({ e, onSource }: { e: DevEvent; onSource: Props['onSource'] }) {
 }
 
 const crumbClass =
-  'grid w-full cursor-pointer grid-cols-[64px_56px_minmax(0,1fr)] gap-2 rounded px-1 py-[3px] text-left font-mono text-xs hover:bg-secondary';
+  'grid w-full cursor-pointer grid-cols-[88px_56px_minmax(0,1fr)] gap-2 rounded px-1 py-[3px] text-left font-mono text-xs hover:bg-secondary';
 
 function Breadcrumbs({ e, store, onOpen }: { e: DevEvent; store: Store; onOpen: (crumb: Crumb) => void }) {
   const crumbs = breadcrumbs(store.all, store.httpRows, e);
@@ -102,7 +108,7 @@ function Breadcrumbs({ e, store, onOpen }: { e: DevEvent; store: Store; onOpen: 
           {crumbs.map((c) => (
             <li key={`${c.kind}|${c.key}`}>
               <button type="button" className={crumbClass} title={formatTime(c.ts)} onClick={() => onOpen(c)}>
-                <span className="text-right text-muted-foreground">{formatOffset(c.offset)}</span>
+                <span className="text-right whitespace-nowrap text-muted-foreground">{formatOffset(c.offset)}</span>
                 {c.row ? (
                   <>
                     <Method method={c.row.method} />
@@ -127,6 +133,7 @@ function Breadcrumbs({ e, store, onOpen }: { e: DevEvent; store: Store; onOpen: 
 }
 
 export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, onSource, selected, onSelect }: Props) {
+  const multiRun = store.runs.size > 1;
   const cells = useCallback(
     (e: DevEvent, group?: Group) => (
       <>
@@ -141,21 +148,20 @@ export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, onSource
             </Badge>
           )}
         </span>
-        <span role="gridcell" className="truncate font-semibold">
-          {typeOf(e)}
-        </span>
         <span role="gridcell" className="truncate">
-          {str(e.data.message) ?? ''}
+          <span className="font-semibold">{typeOf(e)}</span> {messageOf(e)}
         </span>
         <span role="gridcell" className="text-right text-muted-foreground">
           {group && group.count > 1 ? `x${group.count}` : ''}
         </span>
-        <span role="gridcell" className="truncate text-muted-foreground">
-          {runLabel(e.run)}
-        </span>
+        {multiRun && (
+          <span role="gridcell" className="truncate text-muted-foreground">
+            {runLabel(e.run)}
+          </span>
+        )}
       </>
     ),
-    [runLabel],
+    [runLabel, multiRun],
   );
 
   return (
@@ -171,7 +177,7 @@ export function ErrorsTab({ errors, store, runLabel, filterRef, onOpen, onSource
       field={field}
       facets={FACETS}
       groupBy={groupKey}
-      columns="96px 128px minmax(80px, 160px) minmax(0, 1fr) 40px minmax(0, 120px)"
+      columns={`96px 128px minmax(0, 1fr) 40px${multiRun ? ' minmax(0, 120px)' : ''}`}
       empty="No errors yet."
       cells={cells}
       head={(e) => (

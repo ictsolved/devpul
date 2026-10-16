@@ -22,7 +22,7 @@ export function Section({ id, title, summary, actions, children }: Props) {
     setClosed(next);
   };
   return (
-    <section>
+    <section className="group/section">
       <header
         className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 select-none hover:bg-secondary"
         onClick={toggle}
@@ -33,7 +33,12 @@ export function Section({ id, title, summary, actions, children }: Props) {
         <h3 className="text-xs font-semibold">{title}</h3>
         {summary && <span className="text-xs text-muted-foreground">{summary}</span>}
         <span className="flex-1" />
-        {actions}
+        {actions && (
+          // Shown on hover so a column of identical buttons does not compete with the content.
+          <span className="flex gap-1 group-hover/section:opacity-100 focus-within:opacity-100 [@media(hover:hover)]:opacity-0">
+            {actions}
+          </span>
+        )}
       </header>
       {!closed && <div className="pr-3 pb-2 pl-[30px]">{children}</div>}
     </section>
