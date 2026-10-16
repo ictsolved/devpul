@@ -43,12 +43,12 @@ export function Detail({ label, head, onClose, children }: DetailProps) {
   );
 }
 
-/** Returns to the error a detail was opened from. */
+/** Returns to the detail this one was opened from. */
 export function BackButton({ onClick }: { onClick: () => void }) {
   return (
     <Button type="button" variant="outline" size="xs" onClick={onClick}>
       <ArrowLeft />
-      Back to error
+      Back
     </Button>
   );
 }

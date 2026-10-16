@@ -1,21 +1,23 @@
 import { cn } from 'cn';
-import { FlaskConical, SquareTerminal } from 'lucide-react';
-import { memo } from 'react';
+import { FlaskConical, Repeat, SquareTerminal } from 'lucide-react';
+import { memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
 import { ImagePreview, isEmptyValue, JsonModeToggle, JsonView, KeyValues, kvClass } from '../../components/JsonView';
 import { BackButton, Detail } from '../../components/Panes';
 import { Section } from '../../components/Section';
 import { Tip } from '../../components/Tip';
-import { isObject, type JsonObject, str } from '../../core/events';
+import type { Cause } from '../../core/cause';
+import { type DevEvent, isObject, type JsonObject, preview, str } from '../../core/events';
 import { toFetch } from '../../core/fetch';
 import { type DataImage, dataImage, svgImage } from '../../core/image';
 import { DART_IO } from '../../core/profile';
 import { formatBytes, formatDateTime, formatTime, pretty } from '../../core/json';
 import { bearerJwt, expiry, type Jwt, TIME_CLAIMS } from '../../core/jwt';
-import { parsePaused } from '../../core/mocks';
+import { type Editable, parsePaused } from '../../core/mocks';
 import type { HttpRow } from '../../core/store';
 import { Breakpoint } from './Breakpoint';
+import { ReplayForm } from './Replay';
 
 const count = (v: unknown): string | undefined => {
   if (Array.isArray(v)) return `${v.length} items`;
@@ -32,6 +34,20 @@ const size = (v: unknown): string =>
 
 const breakClass = 'font-mono text-xs break-all';
 
+/** What started a call, with the call or event it names if they are kept. */
+export interface StartedBy {
+  cause: Cause;
+  row?: HttpRow;
+  event?: DevEvent;
+  open?: () => void;
+}
+
+/** Loads the request as the app sent it and sends it again. */
+export interface Replayer {
+  load: () => Promise<Editable>;
+  send: (args: JsonObject) => Promise<void>;
+}
+
 interface Props {
   row: HttpRow;
   onClose: () => void;
@@ -40,9 +56,13 @@ interface Props {
   onMock?: () => void;
   /** Lets the call go on from a breakpoint; set while its app is connected. */
   onResume?: (args: JsonObject) => Promise<void>;
+  /** Set while its app is connected and can send the call again. */
+  replay?: Replayer;
+  startedBy?: StartedBy;
 }
 
-function DetailPanelInner({ row, onClose, onBack, onMock, onResume }: Props) {
+function DetailPanelInner({ row, onClose, onBack, onMock, onResume, replay, startedBy }: Props) {
+  const [replaying, setReplaying] = useState<Editable | string | null>(null);
   const req = row.request?.data;
   const endEvent = row.response ?? row.error;
   const end = endEvent?.data;
@@ -80,6 +100,27 @@ function DetailPanelInner({ row, onClose, onBack, onMock, onResume }: Props) {
               </Button>
             </Tip>
           )}
+          {replay && (
+            <Tip content="Send this request again from the app, as it was sent or edited">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-pressed={replaying !== null}
+                onClick={() => {
+                  if (replaying !== null) return setReplaying(null);
+                  replay
+                    .load()
+                    .then(setReplaying, (err: unknown) =>
+                      setReplaying(err instanceof Error ? err.message : String(err)),
+                    );
+                }}
+              >
+                <Repeat />
+                Replay
+              </Button>
+            </Tip>
+          )}
           {curl && <CopyButton text={() => curl} label="curl" icon={<SquareTerminal />} />}
           {fetchCode && <CopyButton text={() => fetchCode} label="fetch" />}
         </>
@@ -88,6 +129,13 @@ function DetailPanelInner({ row, onClose, onBack, onMock, onResume }: Props) {
       {row.state === 'paused' && row.paused && onResume && (
         <Breakpoint key={row.paused.key} paused={parsePaused(row.paused)} onResume={onResume} />
       )}
+      {replay && typeof replaying === 'string' && (
+        <p className="border-b px-3 py-2 text-xs text-destructive">{replaying}</p>
+      )}
+      {replay && replaying !== null && typeof replaying !== 'string' && (
+        <ReplayForm sent={replaying} onSend={replay.send} onCancel={() => setReplaying(null)} />
+      )}
+      {startedBy && <Started by={startedBy} />}
       <Section id="url" title="URL" actions={<CopyButton text={() => row.url} />}>
         <div className={breakClass}>{row.url}</div>
         {finalUrl && finalUrl !== row.url && (
@@ -140,6 +188,46 @@ function DetailPanelInner({ row, onClose, onBack, onMock, onResume }: Props) {
         image={svgImage(end?.body, end?.headers)}
       />
     </Detail>
+  );
+}
+
+const startedClass = 'flex w-full min-w-0 items-baseline gap-2 rounded px-1 py-[3px] text-left font-mono text-xs';
+
+function Started({ by }: { by: StartedBy }) {
+  const { cause, row, event, open } = by;
+  const content =
+    cause.type === 'replay' ? (
+      <>
+        <span className="text-muted-foreground">replay of #{cause.id}</span>
+        {row && (
+          <>
+            <Method method={row.method} />
+            <StatusBadge row={row} />
+            <span className="truncate">{row.url}</span>
+          </>
+        )}
+      </>
+    ) : cause.type === 'action' ? (
+      <>
+        <span className="text-muted-foreground">action</span>
+        <span className="truncate font-sans">{cause.name}</span>
+      </>
+    ) : (
+      <>
+        <span className="text-muted-foreground">{cause.kind}</span>
+        <span className="truncate">{event ? preview(event) : 'no longer kept'}</span>
+      </>
+    );
+  return (
+    <Section id="cause" title="Started by">
+      {open ? (
+        <button type="button" className={cn(startedClass, 'cursor-pointer hover:bg-secondary')} onClick={open}>
+          {content}
+        </button>
+      ) : (
+        <div className={startedClass}>{content}</div>
+      )}
+    </Section>
   );
 }
 

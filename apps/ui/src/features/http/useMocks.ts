@@ -19,9 +19,11 @@ export interface Mocks {
   set: (app: MockApp, rules: MockRule[]) => Promise<void>;
   /** Lets a paused call in [run] go on; the args are `http.resume`'s. */
   resume: (run: string, args: JsonObject) => Promise<void>;
+  /** Runs [handler] in the live app of [run] and returns its result. */
+  call: (run: string, handler: string, args?: JsonObject) => Promise<unknown>;
 }
 
-const handles = (run: RunInfo, name: string): boolean => {
+export const handles = (run: RunInfo, name: string): boolean => {
   const list = run.info?.data.handlers;
   return Array.isArray(list) && list.some((h) => isObject(h) && h.name === name);
 };
@@ -69,13 +71,20 @@ export function useMocks(opts: { runs: RunInfo[]; name: (run: RunInfo) => string
     [request],
   );
 
-  const resume = useCallback(
-    async (run: string, args: JsonObject) => {
+  const callRun = useCallback(
+    async (run: string, handler: string, args?: JsonObject) => {
       const info = runs.find((r) => r.run === run);
       if (!info) throw new Error('The app is not connected.');
-      await request(info, RESUME, args);
+      return request(info, handler, args);
     },
     [runs, request],
+  );
+
+  const resume = useCallback(
+    async (run: string, args: JsonObject) => {
+      await callRun(run, RESUME, args);
+    },
+    [callRun],
   );
 
   useEffect(() => {
@@ -112,5 +121,5 @@ export function useMocks(opts: { runs: RunInfo[]; name: (run: RunInfo) => string
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [keep]);
 
-  return { apps, set, resume } satisfies Mocks;
+  return { apps, set, resume, call: callRun } satisfies Mocks;
 }

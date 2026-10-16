@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { JsonObject } from '../../core/events';
 import { pretty } from '../../core/json';
-import { editOf, type Paused, type PausedEdit, resumeArgs } from '../../core/mocks';
+import { type Editable, editOf, type Paused, type PausedEdit, resumeArgs } from '../../core/mocks';
 
 const FIELD = 'flex flex-col gap-1 text-xs text-muted-foreground';
 const MONO = 'font-mono text-xs';
@@ -57,58 +57,7 @@ export function Breakpoint(props: { paused: Paused; onResume: (args: JsonObject)
           </span>
           <span className="text-muted-foreground">goes on unchanged in {clock(left)}</span>
         </div>
-        {request ? (
-          <div className="flex gap-2">
-            <label className={FIELD}>
-              Method
-              <Input className={`${MONO} w-24`} value={edit.method} onChange={(e) => set({ method: e.target.value })} />
-            </label>
-            <label className={`${FIELD} min-w-0 flex-1`}>
-              URL
-              <Input className={MONO} value={edit.url} onChange={(e) => set({ url: e.target.value })} />
-            </label>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <label className={FIELD}>
-              Status
-              <Input
-                className={`${MONO} w-24`}
-                inputMode="numeric"
-                value={edit.status}
-                onChange={(e) => set({ status: e.target.value })}
-              />
-            </label>
-            <label className={`${FIELD} min-w-0 flex-1`}>
-              Status message
-              <Input value={edit.statusMessage} onChange={(e) => set({ statusMessage: e.target.value })} />
-            </label>
-          </div>
-        )}
-        <label className={FIELD}>
-          Headers, one name: value per line
-          <Textarea className={MONO} rows={3} value={edit.headers} onChange={(e) => set({ headers: e.target.value })} />
-        </label>
-        {paused.editable ? (
-          <label className={FIELD}>
-            Body{paused.json ? ' (JSON)' : ''}
-            <Textarea
-              className={`${MONO} max-h-80`}
-              rows={5}
-              value={edit.body}
-              onChange={(e) => set({ body: e.target.value })}
-            />
-          </label>
-        ) : (
-          paused.body !== null && (
-            <div className={FIELD}>
-              Body, not editable: not text, redacted or over the size limit
-              <pre className={`${MONO} max-h-40 overflow-auto text-foreground`}>
-                {typeof paused.body === 'string' ? paused.body : pretty(paused.body)}
-              </pre>
-            </div>
-          )
-        )}
+        <EditFields held={paused} edit={edit} set={set} />
         {problem && <p className="text-xs text-destructive">{problem}</p>}
         <div className="flex gap-2">
           <Button type="submit" size="sm" disabled={busy}>
@@ -119,7 +68,7 @@ export function Breakpoint(props: { paused: Paused; onResume: (args: JsonObject)
             size="sm"
             variant="outline"
             disabled={busy}
-            onClick={() => void send({ id: paused.event.data.id ?? paused.id })}
+            onClick={() => void send({ id: paused.id })}
           >
             Continue unchanged
           </Button>
@@ -128,12 +77,73 @@ export function Breakpoint(props: { paused: Paused; onResume: (args: JsonObject)
             size="sm"
             variant="warning"
             disabled={busy}
-            onClick={() => void send({ id: paused.event.data.id ?? paused.id, abort: true })}
+            onClick={() => void send({ id: paused.id, abort: true })}
           >
             Abort
           </Button>
         </div>
       </form>
     </section>
+  );
+}
+
+/** Method and URL or status, headers and body of [held], bound to [edit]. */
+export function EditFields(props: { held: Editable; edit: PausedEdit; set: (fields: Partial<PausedEdit>) => void }) {
+  const { held, edit, set } = props;
+  return (
+    <>
+      {held.stage === 'request' ? (
+        <div className="flex gap-2">
+          <label className={FIELD}>
+            Method
+            <Input className={`${MONO} w-24`} value={edit.method} onChange={(e) => set({ method: e.target.value })} />
+          </label>
+          <label className={`${FIELD} min-w-0 flex-1`}>
+            URL
+            <Input className={MONO} value={edit.url} onChange={(e) => set({ url: e.target.value })} />
+          </label>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <label className={FIELD}>
+            Status
+            <Input
+              className={`${MONO} w-24`}
+              inputMode="numeric"
+              value={edit.status}
+              onChange={(e) => set({ status: e.target.value })}
+            />
+          </label>
+          <label className={`${FIELD} min-w-0 flex-1`}>
+            Status message
+            <Input value={edit.statusMessage} onChange={(e) => set({ statusMessage: e.target.value })} />
+          </label>
+        </div>
+      )}
+      <label className={FIELD}>
+        Headers, one name: value per line
+        <Textarea className={MONO} rows={3} value={edit.headers} onChange={(e) => set({ headers: e.target.value })} />
+      </label>
+      {held.editable ? (
+        <label className={FIELD}>
+          Body{held.json ? ' (JSON)' : ''}
+          <Textarea
+            className={`${MONO} max-h-80`}
+            rows={5}
+            value={edit.body}
+            onChange={(e) => set({ body: e.target.value })}
+          />
+        </label>
+      ) : (
+        held.body !== null && (
+          <div className={FIELD}>
+            Body, not editable: not text, redacted or over the size limit
+            <pre className={`${MONO} max-h-40 overflow-auto text-foreground`}>
+              {typeof held.body === 'string' ? held.body : pretty(held.body)}
+            </pre>
+          </div>
+        )
+      )}
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { ArrowDown, ArrowUp, FlaskConical } from 'lucide-react';
+import { ArrowDown, ArrowUp, FlaskConical, Repeat } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,10 +30,10 @@ import {
   type StatusFilter,
 } from '../../core/filter';
 import { formatBytes, formatTime } from '../../core/json';
-import type { JsonObject } from '../../core/events';
+import type { DevEvent, JsonObject } from '../../core/events';
 import type { HttpRow, Store } from '../../core/store';
 import { type Settings, useStored } from '../../lib/storage';
-import { DetailPanel, Method, StatusBadge } from './DetailPanel';
+import { DetailPanel, Method, type Replayer, type StartedBy, StatusBadge } from './DetailPanel';
 import { TagChips } from './TagChips';
 
 const STATUSES: StatusFilter[] = ['2xx', '3xx', '4xx', '5xx', 'err', 'pending'];
@@ -76,11 +76,15 @@ interface Props {
   /** Runs of connected apps that take mock rules. */
   mockRuns: ReadonlySet<string>;
   onResume: (run: string, args: JsonObject) => Promise<void>;
+  /** Undefined when the row's app cannot send it again now. */
+  replayer: (row: HttpRow) => Replayer | undefined;
+  /** Opens what started [row]: another request by key, or an event. */
+  onOpenCause: (row: HttpRow, to: { request: string } | { event: DevEvent }) => void;
 }
 
 export function HttpTab(props: Props) {
   const { store, settings, runLabel, filterRef, selected, onSelect, onBack } = props;
-  const { mockCount, onMocks, mockRuns, onResume } = props;
+  const { mockCount, onMocks, mockRuns, onResume, replayer, onOpenCause } = props;
   const [filter, setFilter] = useStored<HttpFilter>('httpFilter', emptyFilter);
   const [sort, setSort] = useStored<Sort>('httpSort', defaultSort);
 
@@ -120,6 +124,20 @@ export function HttpTab(props: Props) {
   const selectedRow = selected ? rows.find((r) => r.key === selected) : undefined;
   const selectedIndex = selected ? items.findIndex((i) => i.type === 'row' && i.row.key === selected) : -1;
 
+  const startedBy = (row: HttpRow): StartedBy | undefined => {
+    const cause = row.cause;
+    if (cause?.type === 'replay') {
+      const request = `${row.session}|${cause.id}`;
+      const from = store.httpRow(request);
+      return { cause, row: from, open: from && (() => onOpenCause(row, { request })) };
+    }
+    if (cause?.type === 'event' && cause.seq !== undefined) {
+      const event = store.event(`${row.session}|${cause.seq}`);
+      return { cause, event, open: event && (() => onOpenCause(row, { event })) };
+    }
+    return cause && { cause };
+  };
+
   const sortBy = (key: SortKey) =>
     setSort(sort.key === key ? { key, desc: !sort.desc } : { key, desc: !ASCENDING_FIRST.includes(key) });
 
@@ -144,6 +162,8 @@ export function HttpTab(props: Props) {
               mockRuns.has(selectedRow.run) && selectedRow.source === undefined ? () => onMocks(selectedRow) : undefined
             }
             onResume={mockRuns.has(selectedRow.run) ? (args) => onResume(selectedRow.run, args) : undefined}
+            replay={replayer(selectedRow)}
+            startedBy={startedBy(selectedRow)}
           />
         )
       }
@@ -272,6 +292,9 @@ const Cells = memo(function Cells({ row, slow }: { row: HttpRow; slow?: string }
       <span role="gridcell" className="flex items-center gap-0.5 truncate text-muted-foreground">
         {row.source ?? row.id}
         {row.mock && <FlaskConical size={11} className="flex-none text-warning" aria-label={`mock: ${row.mock}`} />}
+        {row.cause?.type === 'replay' && (
+          <Repeat size={11} className="flex-none" aria-label={`replay of #${row.cause.id}`} />
+        )}
       </span>
       <span role="gridcell" className="text-muted-foreground">
         {formatTime(row.ts)}

@@ -344,13 +344,13 @@ test('opens breadcrumbs from an error and goes back to the error', async ({ page
   await expect(page.getByRole('tab', { name: /^HTTP/ })).toHaveAttribute('aria-selected', 'true');
   const request = page.getByRole('complementary', { name: 'Request detail' });
   await expect(request).toContainText('https://example.com/items');
-  await request.getByRole('button', { name: 'Back to error' }).click();
+  await request.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByRole('tab', { name: /^Errors/ })).toHaveAttribute('aria-selected', 'true');
 
   await crumbs.getByRole('button', { name: /Sync failed/ }).click();
   await expect(page.getByRole('tab', { name: /^Logs/ })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('row', { name: /Sync failed/ })).toHaveAttribute('aria-selected', 'true');
-  await detail.getByRole('button', { name: 'Back to error' }).click();
+  await detail.getByRole('button', { name: 'Back' }).click();
   await expect(detail).toContainText('Bad state: layout');
 });
 
@@ -856,5 +856,62 @@ test.describe('with mock handlers', () => {
     vm.emit('http.resumed', { id: 99, how: 'resumed' });
     await expect(breakpoint).toHaveCount(0);
     await expect(status.getByRole('button', { name: /paused/ })).toHaveCount(0);
+  });
+});
+
+test.describe('with replay handlers', () => {
+  let app: FakeVm | undefined;
+  test.use({
+    vmOptions: {
+      handlers: {
+        // The app answers with the id as it sent it, a number here.
+        'http.sent': (args) => ({
+          id: Number(args.id),
+          method: 'POST',
+          url: 'https://example.com/pay',
+          headers: {},
+          body: '{"total":42}',
+          editable: true,
+        }),
+        'http.replay': (args) => {
+          app?.emit('http.request', {
+            id: 77,
+            method: 'POST',
+            url: 'https://example.com/pay',
+            cause: { type: 'replay', id: args.id ?? null },
+          });
+          return { id: 77 };
+        },
+      },
+    },
+  });
+
+  test('shows what started a request, replays it edited and links back', async ({ page, vm }) => {
+    app = vm;
+    await connect(page, vm);
+    await page.getByRole('row', { name: /502/ }).click();
+    const detail = page.getByRole('complementary', { name: 'Request detail' });
+    const cause = detail.getByRole('button', { name: /cart\.checkout/ });
+    await expect(cause).toContainText('items: 2');
+    await cause.click();
+    await expect(page.getByRole('complementary', { name: 'Detail' })).toContainText('cart.checkout');
+    await page.getByRole('button', { name: 'Back' }).click();
+
+    await detail.getByRole('button', { name: 'Replay' }).click();
+    const form = page.getByRole('region', { name: 'Replay' });
+    await form.getByLabel(/^Body/).fill('{"total":43}');
+    await form.getByRole('button', { name: 'Send' }).click();
+    await expect
+      .poll(() =>
+        vm
+          .callsTo('ext.devpul.call')
+          .filter((p) => p.name === 'http.replay')
+          .map((p) => p.args),
+      )
+      .toEqual([JSON.stringify({ id: 6, body: '{"total":43}' })]);
+    await expect(detail).toContainText('#77');
+    await expect(page.getByRole('row', { name: /^77 replay of #6/ })).toBeVisible();
+    await detail.getByRole('button', { name: /replay of #6/ }).click();
+    await expect(detail.getByRole('button', { name: /cart\.checkout/ })).toBeVisible();
   });
 });

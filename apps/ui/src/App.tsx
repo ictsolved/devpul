@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { approve } from './core/approvals';
 import type { Crumb } from './core/breadcrumbs';
 import { openInEditor } from './core/editor';
-import { type DevEvent, str } from './core/events';
+import { type DevEvent, isObject, str } from './core/events';
 import { fromSession } from './core/export';
 import { parseInfo } from './core/info';
 import { formatTime } from './core/json';
@@ -32,8 +32,9 @@ import { ExportItems } from './features/export/ExportItems';
 import { Home } from './features/home/Home';
 import { HttpTab } from './features/http/HttpTab';
 import { MocksDialog } from './features/http/MocksDialog';
-import { useMocks } from './features/http/useMocks';
-import { bodyLost, type MockRule, ruleFromRow } from './core/mocks';
+import type { Replayer } from './features/http/DetailPanel';
+import { handles, useMocks } from './features/http/useMocks';
+import { bodyLost, type MockRule, parseEditable, REPLAY, ruleFromRow, SENT } from './core/mocks';
 import { LogsTab } from './features/logs/LogsTab';
 import { offeredBy, PluginOffers, usePlugins } from './features/plugins/PluginOffers';
 import { PluginsView } from './features/plugins/PluginsView';
@@ -625,14 +626,38 @@ export function App() {
     const from = store.selected(t)?.from;
     return from && (() => openIn(from.tab, from.key));
   };
+  // The tab an event of [kind] lists in, other than Logs.
+  const eventTab = (kind: string) => {
+    const owner = plugins.find(({ plugin: p }) => matches(p, kind))?.plugin;
+    if (!owner && kind === 'lifecycle') setLifecycleOn(true);
+    return owner ? `plugin:${owner.id}` : 'events';
+  };
   const openCrumb = (crumb: Crumb) => {
     const error = store.selected('errors');
-    const kind = crumb.event?.kind ?? '';
-    const owner = plugins.find(({ plugin: p }) => matches(p, kind))?.plugin;
-    const to =
-      crumb.kind === 'request' ? 'http' : crumb.kind === 'log' ? 'logs' : owner ? `plugin:${owner.id}` : 'events';
-    if (to === 'events' && kind === 'lifecycle') setLifecycleOn(true);
+    const to = crumb.kind === 'request' ? 'http' : crumb.kind === 'log' ? 'logs' : eventTab(crumb.event?.kind ?? '');
     openIn(to, crumb.key, error && { tab: 'errors', key: error.key });
+  };
+  const openCause = (row: HttpRow, to: { request: string } | { event: DevEvent }) => {
+    const from = { tab: 'http', key: row.key };
+    if ('request' in to) openIn('http', to.request, from);
+    else openIn(eventTab(to.event.kind), to.event.key, from);
+  };
+  const replayer = (row: HttpRow): Replayer | undefined => {
+    const run = openRuns.find((r) => r.run === row.run);
+    if (!row.replayable || !run || !handles(run, REPLAY)) return undefined;
+    return {
+      load: async () => {
+        const sent = await mocks.call(row.run, SENT, { id: row.id });
+        if (!isObject(sent)) throw new Error('The app sent nothing back.');
+        return parseEditable(sent);
+      },
+      send: async (args) => {
+        const result = await mocks.call(row.run, REPLAY, args);
+        const id = isObject(result) ? str(result.id) : undefined;
+        if (id === undefined) throw new Error('The app sent nothing: ignoreUrls or ignoreMethods match the request.');
+        openIn('http', `${row.session}|${id}`, { tab: 'http', key: row.key });
+      },
+    };
   };
 
   const openSettings = () => {
@@ -806,6 +831,8 @@ export function App() {
                     mockRuns={mockRuns}
                     onMocks={openMocks}
                     onResume={mocks.resume}
+                    replayer={replayer}
+                    onOpenCause={openCause}
                   />
                 )}
                 {activeTab === 'errors' && (
