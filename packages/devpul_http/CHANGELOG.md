@@ -1,6 +1,7 @@
 ## 1.1.0
 
 - Acts on mock rules: answers, fails, delays or pauses calls, as the UI or an agent sets them.
+- Calls made with a `Request` can be replayed from the UI, through the wrapped client.
 
 ## 1.0.0
 

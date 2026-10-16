@@ -7,7 +7,8 @@ import 'package:http/http.dart';
 ///
 /// Response bodies are read in full and handed on unchanged, except
 /// `text/event-stream`, which passes through untouched. Mock rules from the
-/// UI answer, fail, delay or pause calls here.
+/// UI answer, fail, delay or pause calls here. A [Request] can be replayed
+/// from the UI: it goes out again through the wrapped client.
 class DevpulClient extends BaseClient {
   DevpulClient([Client? inner]) : _inner = inner ?? Client();
 
@@ -21,6 +22,9 @@ class DevpulClient extends BaseClient {
       headers: request.headers,
       body: _requestBody(request),
       mockable: true,
+      // Reads request when replayed: by then what was sent, edits included.
+      replay: request is Request ? (edit) => _replay(request, edit) : null,
+      replayBody: _editable(request),
     );
     if (call == null) return _inner.send(request);
 
@@ -130,6 +134,12 @@ class DevpulClient extends BaseClient {
   }
 
   static const _aborted = 'Aborted at a DevPul breakpoint';
+
+  Future<void> _replay(BaseRequest request, DevpulHttpEdit edit) async {
+    final response = await send(_rebuild(request, edit));
+    // An event stream nobody reads would keep the connection open.
+    await response.stream.listen(null).cancel();
+  }
 
   static Never _fail(DevpulHttpCall call, String message, Uri url) {
     call.error(errorType: 'ClientException', message: message);

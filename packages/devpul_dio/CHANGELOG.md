@@ -1,6 +1,7 @@
 ## 1.1.0
 
 - Acts on mock rules: answers, fails, delays or pauses calls, as the UI or an agent sets them. Mocked responses and failures pass through every interceptor, and a status that fails `validateStatus` throws as a real one does.
+- Calls can be replayed from the UI, as the interceptor saw them. `DevpulDioInterceptor(dio: dio)` sends replays through that Dio's adapter and transformer.
 
 ## 1.0.0
 

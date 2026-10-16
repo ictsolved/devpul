@@ -5,9 +5,11 @@ import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'action.dart';
+import 'cause.dart';
 import 'config.dart';
 import 'console.dart';
 import 'encode.dart';
+import 'http.dart' show Replays;
 import 'limits.dart';
 import 'mock.dart';
 import 'sha256.dart';
@@ -40,6 +42,11 @@ Future<Object?> debugRunCall(
 /// Posts past the limits, for events a waiting call depends on.
 void emitUnlimited(String kind, Map<String, Object?> data) =>
     Devpul._post(kind, data, limited: false);
+
+/// Posts as [Devpul.emit] does and returns the event's `seq`, or null when
+/// it was not posted.
+int? emitSeq(String kind, Map<String, Object?> data) =>
+    Devpul._post(kind, data, limited: !kind.startsWith('app.'));
 
 /// What `ext.devpul.info` returns. Tests only.
 Map<String, Object?> debugInfo() => Devpul._info();
@@ -114,16 +121,16 @@ abstract final class Devpul {
   static void emit(String kind, Map<String, Object?> data) =>
       _post(kind, data, limited: !kind.startsWith('app.'));
 
-  static void _post(
+  static int? _post(
     String kind,
     Map<String, Object?> data, {
     required bool limited,
   }) {
-    if (!enabled) return;
+    if (!enabled) return null;
     try {
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (limited && !_limits.allow(kind, now)) return;
-      _emit(kind, data, now);
+      if (limited && !_limits.allow(kind, now)) return null;
+      final seq = _emit(kind, data, now);
       if (_config.console == ConsoleMode.verbose &&
           !kind.startsWith('app.') &&
           kind != 'error' &&
@@ -134,8 +141,10 @@ abstract final class Devpul {
           color: consoleColors ? ansiGrey : null,
         );
       }
+      return seq;
     } catch (_) {
       // Tooling errors must never reach the app.
+      return null;
     }
   }
 
@@ -318,7 +327,8 @@ abstract final class Devpul {
     final values = {
       for (final p in action.params) p.name: readParam(p, args?[p.name]),
     };
-    return toJsonSafe(await action.run(values));
+    final cause = Cause({'type': 'action', 'name': name});
+    return toJsonSafe(await cause.run(() => action.run(values)));
   }
 
   static Future<Object?> _runCall(
@@ -437,7 +447,7 @@ abstract final class Devpul {
         '?uri=${Uri.encodeComponent('$ws')}';
   }
 
-  static void _emit(String kind, Map<String, Object?> data, int now) {
+  static int _emit(String kind, Map<String, Object?> data, int now) {
     if (_backlog.register()) unawaited(_startLink());
     // A listener that shows up late (flutter attach) still learns which app
     // this is, and the link may have changed.
@@ -460,10 +470,11 @@ abstract final class Devpul {
     for (final MapEntry(:key, :value) in tags.entries) {
       size += key.length + value.length + 6;
     }
+    final seq = ++_seq;
     final event = <String, Object?>{
       'v': protocolVersion,
       'session': _session,
-      'seq': ++_seq,
+      'seq': seq,
       'ts': now,
       if (tags.isNotEmpty) 'tags': Map.of(tags),
       'data': payload,
@@ -475,6 +486,7 @@ abstract final class Devpul {
     _backlog.add(fullKind, event, size, _config.backlogSize);
     developer.postEvent(fullKind, event);
     debugOnPost?.call(kind, event);
+    return seq;
   }
 
   static String _randomId() {
@@ -548,6 +560,7 @@ final class _Backlog {
     });
     // Before the handshake, so no app.info for them.
     Mocks.register(Devpul._addHandler);
+    Replays.register(Devpul._addHandler);
     _extension('info', (_) => Devpul._info());
     return true;
   }

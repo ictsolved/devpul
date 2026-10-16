@@ -25,6 +25,9 @@ package:devpul/devpul.dart:
     log (static method: void Function(Object?, {Object? error, String level, String? name, StackTrace? stack}))
     plugin (static method: void Function(String, String Function(), {String? description, String? origin, String? version}))
     session (static method: void Function(Map<String, Object?>, {Map<String, String>? tags}))
+  DevpulCause (class extends Object, final):
+    new (constructor: DevpulCause Function(String, Map<String, Object?>))
+    run (method: R Function<R>(R Function()))
   DevpulConfig (class extends Object, final):
     new (const constructor: DevpulConfig Function({bool? ansiColors, int backlogSize, ConsoleMode console, bool enabled, Object Function()? idGenerator, Set<String> ignoreMethods, List<Pattern> ignoreUrls, int maxValueLength, bool printLink, Object? Function(Uri, Object?)? redactBody, Map<String, Object?> Function(Uri, Map<String, Object?>)? redactHeaders, String? uiUrl}))
     ansiColors (getter: bool?)
@@ -44,7 +47,7 @@ package:devpul/devpul.dart:
     fields (getter: List<MapEntry<String, String>>)
     files (getter: List<MapEntry<String, String>>)
   DevpulHttp (class extends Object, abstract, final):
-    request (static method: DevpulHttpCall? Function({Object? body, Map<String, Object?> headers, required String method, bool mockable, required Uri url}))
+    request (static method: DevpulHttpCall? Function({Object? body, Map<String, Object?> headers, required String method, bool mockable, Future<void> Function(DevpulHttpEdit)? replay, Object? replayBody, required Uri url}))
   DevpulHttpCall (class extends Object, final):
     id (getter: Object)
     method (getter: String)

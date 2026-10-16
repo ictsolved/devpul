@@ -143,6 +143,8 @@ void main() {
         ['http.mocks.set', 'call_plugin_write'],
         ['http.paused', 'call_plugin'],
         ['http.resume', 'call_plugin_write'],
+        ['http.sent', 'call_plugin'],
+        ['http.replay', 'call_plugin_write'],
         ['flags.list', 'call_plugin'],
       ],
     );

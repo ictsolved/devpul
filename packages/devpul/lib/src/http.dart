@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'cause.dart';
 import 'config.dart';
 import 'console.dart';
 import 'devpul.dart';
@@ -44,12 +46,19 @@ abstract final class DevpulHttp {
   /// Returns null when disabled or ignored; skip the call's later events then.
   /// An adapter passes [mockable] when it acts on [DevpulHttpCall.mock];
   /// other calls never see mock rules.
+  ///
+  /// An adapter passes [replay] to let the UI and agents send the call
+  /// again: it gets what to change and sends the request as this call sent
+  /// it, after any breakpoint edits. [replayBody] is the body to edit, as
+  /// [DevpulHttpCall.pauseRequest] takes it.
   static DevpulHttpCall? request({
     required String method,
     required Uri url,
     Map<String, Object?> headers = const {},
     Object? body,
     bool mockable = false,
+    Future<void> Function(DevpulHttpEdit edit)? replay,
+    Object? replayBody,
   }) {
     if (!Devpul.enabled) return null;
     try {
@@ -60,6 +69,13 @@ abstract final class DevpulHttp {
       final call = DevpulHttpCall._(id, upper, url);
       call._headers = normalizeHeaders(headers);
       call._body = body;
+      final cause = currentCause;
+      call._cause = cause?.json;
+      if (replay != null) {
+        call._replay = replay;
+        call._replayBody = replayBody;
+        Replays._add(call);
+      }
       final mock = mockable ? Mocks.match(upper, url) : null;
       call._mock = mock;
       if (mock == null || mock.mode != DevpulMockMode.pause) {
@@ -68,6 +84,9 @@ abstract final class DevpulHttp {
       } else if (!mock.pausesRequest || !Mocks.listening) {
         call._postRequest();
       }
+      final started = cause?.started;
+      cause?.started = null;
+      started?.call(id);
       return call;
     } catch (_) {
       return null;
@@ -97,6 +116,59 @@ abstract final class DevpulHttp {
   };
 }
 
+/// Calls that adapters can send again, newest last.
+abstract final class Replays {
+  static const _max = 100;
+  static final _calls = <String, DevpulHttpCall>{};
+
+  static void _add(DevpulHttpCall call) {
+    final id = '${call.id}';
+    _calls
+      ..remove(id)
+      ..[id] = call;
+    if (_calls.length > _max) _calls.remove(_calls.keys.first);
+  }
+
+  static DevpulHttpCall _find(Map<String, Object?> args) {
+    final id = args['id']?.toString();
+    return _calls[id] ??
+        (throw FormatException(
+          'Call $id cannot be replayed: the app keeps the last $_max calls '
+          'made through devpul_http, devpul_dio or another adapter that '
+          'replays.',
+        ));
+  }
+
+  /// Adds the handlers with [handle], which takes `Devpul.handle`'s
+  /// arguments.
+  static void register(
+    void Function(
+      String name,
+      FutureOr<Object?> Function(Map<String, Object?> args) run, {
+      bool sensitive,
+      String? description,
+    })
+    handle,
+  ) {
+    handle(
+      'http.sent',
+      (args) => _find(args)._sent(),
+      description:
+          'An HTTP call as it was sent, to edit for http.replay: method, url, '
+          'headers, body, and whether the body is editable. Args: id.',
+    );
+    handle(
+      'http.replay',
+      (args) async => {'id': ?await _find(args)._replayWith(args)},
+      sensitive: true,
+      description:
+          'Sends an HTTP call again from the app, as it was sent, and returns '
+          'the new call\'s id. Args: id, and to change it: method, url, '
+          'headers (all of them), body (text).',
+    );
+  }
+}
+
 final class DevpulHttpCall {
   DevpulHttpCall._(this.id, this._method, this._url)
     : _watch = Stopwatch()..start();
@@ -110,6 +182,9 @@ final class DevpulHttpCall {
   bool _posted = false;
   // The mode of the rule that changed this call, for the events.
   String? _acted;
+  Map<String, Object?>? _cause;
+  Future<void> Function(DevpulHttpEdit edit)? _replay;
+  Object? _replayBody;
 
   String get method => _method;
   Uri get url => _url;
@@ -132,6 +207,8 @@ final class DevpulHttpCall {
       'body': normalizeBody(b, type: _contentType(h)),
       'curl': curl(method, url, h, b),
       'mock': ?_acted,
+      'cause': ?_cause,
+      if (_replay != null) 'replayable': true,
     });
     _print('>', '$method $url', ansiCyan, h, b);
   }
@@ -158,7 +235,7 @@ final class DevpulHttpCall {
       if (edit.method != null) _method = edit.method!.toUpperCase();
       if (edit.url != null) _url = edit.url!;
       if (edit.headers != null) _headers = edit.headers!;
-      if (edit.body != null) _body = edit.body;
+      if (edit.body != null) _body = _replayBody = edit.body;
       _postRequest();
       return edit;
     } catch (_) {
@@ -201,6 +278,38 @@ final class DevpulHttpCall {
     } catch (_) {
       return const DevpulHttpEdit();
     }
+  }
+
+  Map<String, Object?> _sent() {
+    final shown = DevpulHttp._headers(Devpul.config, url, _headers);
+    return {
+      'id': id,
+      'method': method,
+      'url': url.toString(),
+      'headers': shown,
+      ..._shownBody(editableBody(_replayBody), _replayBody ?? _body, shown),
+    };
+  }
+
+  /// Sends the call again with the changes in [args], as `http.resume`
+  /// takes them, and returns the new call's id once it has one.
+  Future<Object?> _replayWith(Map<String, Object?> args) async {
+    final shown = DevpulHttp._headers(Devpul.config, url, _headers);
+    final edit = _edit(
+      {...args, 'abort': null},
+      _headers,
+      shown,
+      editableBody(_replayBody),
+    );
+    final started = Completer<Object?>();
+    final cause = Cause({
+      'type': 'replay',
+      'id': id,
+    }, started: started.complete);
+    final sent = cause.run(() => _replay!(edit)).then<Object?>((_) => null);
+    // The new call's id, or null when it was ignored; a failure after it
+    // started shows on that call.
+    return Future.any([started.future, sent]);
   }
 
   Map<String, Object?> _shownBody(

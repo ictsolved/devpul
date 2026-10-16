@@ -66,6 +66,15 @@
       "sensitive": true
     },
     {
+      "name": "http.sent",
+      "description": "An HTTP call as it was sent, to edit for http.replay: method, url, headers, body, and whether the body is editable. Args: id."
+    },
+    {
+      "name": "http.replay",
+      "description": "Sends an HTTP call again from the app, as it was sent, and returns the new call's id. Args: id, and to change it: method, url, headers (all of them), body (text).",
+      "sensitive": true
+    },
+    {
       "name": "my_plugin.items",
       "description": "Items in the cart."
     },

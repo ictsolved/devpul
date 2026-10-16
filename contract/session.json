@@ -96,6 +96,15 @@
             "sensitive": true
           },
           {
+            "name": "http.sent",
+            "description": "An HTTP call as it was sent, to edit for http.replay: method, url, headers, body, and whether the body is editable. Args: id."
+          },
+          {
+            "name": "http.replay",
+            "description": "Sends an HTTP call again from the app, as it was sent, and returns the new call's id. Args: id, and to change it: method, url, headers (all of them), body (text).",
+            "sensitive": true
+          },
+          {
             "name": "my_plugin.items",
             "description": "Items in the cart."
           },
@@ -556,12 +565,120 @@
       }
     },
     {
-      "kind": "cart.updated",
+      "kind": "cart.checkout",
       "run": "c1|isolateGroups/1",
       "isolate": "main",
       "session": "s1",
       "seq": 22,
       "ts": 1767225600022,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "items": 2
+      }
+    },
+    {
+      "kind": "http.request",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 23,
+      "ts": 1767225600023,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 6,
+        "method": "POST",
+        "url": "https://example.com/pay",
+        "params": {},
+        "headers": {},
+        "body": {
+          "total": 42
+        },
+        "curl": "curl -X POST 'https://example.com/pay' --data-raw '{\"total\":42}'",
+        "cause": {
+          "type": "event",
+          "kind": "cart.checkout",
+          "seq": 22
+        },
+        "replayable": true
+      }
+    },
+    {
+      "kind": "http.response",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 24,
+      "ts": 1767225600024,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 6,
+        "method": "POST",
+        "url": "https://example.com/pay",
+        "status": 502,
+        "statusMessage": null,
+        "durationMs": 5,
+        "headers": {},
+        "body": null
+      }
+    },
+    {
+      "kind": "http.request",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 25,
+      "ts": 1767225600025,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 7,
+        "method": "POST",
+        "url": "https://example.com/pay",
+        "params": {},
+        "headers": {},
+        "body": null,
+        "curl": "curl -X POST 'https://example.com/pay'",
+        "cause": {
+          "type": "replay",
+          "id": 6
+        }
+      }
+    },
+    {
+      "kind": "http.response",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 26,
+      "ts": 1767225600026,
+      "tags": {
+        "env": "dev"
+      },
+      "data": {
+        "id": 7,
+        "method": "POST",
+        "url": "https://example.com/pay",
+        "status": 200,
+        "statusMessage": null,
+        "durationMs": 5,
+        "headers": {},
+        "body": null
+      }
+    },
+    {
+      "kind": "cart.updated",
+      "run": "c1|isolateGroups/1",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 27,
+      "ts": 1767225600027,
       "tags": {
         "env": "dev"
       },
@@ -576,8 +693,8 @@
       "run": "c1|isolateGroups/1",
       "isolate": "main",
       "session": "s1",
-      "seq": 23,
-      "ts": 1767225600023,
+      "seq": 28,
+      "ts": 1767225600028,
       "tags": {
         "env": "dev"
       },

@@ -219,6 +219,14 @@ void main() {
       expect(sent.body, '{"n":2}');
       expect(last('http.request')['method'], 'PUT');
       expect(last('http.request')['mock'], 'pause');
+
+      // A replay sends what was sent, past the breakpoint.
+      await rules([]);
+      await debugRunCall('http.replay', {'id': last('http.request')['id']});
+      await pumpEventQueue();
+      expect(sent.method, 'PUT');
+      expect(sent.url, Uri.parse('https://example.com/items/8'));
+      expect(sent.body, '{"n":2}');
     });
 
     test(
@@ -277,6 +285,56 @@ void main() {
       await resume({'abort': true});
       await res;
       expect(last('http.error')['mock'], 'pause');
+    });
+  });
+
+  group('replay', () {
+    test('sends the request again through the inner client', () async {
+      final sent = <http.Request>[];
+      final c = client((request) async {
+        sent.add(request);
+        return http.Response('ok ${sent.length}', 200);
+      });
+      await c.post(
+        Uri.parse('https://example.com/items'),
+        headers: {'x-a': '1', 'content-type': 'text/plain'},
+        body: 'one',
+      );
+      final first = events.first.$2;
+      expect(first['replayable'], true);
+      expect(await debugRunCall('http.sent', {'id': first['id']}), {
+        'id': first['id'],
+        'method': 'POST',
+        'url': 'https://example.com/items',
+        'headers': {'x-a': '1', 'content-type': 'text/plain; charset=utf-8'},
+        'body': 'one',
+        'editable': true,
+      });
+
+      events.clear();
+      final result = await debugRunCall('http.replay', {
+        'id': first['id'],
+        'url': 'https://example.com/items/2',
+        'body': 'two',
+      });
+      await pumpEventQueue();
+      final [(_, req), (_, end)] = events;
+      expect(result, {'id': req['id']});
+      expect(req['cause'], {'type': 'replay', 'id': first['id']});
+      expect(req['url'], 'https://example.com/items/2');
+      expect(end['body'], 'ok 2');
+      expect(sent.last.url, Uri.parse('https://example.com/items/2'));
+      expect(sent.last.body, 'two');
+      expect(sent.last.headers['x-a'], '1');
+    });
+
+    test('streamed and multipart requests are not replayable', () async {
+      final c = client((_) async => http.Response('', 204));
+      await c.send(
+        http.MultipartRequest('POST', Uri.parse('https://example.com/f'))
+          ..fields['a'] = '1',
+      );
+      expect(events.first.$2.containsKey('replayable'), false);
     });
   });
 }

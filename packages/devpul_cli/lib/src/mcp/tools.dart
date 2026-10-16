@@ -189,10 +189,21 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
         if (size.isNotEmpty) size,
         if (r.source case final source?) '[$source]',
         if (r.mock case final mock?) '[mock: $mock]',
+        if (_store.cause(r) case final cause?) '[${_causeText(cause)}]',
         r.url,
       ].join(' ');
     });
   }
+
+  static String _causeText(Map<String, Object?> cause) => switch (cause) {
+    {'type': 'replay', 'request': final int id} => 'replay of $id',
+    {'type': 'replay'} => 'replay',
+    {'type': 'action', 'name': final String name} => 'from action $name',
+    {'type': 'event', 'kind': final String kind, 'event': final int id} =>
+      'from $kind $id',
+    {'type': 'event', 'kind': final String kind} => 'from $kind',
+    _ => '',
+  };
 
   String _request(Map<String, Object?> args) {
     final id = args['id'] as int;
@@ -217,9 +228,12 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
       'durationMs': ?row.durationMs,
       'source': ?row.source,
       'mock': ?row.mock,
+      'cause': ?_store.cause(row),
       'started': _time(row.ts, full: true),
       if (row.held)
         'paused': {'id': row.paused!.data['id'], ...?part(row.paused)},
+      if (row.request?.data['replayable'] == true)
+        'replay': {'id': row.request!.data['id']},
       'request': ?part(row.request),
       'response': ?part(row.response),
       'error': ?part(row.error),
@@ -459,7 +473,8 @@ final _listRequests = Tool(
   description:
       'HTTP requests: id, time, method, status (or pending, paused, failed), '
       'duration, response size, [mock: mode] when a mock rule changed it, '
-      'URL.',
+      '[replay of id], [from action name] or [from kind id] for what started '
+      'it, URL.',
   annotations: _readOnly,
   inputSchema: Schema.object(
     properties: {
@@ -484,7 +499,9 @@ final _getRequest = Tool(
   description:
       'One HTTP request with headers and bodies of request and response, or '
       'its error. A paused one has paused: the request or response held, '
-      'with the id http.resume takes.',
+      'with the id http.resume takes. A replayable one has replay: the id '
+      'http.replay takes. cause: what started it, a replay of request, an '
+      'action, or an event (get_event takes its id).',
   annotations: _readOnly,
   inputSchema: Schema.object(
     properties: {

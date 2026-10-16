@@ -1,3 +1,4 @@
+import { type Cause, parseCause } from './cause';
 import { type DevEvent, isObject, type JsonObject, num, str, TRUNCATED } from './events';
 import { dataImage } from './image';
 import type { ProfileLookup } from './profile';
@@ -30,6 +31,10 @@ export interface HttpRow {
   resumed?: number;
   /** The mode of the mock rule that changed the call. */
   mock?: string;
+  /** What started the call: a replay, an action or an event of its session. */
+  cause?: Cause;
+  /** The app can send it again. */
+  replayable: boolean;
 }
 
 export interface RunInfo {
@@ -232,6 +237,14 @@ export class Store implements ProfileLookup {
     return times?.some((t) => t <= ms && t >= ms - ADAPTER_LEAD_MS) === true;
   }
 
+  event(key: string): DevEvent | undefined {
+    return this.events.get(key);
+  }
+
+  httpRow(key: string): HttpRow | undefined {
+    return this.http.get(key);
+  }
+
   selected(tab: string): Selection | undefined {
     return this.selection.get(tab);
   }
@@ -354,6 +367,7 @@ export class Store implements ProfileLookup {
           ts: e.ts,
           seq: e.seq,
           state: 'pending',
+          replayable: false,
         };
     if (e.kind === 'http.request') {
       row.request = e;
@@ -386,6 +400,8 @@ export class Store implements ProfileLookup {
     row.durationMs = num(end?.data.durationMs);
     row.size = end ? bodySize(end.data) : undefined;
     row.mock = str(end?.data.mock) ?? str(row.request?.data.mock);
+    row.cause = parseCause(row.request?.data.cause);
+    row.replayable = row.request?.data.replayable === true;
     const held = row.paused && row.paused.seq > (row.resumed ?? 0);
     row.state = row.error ? 'error' : row.response ? 'done' : held ? 'paused' : 'pending';
     this.http.set(key, row);

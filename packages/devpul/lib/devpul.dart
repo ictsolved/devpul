@@ -3,6 +3,7 @@
 library;
 
 export 'src/action.dart' show DevpulParam;
+export 'src/cause.dart' show DevpulCause;
 export 'src/config.dart';
 export 'src/devpul.dart' show Devpul;
 export 'src/encode.dart' show toJsonSafe;

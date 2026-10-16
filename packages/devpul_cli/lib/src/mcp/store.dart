@@ -121,6 +121,28 @@ final class Store {
     return null;
   }
 
+  /// What started [row], with the ids tools take, from its `cause`.
+  Map<String, Object?>? cause(HttpRow row) {
+    final cause = row.request?.data['cause'];
+    if (cause is! Map<String, Object?>) return null;
+    return switch (cause) {
+      {'type': 'replay', 'id': final Object id} => {
+        'type': 'replay',
+        'request': ?_http['${row.session}|$id']?.number,
+      },
+      {'type': 'action', 'name': final String name} => {
+        'type': 'action',
+        'name': name,
+      },
+      {'type': 'event', 'kind': final String kind} => {
+        'type': 'event',
+        'kind': kind,
+        'event': ?_events['${row.session}|${cause['seq']}']?.id,
+      },
+      _ => null,
+    };
+  }
+
   /// Adds the events not already known and returns how many were new.
   int add(Iterable<DevEvent> incoming) {
     var added = 0;

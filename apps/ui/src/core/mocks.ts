@@ -27,6 +27,8 @@ export interface MockRule {
 export const MOCKS = 'http.mocks';
 export const SET_MOCKS = 'http.mocks.set';
 export const RESUME = 'http.resume';
+export const SENT = 'http.sent';
+export const REPLAY = 'http.replay';
 
 export function newRule(fields: Partial<MockRule> = {}): MockRule {
   return {
@@ -152,10 +154,10 @@ export function parseHeaders(text: string): Record<string, string> {
   return out;
 }
 
-/** A call held at a pause rule, from its `http.paused` event. */
-export interface Paused {
-  event: DevEvent;
-  id: string;
+/** A request or response to edit: one held at a pause rule, or one `http.sent` returns for a replay. */
+export interface Editable {
+  /** The app's call id, as it sent it. */
+  id: Json;
   stage: 'request' | 'response';
   method: string;
   url: string;
@@ -165,20 +167,23 @@ export interface Paused {
   json: boolean;
   status?: number;
   statusMessage?: string;
+}
+
+/** A call held at a pause rule, from its `http.paused` event. */
+export interface Paused extends Editable {
+  event: DevEvent;
   /** App clock. */
   until: number;
 }
 
-export function parsePaused(e: DevEvent): Paused {
-  const d = e.data;
+export function parseEditable(d: JsonObject): Editable {
   const headers: Record<string, string> = {};
   if (isObject(d.headers)) {
     for (const [k, v] of Object.entries(d.headers))
       headers[k] = Array.isArray(v) ? v.map(String).join(', ') : String(v);
   }
   return {
-    event: e,
-    id: str(d.id) ?? '',
+    id: d.id ?? null,
     stage: d.stage === 'response' ? 'response' : 'request',
     method: str(d.method) ?? '',
     url: str(d.url) ?? '',
@@ -188,8 +193,11 @@ export function parsePaused(e: DevEvent): Paused {
     json: d.json === true,
     status: num(d.status),
     statusMessage: str(d.statusMessage),
-    until: e.ts + (num(d.timeoutMs) ?? 0),
   };
+}
+
+export function parsePaused(e: DevEvent): Paused {
+  return { ...parseEditable(e.data), event: e, until: e.ts + (num(e.data.timeoutMs) ?? 0) };
 }
 
 export interface PausedEdit {
@@ -201,7 +209,7 @@ export interface PausedEdit {
   statusMessage: string;
 }
 
-export function editOf(p: Paused): PausedEdit {
+export function editOf(p: Editable): PausedEdit {
   return {
     method: p.method,
     url: p.url,
@@ -212,9 +220,9 @@ export function editOf(p: Paused): PausedEdit {
   };
 }
 
-/** `http.resume` args with only the fields that changed, or an error to show. */
-export function resumeArgs(p: Paused, edit: PausedEdit): JsonObject | string {
-  const args: JsonObject = { id: p.event.data.id ?? p.id };
+/** `http.resume` or `http.replay` args with only the fields that changed, or an error to show. */
+export function resumeArgs(p: Editable, edit: PausedEdit): JsonObject | string {
+  const args: JsonObject = { id: p.id };
   const was = editOf(p);
   if (p.stage === 'request') {
     if (edit.method.trim() && edit.method.trim().toUpperCase() !== p.method) {

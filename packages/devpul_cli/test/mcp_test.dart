@@ -28,6 +28,8 @@ void main() {
     final store = Store()..add(events);
     expect(store.all, hasLength(events.length));
     expect(store.requests.map((r) => [r.method, r.state, r.status, r.mock]), [
+      ['POST', 'done', 200, null],
+      ['POST', 'done', 502, null],
       ['POST', 'done', 200, 'pause'],
       ['GET', 'done', 200, 'respond'],
       ['POST', 'done', 500, null],
@@ -35,6 +37,15 @@ void main() {
       ['POST', 'done', 201, null],
     ]);
     expect(store.requests.first.held, false);
+    final [replay, paid, ...] = store.requests;
+    final checkout = store.all.firstWhere((e) => e.kind == 'cart.checkout');
+    expect(store.cause(replay), {'type': 'replay', 'request': paid.number});
+    expect(store.cause(paid), {
+      'type': 'event',
+      'kind': 'cart.checkout',
+      'event': checkout.id,
+    });
+    expect(store.cause(store.requests.last), null);
     final kinds = store.all.map((e) => e.kind);
     expect(kinds.where((k) => k == 'error'), hasLength(2));
     expect(kinds.where((k) => k == 'log'), hasLength(2));

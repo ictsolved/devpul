@@ -9,7 +9,16 @@ import 'package:dio/dio.dart';
 /// Mock rules from the UI answer, fail, delay or pause calls here. A mocked
 /// response or failure still passes through every interceptor, as a real
 /// one does.
+///
+/// Calls can be replayed from the UI: the request goes out again as this
+/// interceptor saw it, without running the other interceptors.
 class DevpulDioInterceptor extends Interceptor {
+  /// [dio] is the instance this is added to; replays go out through its
+  /// `httpClientAdapter` and `transformer`, or Dio's defaults without it.
+  DevpulDioInterceptor({this.dio});
+
+  final Dio? dio;
+
   static const _key = 'devpul.call';
   static const _pausedKey = 'devpul.paused';
 
@@ -21,6 +30,9 @@ class DevpulDioInterceptor extends Interceptor {
       headers: options.headers,
       body: _body(options.data),
       mockable: true,
+      // Reads options when replayed: by then what was sent, edits included.
+      replay: options.data is Stream ? null : (edit) => _replay(options, edit),
+      replayBody: _editable(options.data),
     );
     if (call != null) options.extra[_key] = call;
     final mock = call?.mock;
@@ -63,17 +75,63 @@ class DevpulDioInterceptor extends Interceptor {
         if (edit.abort) {
           return handler.reject(_failure(options, _aborted), true);
         }
-        if (edit.method case final method?) options.method = method;
-        if (edit.url case final url?) {
-          options
-            ..path = '$url'
-            ..queryParameters = {};
-        }
-        if (edit.headers case final headers?) {
-          options.headers = _withoutLength(headers);
-        }
-        if (edit.body case final body?) options.data = _rebuild(data, body);
+        _apply(options, edit);
         handler.next(options);
+    }
+  }
+
+  static void _apply(RequestOptions options, DevpulHttpEdit edit) {
+    if (edit.method case final method?) options.method = method;
+    if (edit.url case final url?) {
+      options
+        ..path = '$url'
+        ..queryParameters = {};
+    }
+    if (edit.headers case final headers?) {
+      options.headers = _withoutLength(headers);
+    }
+    if (edit.body case final body?) {
+      options.data = _rebuild(options.data, body);
+    }
+  }
+
+  Future<void> _replay(RequestOptions sent, DevpulHttpEdit edit) async {
+    final data = sent.data;
+    final options =
+        sent.copyWith(
+            data: data is FormData ? data.clone() : data,
+            // Dio wrote the first body's length into these.
+            headers: {
+              for (final MapEntry(:key, :value) in sent.headers.entries)
+                if (key.toLowerCase() != Headers.contentLengthHeader)
+                  key: value,
+            },
+            extra: {
+              for (final MapEntry(:key, :value) in sent.extra.entries)
+                if (!key.startsWith('devpul.')) key: value,
+            },
+          )
+          // The caller's token and progress callbacks belong to the first
+          // call.
+          ..cancelToken = null
+          ..onSendProgress = null
+          ..onReceiveProgress = null;
+    _apply(options, edit);
+    final from = dio;
+    final client = Dio()..interceptors.add(this);
+    if (from != null) {
+      client
+        ..httpClientAdapter = from.httpClientAdapter
+        ..transformer = from.transformer;
+    }
+    try {
+      final response = await client.fetch<dynamic>(options);
+      // A stream nobody reads would keep the connection open.
+      if (response.data case final ResponseBody body) {
+        await body.stream.listen(null).cancel();
+      }
+    } finally {
+      if (from == null) client.close();
     }
   }
 

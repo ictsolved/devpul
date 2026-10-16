@@ -41,18 +41,26 @@ describe('contract', () => {
     store.add(events);
     expect(store.size).toBe(events.length);
     expect(store.httpRows.map((r) => [r.method, r.state, r.status, r.mock])).toEqual([
+      ['POST', 'done', 200, undefined],
+      ['POST', 'done', 502, undefined],
       ['POST', 'done', 200, 'pause'],
       ['GET', 'done', 200, 'respond'],
       ['POST', 'done', 500, undefined],
       ['GET', 'error', undefined, undefined],
       ['POST', 'done', 201, undefined],
     ]);
-    expect(store.httpRows[0]?.paused && parsePaused(store.httpRows[0].paused)).toMatchObject({
+    const [replay, paid, checkout] = store.httpRows;
+    const started = store.other.find((e) => e.kind === 'cart.checkout');
+    expect(paid?.replayable).toBe(true);
+    expect(paid?.cause).toEqual({ type: 'event', kind: 'cart.checkout', seq: started?.seq });
+    expect(replay?.cause).toEqual({ type: 'replay', id: paid?.id });
+    expect(replay && store.httpRow(`${replay.session}|${paid?.id}`)).toBe(paid);
+    expect(checkout?.paused && parsePaused(checkout.paused)).toMatchObject({
       stage: 'response',
       status: 402,
       editable: true,
     });
-    expect(store.httpRows[4]?.size).toBe(11);
+    expect(store.httpRows[6]?.size).toBe(11);
     const [flutterError, zoneError] = ['flutter', 'zone'].map((s) => store.errors.find((e) => e.data.source === s));
     expect(store.errors).toHaveLength(2);
     expect(flutterError?.data.widget).toBe('Cart');
@@ -61,7 +69,7 @@ describe('contract', () => {
     expect(store.logs).toHaveLength(2);
     // The two files come from separate runs, so only the order within each is fixed.
     const kinds = (file: DevEvent[]) => store.other.filter((e) => file.includes(e)).map((e) => e.kind);
-    expect(kinds(core)).toEqual(['big', 'cart.updated']);
+    expect(kinds(core)).toEqual(['big', 'cart.updated', 'cart.checkout']);
     expect(kinds(flutter)).toEqual(['route', 'lifecycle', 'lifecycle', 'route', 'route', 'route', 'route']);
     expect([...store.tags.get('env')!]).toEqual(['dev']);
     const run = [...store.runs.values()][0];

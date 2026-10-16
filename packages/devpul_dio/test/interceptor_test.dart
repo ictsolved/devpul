@@ -35,10 +35,11 @@ ResponseBody _json(Object body, int status) => ResponseBody.fromString(
 void main() {
   final events = <(String, Map<String, Object?>)>[];
 
-  Dio dio(ResponseBody Function(RequestOptions) respond) =>
-      Dio(BaseOptions(baseUrl: 'https://example.com/api'))
-        ..httpClientAdapter = _Adapter(respond)
-        ..interceptors.add(DevpulDioInterceptor());
+  Dio dio(ResponseBody Function(RequestOptions) respond) {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.com/api'))
+      ..httpClientAdapter = _Adapter(respond);
+    return dio..interceptors.add(DevpulDioInterceptor(dio: dio));
+  }
 
   setUp(() {
     events.clear();
@@ -315,6 +316,101 @@ void main() {
       await resume({'abort': true});
       await res;
       expect(last('http.error')['errorType'], 'connectionError');
+    });
+  });
+
+  group('replay', () {
+    test('sends what was sent through the given Dio\'s adapter', () async {
+      final seen = <RequestOptions>[];
+      final client = Dio(BaseOptions(baseUrl: 'https://example.com/api'))
+        ..httpClientAdapter = _Adapter((o) {
+          seen.add(o);
+          return _json({'n': seen.length}, 200);
+        });
+      var added = 0;
+      final token = CancelToken();
+      client.interceptors
+        ..add(
+          InterceptorsWrapper(
+            onRequest: (o, h) {
+              added++;
+              o.headers['x-auth'] = 'a$added';
+              h.next(o);
+            },
+          ),
+        )
+        ..add(DevpulDioInterceptor(dio: client));
+      await client.post<Object?>(
+        '/items',
+        data: {'qty': 1},
+        cancelToken: token,
+        options: Options(extra: {'keep': true}),
+      );
+      token.cancel();
+      final first = events.first.$2;
+      expect(first['replayable'], true);
+      expect(await debugRunCall('http.sent', {'id': first['id']}), {
+        'id': first['id'],
+        'method': 'POST',
+        'url': 'https://example.com/api/items',
+        'headers': {'x-auth': 'a1', 'content-type': 'application/json'},
+        'body': '{\n  "qty": 1\n}',
+        'editable': true,
+        'json': true,
+      });
+
+      events.clear();
+      final result = await debugRunCall('http.replay', {
+        'id': first['id'],
+        'body': '{"qty": 20}',
+      });
+      await pumpEventQueue();
+      final [(_, req), (_, res)] = events;
+      expect(result, {'id': req['id']});
+      expect(req['cause'], {'type': 'replay', 'id': first['id']});
+      expect(req['body'], {'qty': 20});
+      expect(res['body'], {'n': 2});
+      // The other interceptors do not run again.
+      expect(added, 1);
+      expect(seen.last.headers['x-auth'], 'a1');
+      expect(seen.last.data, {'qty': 20});
+      // Dio puts the first body's length in the headers it sent with.
+      expect(
+        (req['headers']! as Map).keys,
+        isNot(contains(Headers.contentLengthHeader)),
+      );
+      expect(seen.last.extra['keep'], true);
+      expect(seen.last.extra.keys.where((k) => k.startsWith('devpul.')), [
+        'devpul.call',
+      ]);
+    });
+
+    test('stream bodies are not replayable', () async {
+      await dio((_) => _json({}, 200)).post<Object?>(
+        '/up',
+        data: Stream.value(utf8.encode('x')),
+        options: Options(headers: {Headers.contentLengthHeader: 1}),
+      );
+      expect(events.first.$2.containsKey('replayable'), false);
+    });
+
+    test('a FormData body goes out again', () async {
+      final seen = <RequestOptions>[];
+      final client = dio((o) {
+        seen.add(o);
+        return _json({}, 200);
+      });
+      await client.post<Object?>(
+        '/f',
+        data: FormData.fromMap({
+          'a': '1',
+          'file': MultipartFile.fromBytes([1, 2], filename: 'x.bin'),
+        }),
+      );
+      await debugRunCall('http.replay', {'id': events.first.$2['id']});
+      await pumpEventQueue();
+      expect(seen, hasLength(2));
+      expect((seen.last.data as FormData).files.single.value.filename, 'x.bin');
     });
   });
 }

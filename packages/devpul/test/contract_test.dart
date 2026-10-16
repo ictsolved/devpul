@@ -156,6 +156,20 @@ void main() {
     );
     await debugRunCall('http.mocks.set', {'rules': <Object?>[]});
 
+    final pay = Uri.parse('https://example.com/pay');
+    final paid = DevpulCause('cart.checkout', {'items': 2}).run(
+      () => DevpulHttp.request(
+        method: 'POST',
+        url: pay,
+        body: '{"total":42}',
+        replayBody: '{"total":42}',
+        replay: (_) async {
+          DevpulHttp.request(method: 'POST', url: pay)?.response(status: 200);
+        },
+      ),
+    )!..response(status: 502);
+    await debugRunCall('http.replay', {'id': paid.id});
+
     Devpul.emit('cart.updated', {
       'items': 3,
       'total': 42.5,
