@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stackLines } from './stack';
+import { foldStack, stackLines } from './stack';
 
 const linked = (stack: string) =>
   stackLines(stack).map((l) => l.frame && { text: l.text.slice(l.frame.start, l.frame.end), ...l.frame.location });
@@ -61,5 +61,53 @@ describe('stackLines', () => {
       '',
     ]);
     expect(lines.some((l) => l.frame)).toBe(false);
+  });
+});
+
+const parts = (stack: string, head = 0) =>
+  foldStack(stackLines(stack), 3, head).map((p) => (p.folded ? p.lines.length : p.lines.map((l) => l.text)));
+
+describe('foldStack', () => {
+  it('folds runs of framework frames and keeps app frames and short runs', () => {
+    const stack = [
+      '#0      Cart.add (package:shop/cart.dart:12:5)',
+      '#1      _InkResponseState.handleTap (package:flutter/src/material/ink_well.dart:1224:21)',
+      '#2      GestureRecognizer.invokeCallback (package:flutter/src/gestures/recognizer.dart:362:24)',
+      '<asynchronous suspension>',
+      '#3      _rootRun (dart:async/zone.dart:1525:13)',
+      '<asynchronous suspension>',
+      '#4      build (package:shop/page.dart:8)',
+      '#5      _rootRun (dart:async/zone.dart:1525:13)',
+    ].join('\n');
+    expect(parts(stack)).toEqual([
+      ['#0      Cart.add (package:shop/cart.dart:12:5)'],
+      4,
+      [
+        '<asynchronous suspension>',
+        '#4      build (package:shop/page.dart:8)',
+        '#5      _rootRun (dart:async/zone.dart:1525:13)',
+      ],
+    ]);
+  });
+
+  it('shows the first lines whatever they are', () => {
+    const stack = [
+      'dart:async 1:1  a',
+      'dart:async 2:1  b',
+      'dart:async 3:1  c',
+      'dart:async 4:1  d',
+      'dart:async 5:1  e',
+    ];
+    expect(parts(stack.join('\n'), 2)).toEqual([stack.slice(0, 2), 3]);
+  });
+
+  it('folds web frames', () => {
+    const stack = [
+      'package:shop/cart.dart 12:5   add',
+      'dart:async 1:1  run',
+      'dart:async 2:1  run',
+      'dart:async 3:1  run',
+    ];
+    expect(parts(stack.join('\n'))).toEqual([['package:shop/cart.dart 12:5   add'], 3]);
   });
 });
