@@ -127,16 +127,25 @@ export function App() {
   }, []);
 
   const onEvents = useCallback(
-    (events: DevEvent[]) => {
+    (incoming: DevEvent[]) => {
+      let events = incoming;
       if (latest.current.settings.clearOnRestart) {
-        // A new run on a connection replaces that connection's earlier runs.
+        // A new run on a connection replaces that connection's earlier runs. Records DDS replays
+        // from an ended run's Logging stream are earlier than the run there and stay out.
         const runs = store.runs;
         const fresh = new Map<string, DevEvent>();
         for (const e of events) if (!runs.has(e.run) && !fresh.has(e.run)) fresh.set(e.run, e);
+        const ended = new Set<string>();
         for (const e of fresh.values()) {
-          const old = new Set([...runs.values()].filter((r) => r.conn === e.conn && r.last <= e.ts).map((r) => r.run));
+          const conn = [...runs.values()].filter((r) => r.conn === e.conn);
+          if (conn.some((r) => r.first > e.ts)) {
+            ended.add(e.run);
+            continue;
+          }
+          const old = new Set(conn.filter((r) => r.last <= e.ts).map((r) => r.run));
           if (old.size) drop((x) => old.has(x.run));
         }
+        if (ended.size) events = events.filter((e) => !ended.has(e.run));
       }
       const added = store.add(events);
       if (added.length) persist.current?.put(added);

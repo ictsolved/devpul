@@ -76,6 +76,22 @@ export function latestRuns(runs: ReadonlyMap<string, RunInfo>): RunInfo[] {
   return [...best.values()];
 }
 
+// Logging records DDS replays on connect arrive after newer DevPul events; ties keep arrival order.
+function insertByTime(list: DevEvent[], e: DevEvent): void {
+  let lo = 0;
+  let hi = list.length;
+  if (!hi || list[hi - 1]!.ts <= e.ts) {
+    list.push(e);
+    return;
+  }
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid]!.ts <= e.ts) lo = mid + 1;
+    else hi = mid;
+  }
+  list.splice(lo, 0, e);
+}
+
 export class Store implements ProfileLookup {
   /** Cap on the summed `size` of kept events; oldest go first. */
   maxBytes: number;
@@ -308,15 +324,15 @@ export class Store implements ProfileLookup {
     if (e.kind === 'app.session' || e.kind === 'app.info' || e.kind === 'http.mocks') {
       return;
     } else if (e.kind === 'log') {
-      this.logList.push(e);
+      insertByTime(this.logList, e);
       this.logsSnapshot = null;
     } else if (e.kind.startsWith('http.')) {
       this.indexHttp(e);
     } else if (e.kind === 'error') {
-      this.errorList.push(e);
+      insertByTime(this.errorList, e);
       this.errorsSnapshot = null;
     } else {
-      this.otherList.push(e);
+      insertByTime(this.otherList, e);
       this.otherSnapshot = null;
     }
   }

@@ -31,7 +31,9 @@ function load(name: string): DevEvent[] {
   });
 }
 
-const events = [...load('events.json'), ...load('flutter.json')];
+const core = load('events.json');
+const flutter = load('flutter.json');
+const events = [...core, ...flutter];
 
 describe('contract', () => {
   it('parses every event into the right tab', () => {
@@ -51,22 +53,16 @@ describe('contract', () => {
       editable: true,
     });
     expect(store.httpRows[4]?.size).toBe(11);
-    expect(store.errors.map((e) => e.data.source)).toEqual(['flutter', 'zone']);
-    expect(store.errors[0]?.data.widget).toBe('Cart');
-    expect(store.errors.map((e) => e.data.route)).toEqual(['Cart', '/cart']);
-    expect(readLocation(store.errors[0]?.data.location)).toMatchObject({ file: 'file:///app/test/contract_test.dart' });
+    const [flutterError, zoneError] = ['flutter', 'zone'].map((s) => store.errors.find((e) => e.data.source === s));
+    expect(store.errors).toHaveLength(2);
+    expect(flutterError?.data.widget).toBe('Cart');
+    expect([flutterError?.data.route, zoneError?.data.route]).toEqual(['Cart', '/cart']);
+    expect(readLocation(flutterError?.data.location)).toMatchObject({ file: 'file:///app/test/contract_test.dart' });
     expect(store.logs).toHaveLength(2);
-    expect(store.other.map((e) => e.kind)).toEqual([
-      'route',
-      'lifecycle',
-      'lifecycle',
-      'route',
-      'route',
-      'route',
-      'route',
-      'big',
-      'cart.updated',
-    ]);
+    // The two files come from separate runs, so only the order within each is fixed.
+    const kinds = (file: DevEvent[]) => store.other.filter((e) => file.includes(e)).map((e) => e.kind);
+    expect(kinds(core)).toEqual(['big', 'cart.updated']);
+    expect(kinds(flutter)).toEqual(['route', 'lifecycle', 'lifecycle', 'route', 'route', 'route', 'route']);
     expect([...store.tags.get('env')!]).toEqual(['dev']);
     const run = [...store.runs.values()][0];
     expect(run?.session?.data.name).toBe('Shop');

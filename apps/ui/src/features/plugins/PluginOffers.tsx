@@ -2,7 +2,7 @@ import { Puzzle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { type Approval, approvedAndCached, type Listed, toLoad } from '../../core/approvals';
-import type { DevEvent } from '../../core/events';
+import { type DevEvent, isObject } from '../../core/events';
 import { parseInfo } from '../../core/info';
 import { sourceHref } from '../../core/registry';
 import { formatBytes } from '../../core/json';
@@ -97,6 +97,8 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
         asked.current.add(once);
         void fetchOffer(info, id, call).then(
           async (source) => {
+            if (source === null) return;
+            setErrors((e) => (id in e ? Object.fromEntries(Object.entries(e).filter(([k]) => k !== id)) : e));
             const hash = await sha256(source);
             sources.current.set(hash, source);
             setFetched((f) => ({
@@ -167,8 +169,10 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
   return { offers, errors, allow, dismiss };
 }
 
-async function fetchOffer(info: DevEvent, id: string, call: AppCall): Promise<string> {
+async function fetchOffer(info: DevEvent, id: string, call: AppCall): Promise<string | null> {
   const result = await call(info, 'ext.devpul.plugin', { id });
+  // DDS replays an ended run's handshake; its isolate answers with a Sentinel and the run after it asks again.
+  if (isObject(result) && result.type === 'Sentinel') return null;
   const source = result && typeof result === 'object' ? (result as { source?: unknown }).source : undefined;
   if (typeof source !== 'string') throw new Error('The app sent no plugin source.');
   if (source.length > MAX_SOURCE) {

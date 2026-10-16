@@ -28,8 +28,16 @@ const res = (id: number, seq: number, ts: number, status = 200) =>
 // Three-digit seq and ts, so every event without pad has the same size.
 const custom = (i: number, pad = '') => vmEvent('custom', { session: 's', seq: 100 + i, ts: 100 + i, pad });
 const seqs = (store: Store) => store.all.map((e) => e.seq - 100);
+const timedLog = (seq: number, ts: number) => vmEvent('log', { session: 's1', seq, ts, message: `m${seq}` });
 
 describe('Store', () => {
+  it('lists events by time when older ones arrive later', () => {
+    const store = new Store();
+    store.add([timedLog(1, 100), timedLog(2, 300)]);
+    store.add([timedLog(3, 200), timedLog(4, 300)]);
+    expect(store.logs.map((e) => e.seq)).toEqual([4, 2, 3, 1]);
+  });
+
   it('pairs out of order responses and keeps pending rows', () => {
     const store = new Store();
     store.add([req(1, 1, 100), req(2, 2, 101), req(3, 3, 102), res(2, 4, 110), res(1, 5, 120, 404)]);
