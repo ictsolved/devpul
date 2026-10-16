@@ -1,7 +1,8 @@
 import { cn } from 'cn';
-import { Snowflake } from 'lucide-react';
+import { Pause, Play } from 'lucide-react';
 import { type ComponentProps, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Tip } from './Tip';
 
 export const toolbarClass = 'flex items-start gap-2 border-b px-3 py-2';
 export const filtersClass = 'flex min-w-0 flex-1 flex-wrap items-center gap-2';
@@ -41,25 +42,27 @@ export function useListKeys(
   }, [keys, selected, select]);
 }
 
-/** Freezes which items are listed; listed ones still update. */
+/** Pauses which items are listed; listed ones still update. */
 export function usePause<T extends { key: string }>(items: readonly T[]) {
-  const [frozen, setFrozen] = useState<Set<string> | null>(null);
-  const visible = useMemo(() => (frozen ? items.filter((i) => frozen.has(i.key)) : items), [items, frozen]);
+  const [kept, setKept] = useState<Set<string> | null>(null);
+  const visible = useMemo(() => (kept ? items.filter((i) => kept.has(i.key)) : items), [items, kept]);
   return {
     visible,
-    paused: frozen !== null,
+    paused: kept !== null,
     newCount: items.length - visible.length,
-    toggle: () => setFrozen(frozen ? null : new Set(items.map((i) => i.key))),
+    toggle: () => setKept(kept ? null : new Set(items.map((i) => i.key))),
   };
 }
 
 export function PauseButton(props: { paused: boolean; newCount: number; onClick: () => void }) {
   const { paused, newCount, onClick } = props;
   return (
-    <Button type="button" variant={paused ? 'warning' : 'outline'} size="sm" onClick={onClick}>
-      <Snowflake />
-      {paused ? `Unfreeze${newCount ? ` (${newCount} new)` : ''}` : 'Freeze'}
-    </Button>
+    <Tip content={paused ? 'List rows that arrived while paused' : 'Stop adding rows; listed rows still update'}>
+      <Button type="button" variant={paused ? 'warning' : 'outline'} size="sm" onClick={onClick}>
+        {paused ? <Play /> : <Pause />}
+        {paused ? `Resume${newCount ? ` (${newCount} new)` : ''}` : 'Pause'}
+      </Button>
+    </Tip>
   );
 }
 

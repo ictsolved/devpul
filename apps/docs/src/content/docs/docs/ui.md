@@ -67,7 +67,7 @@ Calls through dart:io's `HttpClient` can show with no adapter: `package:http`'s 
 - Clients that record into `package:http_profile` show the same way.
 - Flutter web has no dart:io and shows no globe.
 
-**Freeze** keeps the listed rows as they are; rows already shown still update. Unfreeze shows how many arrived meanwhile.
+**Pause** keeps the listed rows as they are; rows already shown still update. Resume shows how many arrived meanwhile.
 
 ## Keyboard
 
