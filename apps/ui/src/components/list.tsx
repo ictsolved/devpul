@@ -1,9 +1,11 @@
 import { cn } from 'cn';
-import { Pause, Play } from 'lucide-react';
+import { Snowflake } from 'lucide-react';
 import { type ComponentProps, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-export const toolbarClass = 'flex flex-wrap items-center gap-2 border-b px-3 py-2';
+export const toolbarClass = 'flex items-start gap-2 border-b px-3 py-2';
+export const filtersClass = 'flex min-w-0 flex-1 flex-wrap items-center gap-2';
+export const toolbarEndClass = 'flex flex-none items-center gap-2';
 export const filterClass = 'w-[340px] max-w-full max-[860px]:w-full';
 export const emptyClass = 'px-3 py-6 text-muted-foreground';
 export const rowClass = (selected: boolean) =>
@@ -55,8 +57,8 @@ export function PauseButton(props: { paused: boolean; newCount: number; onClick:
   const { paused, newCount, onClick } = props;
   return (
     <Button type="button" variant={paused ? 'warning' : 'outline'} size="sm" onClick={onClick}>
-      {paused ? <Play /> : <Pause />}
-      {paused ? `Resume${newCount ? ` (${newCount} new)` : ''}` : 'Pause'}
+      <Snowflake />
+      {paused ? `Unfreeze${newCount ? ` (${newCount} new)` : ''}` : 'Freeze'}
     </Button>
   );
 }

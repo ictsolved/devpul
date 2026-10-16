@@ -77,7 +77,7 @@ devpul --plugin . run example/main.dart
 
 `devpul check` validates the folder the way `devpul add` and the registry do. To try the Dart half in an app, run `devpul add ../my_plugin` there; `devpul sync` copies it again after edits.
 
-A plugin on any static server that sets CORS headers works too: add its URL under Module URLs in the Plugins tab and reload DevPul after editing. A file or URL you add yourself runs without the approval prompt.
+A plugin on any static server that sets CORS headers works too: add its URL under Plugin URLs in the Plugins tab and reload DevPul after editing. A file or URL you add yourself runs without the approval prompt.
 
 ## Shipping a plugin
 

@@ -146,7 +146,7 @@ function MocksPanel(props: Props) {
                       rules && void apply([newRule({ url: '*', mode: 'fail', message: 'Offline' }), ...rules])
                     }
                   >
-                    Add offline rule
+                    Simulate offline
                   </Button>
                 </Tip>
               </div>

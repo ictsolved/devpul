@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Fold } from '../../components/Fold';
 import { Chip } from '../../components/list';
 import { formatBytes } from '../../core/json';
 import type { Settings } from '../../lib/storage';
@@ -68,11 +69,11 @@ export function SettingsDialog(props: Props) {
         <div className="-mx-6 overflow-y-auto px-6 [&_p]:my-1.5">
           <Heading>Slow requests</Heading>
           <label className={LABEL}>
-            Amber from (ms)
+            Slow from (ms)
             <NumberField key={settings.slowMs} value={settings.slowMs} min={1} onCommit={(v) => set('slowMs', v)} />
           </label>
           <label className={LABEL}>
-            Red from (ms)
+            Very slow from (ms)
             <NumberField
               key={settings.verySlowMs}
               value={settings.verySlowMs}
@@ -83,14 +84,14 @@ export function SettingsDialog(props: Props) {
 
           <Heading>Storage</Heading>
           <label className={LABEL}>
-            Events kept (MB, oldest dropped first)
+            Memory limit (MB)
             <NumberField key={settings.maxMB} value={settings.maxMB} min={1} onCommit={(v) => set('maxMB', v)} />
           </label>
           <Check checked={settings.persist} onChange={(v) => set('persist', v)}>
             Keep events in this browser across reloads (IndexedDB, same limit)
           </Check>
           <Check checked={!settings.clearOnRestart} onChange={(v) => set('clearOnRestart', !v)}>
-            Keep earlier runs
+            Keep events from earlier runs
           </Check>
           <p className="text-muted-foreground">
             In memory: {memory.count} events, {formatBytes(memory.bytes)}
@@ -105,9 +106,12 @@ export function SettingsDialog(props: Props) {
             Clear all events
           </Button>
 
-          <Heading>Limits</Heading>
-          <p>Set in the app before it sends events, per kind and its dotted children. App events are never limited.</p>
-          <Limits apps={limitApps} call={call} />
+          <Fold title="Limits">
+            <p>
+              Set in the app before it sends events, per kind and its dotted children. App events are never limited.
+            </p>
+            <Limits apps={limitApps} call={call} />
+          </Fold>
 
           <Heading>Status bar fields</Heading>
           {sessionKeys.length === 0 ? (

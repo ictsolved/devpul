@@ -56,7 +56,7 @@ Paste it into the field, or anywhere on the page outside a text field. On the ho
 
 Hot reload and hot restart keep the URL. A full restart gets a new port and token: paste the new URL, or click the new link, and DevPul replaces the old one. A saved URL that is not connected belongs to a run that ended. URLs that are still connected stay, so you can watch several apps at once.
 
-A hot restart or a replaced URL also drops that app's older events. With **Keep earlier runs** in Settings, earlier runs stay and show as separate run chips.
+A hot restart or a replaced URL also drops that app's older events. With **Keep events from earlier runs** in Settings, earlier runs stay and show as separate run chips.
 
 ## Open DevPul already connected
 

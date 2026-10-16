@@ -18,7 +18,7 @@ A rule matches a method, or any, and a whole URL where `*` stands for any run of
 | Delay   | The real response, after the delay.                                                           |
 | Pause   | The request, the response or both held until you let them go from the UI. See below.          |
 
-Respond and Fail take a delay too. **Add offline rule** adds `*` with Fail, so every call fails while it is on.
+Respond and Fail take a delay too. **Simulate offline** adds `*` with Fail, so every call fails while it is on.
 
 A mocked call still runs every Dio interceptor, and a status that fails `validateStatus` throws `DioException.badResponse` as a real one does. In the list, a flask marks calls a rule changed; the detail panel says which mode, and the app's console line ends with `(mock: respond)`.
 

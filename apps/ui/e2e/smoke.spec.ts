@@ -377,8 +377,9 @@ test('keeps settings and sets limits in the app', async ({ page, vm }) => {
   await page.getByRole('menuitem', { name: 'Settings' }).click();
   const dialog = page.getByRole('dialog', { name: 'Settings' });
   await expect(dialog).toContainText(`In memory: ${vm.events.length} events`);
-  await dialog.getByLabel('Amber from (ms)').fill('250');
+  await dialog.getByLabel('Slow from (ms)', { exact: true }).fill('250');
 
+  await dialog.getByText('Limits', { exact: true }).click();
   await dialog.getByRole('checkbox', { name: 'Mute log' }).click();
   await expect
     .poll(() => vm.callsTo('ext.devpul.limit'))
@@ -390,7 +391,7 @@ test('keeps settings and sets limits in the app', async ({ page, vm }) => {
   await page.reload();
   await page.getByRole('button', { name: 'More' }).click();
   await page.getByRole('menuitem', { name: 'Settings' }).click();
-  await expect(page.getByRole('dialog').getByLabel('Amber from (ms)')).toHaveValue('250');
+  await expect(page.getByRole('dialog').getByLabel('Slow from (ms)', { exact: true })).toHaveValue('250');
 });
 
 test('offers the app plugin and loads it once allowed', async ({ page, vm }) => {

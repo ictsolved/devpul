@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Fold } from '../../components/Fold';
 import type { Approval } from '../../core/approvals';
 import { marketUrl, pageUrl } from '../../lib/links';
 import { type Offer, OfferText } from './PluginOffers';
@@ -66,6 +67,8 @@ const LINK = 'text-primary hover:underline';
 
 export function PluginsView(props: Props) {
   const { offers, approvals, urls, served, errors, writes, onWrites, onAllow, onDismiss, onApprovals, onUrls } = props;
+  // Open only on mount, so clearing the field does not fold it away.
+  const [urlsOpen] = useState(urls.length > 0 || served.length > 0);
   return (
     <div className="min-h-0 flex-1 overflow-y-auto" aria-label="Plugins" role="region">
       <div className="mx-auto max-w-190 px-4 py-3 [&_p]:my-1.5">
@@ -150,21 +153,22 @@ export function PluginsView(props: Props) {
           </a>
         </p>
 
-        <Heading>Module URLs</Heading>
-        <label className="my-1.5 flex flex-col gap-1">
-          One per line. They run with full access to this page, without asking.
-          <PluginUrls urls={urls} onCommit={onUrls} />
-        </label>
-        {served.length > 0 && (
-          <>
-            <p>Served by devpul --plugin:</p>
-            {served.map((url) => (
-              <p key={url} className="font-mono text-xs wrap-anywhere text-muted-foreground">
-                {url}
-              </p>
-            ))}
-          </>
-        )}
+        <Fold title="Plugin URLs" open={urlsOpen}>
+          <label className="my-1.5 flex flex-col gap-1">
+            One per line. They run with full access to this page, without asking.
+            <PluginUrls urls={urls} onCommit={onUrls} />
+          </label>
+          {served.length > 0 && (
+            <>
+              <p>Served by devpul --plugin:</p>
+              {served.map((url) => (
+                <p key={url} className="font-mono text-xs wrap-anywhere text-muted-foreground">
+                  {url}
+                </p>
+              ))}
+            </>
+          )}
+        </Fold>
       </div>
     </div>
   );
