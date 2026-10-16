@@ -33,6 +33,8 @@ final flags = Flags();
 
 Future<void> sync() async {}
 
+Future<void> placeOrder() async {}
+
 final cartProvider = Provider((ref) => cart);
 
 sealed class CartEvent {}

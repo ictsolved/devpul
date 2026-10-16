@@ -37,6 +37,15 @@ Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 
 Any JSON-like value works; other objects become their `toString()`. Kinds that no plugin claims show in Events. Prefer dotted names, such as `cart.updated`, so `kind:cart` finds the family. [Extending DevPul](/docs/extend/) has observers that send Riverpod and Bloc state this way.
 
+## Causes
+
+```dart
+Future<void> checkout() =>
+    DevpulCause('cart.checkout', {'items': cart.items.length}).run(placeOrder);
+```
+
+`DevpulCause` posts its event as `Devpul.emit` does. HTTP calls the adapters make inside `run`, and in the futures and timers it starts, name that event as their cause; the request's detail shows it under **Started by**. It travels in a zone value, so work that was already scheduled, such as a stream listened to earlier, does not carry it. Actions run from the UI and replays set a cause of their own, and the bloc plugin makes each event a bloc handles the cause of that handler's calls.
+
 ## Logs
 
 ```dart

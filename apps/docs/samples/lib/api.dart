@@ -24,6 +24,9 @@ void emit() {
   Devpul.emit('cart.updated', {'items': 3, 'total': 42.5});
 }
 
+Future<void> checkout() =>
+    DevpulCause('cart.checkout', {'items': cart.items.length}).run(placeOrder);
+
 void logs(Object e, StackTrace s) {
   Devpul.log('Signed in', name: 'auth');
   Devpul.log('Retrying', level: 'warn', name: 'sync');

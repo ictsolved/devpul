@@ -43,8 +43,8 @@ On connect it reads the app's backlog, as the UI does, then records live. Hot re
 | Tool                | Returns                                                                                                                                                |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `get_session`       | The app's session fields, devpul version, actions with their parameters, plugins with their handlers, rate limits and the runs recorded.               |
-| `list_requests`     | One line per request: id, time, method, status, duration, size, URL. Filters: method, host, status range, state (pending, done, failed), text.         |
-| `get_request`       | One request with headers and bodies of request and response, or its error.                                                                             |
+| `list_requests`     | One line per request: id, time, method, status, duration, size, mock mode, what started it, URL. Filters: method, host, status range, state, text.     |
+| `get_request`       | One request with headers and bodies of request and response, or its error, and its cause.                                                              |
 | `list_errors`       | One line per error: id, time, type and message, route.                                                                                                 |
 | `list_logs`         | One line per log: id, time, level, logger name, message. Filters: lowest level, logger name, text.                                                     |
 | `list_events`       | Route changes, plugin events and `Devpul.emit` events. Filters: kind, text.                                                                            |

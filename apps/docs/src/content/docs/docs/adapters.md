@@ -131,3 +131,20 @@ final edit = await call.pauseResponse(
 ```
 
 Both return at once, unchanged, when the rule does not pause that side or no UI is connected.
+
+## Replay
+
+An adapter that passes `replay` lets the UI and agents send a call again. The callback gets a `DevpulHttpEdit` with the fields to change and sends the request as this call sent it, through what sits below the adapter; `replayBody` is the body to edit, as `pauseRequest` takes it.
+
+```dart
+final call = DevpulHttp.request(
+  method: request.method,
+  url: request.url,
+  headers: request.headers,
+  body: request.body,
+  replay: (edit) => send(MockingAdapter.copy(request, edit)),
+  replayBody: request.body,
+);
+```
+
+The replay goes through the adapter again, so it shows as a call of its own with the call it replays as its cause.

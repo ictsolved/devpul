@@ -33,3 +33,14 @@ What it records:
 Streamed request and response bodies show as `<stream>`. Image responses show as previews when read with `ResponseType.bytes`; other response types decode them as text. Ignore rules, redaction, size limits and console output come from [`Devpul.configure`](/docs/api/#configuration).
 
 [Mock rules and breakpoints](/docs/mocking/) apply to its calls. A mocked response or failure passes through every interceptor, as a real one does.
+
+## Replay
+
+A [replayed](/docs/mocking/#replay) call goes out as the interceptor saw it, without the other interceptors. Pass the Dio so it goes through the same `httpClientAdapter` and `transformer`:
+
+```dart
+final dio = Dio()..httpClientAdapter = adapter;
+dio.interceptors.add(DevpulDioInterceptor(dio: dio));
+```
+
+Without it, Dio's default adapter sends replays, which skips an adapter that pins certificates, sets a proxy or uses the platform's HTTP stack.

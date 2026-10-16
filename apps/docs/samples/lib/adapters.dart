@@ -127,3 +127,27 @@ final class MockingAdapter {
         ..headers.addAll(edit.headers ?? request.headers)
         ..body = edit.body ?? request.body;
 }
+
+final class ReplayingAdapter {
+  ReplayingAdapter(this.inner);
+
+  final Client inner;
+
+  Future<Response> send(Request request) async {
+    final call = DevpulHttp.request(
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      body: request.body,
+      replay: (edit) => send(MockingAdapter.copy(request, edit)),
+      replayBody: request.body,
+    );
+    final response = await Response.fromStream(await inner.send(request));
+    call?.response(
+      status: response.statusCode,
+      headers: response.headers,
+      body: response.body,
+    );
+    return response;
+  }
+}

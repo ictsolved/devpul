@@ -1,9 +1,9 @@
 ---
-title: Mocks and breakpoints
-description: Answer, fail, delay or pause HTTP calls in the running app from the DevPul UI or an agent, and edit requests and responses at a breakpoint.
+title: Mocks, breakpoints and replay
+description: Answer, fail, delay or pause HTTP calls in the running app from the DevPul UI or an agent, edit requests and responses at a breakpoint, and send a request again.
 ---
 
-Mock rules change HTTP calls made through [devpul_http](/docs/http/) or [devpul_dio](/docs/dio/), in the running app, with no code change. Set them from the HTTP tab or have an [agent](/docs/mcp/) set them.
+Mock rules change HTTP calls made through [devpul_http](/docs/http/) or [devpul_dio](/docs/dio/), in the running app, with no code change. Set them from the HTTP tab or have an [agent](/docs/mcp/) set them. Replay sends a captured request again from the app.
 
 ## Rules
 
@@ -35,18 +35,30 @@ A Pause rule holds the call before it goes out, before the app gets the response
 
 A held call goes on unchanged after 5 minutes, or as soon as no DevPul page or agent is connected, so a closed tab never stalls the app. Timeouts of the app's own, such as `.timeout()` on the future or Dio's `receiveTimeout`, still run while it is held.
 
+## Replay
+
+Select a request and click **Replay**. The form holds the request as the app sent it: change the method, URL, headers or body, or leave them, and click **Send**. The app sends it again and the new call opens, marked with a replay icon in the list; **Started by** in its detail links back to the call it replays.
+
+- The request goes out through what sits below the adapter: the client `DevpulClient` wraps, or the adapter of the Dio passed to [`DevpulDioInterceptor(dio: dio)`](/docs/dio/#replay). Clients and interceptors in front of the adapter do not run again, so headers they set go out as they were, an expired token included; edit it in the form.
+- Mock rules apply to the replay as to any call.
+- The app's own code never gets the response; DevPul shows it.
+- Bodies are editable as at a breakpoint. Redacted headers sent back as shown keep their real value.
+- The app keeps the last 100 calls it can replay, until it restarts.
+
 ## Agents
 
-The app registers four [handlers](/docs/api/#handlers) that `devpul mcp` lists in `get_session`:
+The app registers six [handlers](/docs/api/#handlers) that `devpul mcp` lists in `get_session`:
 
-| Handler          | Tool                | Does                                                       |
-| ---------------- | ------------------- | ---------------------------------------------------------- |
-| `http.mocks`     | `call_plugin`       | Returns the rules.                                         |
-| `http.mocks.set` | `call_plugin_write` | Replaces the rules with `{"rules": [...]}`.                |
-| `http.paused`    | `call_plugin`       | Returns the held calls.                                    |
-| `http.resume`    | `call_plugin_write` | Lets a held call go, with the fields to change or `abort`. |
+| Handler          | Tool                | Does                                                              |
+| ---------------- | ------------------- | ----------------------------------------------------------------- |
+| `http.mocks`     | `call_plugin`       | Returns the rules.                                                |
+| `http.mocks.set` | `call_plugin_write` | Replaces the rules with `{"rules": [...]}`.                       |
+| `http.paused`    | `call_plugin`       | Returns the held calls.                                           |
+| `http.resume`    | `call_plugin_write` | Lets a held call go, with the fields to change or `abort`.        |
+| `http.sent`      | `call_plugin`       | Returns a call as it was sent, with whether its body is editable. |
+| `http.replay`    | `call_plugin_write` | Sends a call again, with the fields to change; returns its id.    |
 
-`list_requests` shows `paused` and `[mock: mode]`; `get_request` on a paused call includes what is held and its id for `http.resume`. Rules an agent sets show in the UI.
+`list_requests` shows `paused`, `[mock: mode]` and what started a call, such as `[replay of 12]`; `get_request` on a paused call includes what is held and its id for `http.resume`, and on a replayable one the id `http.replay` takes. Rules an agent sets show in the UI.
 
 ## Limits
 
@@ -54,3 +66,4 @@ The app registers four [handlers](/docs/api/#handlers) that `devpul mcp` lists i
 - Calls matching `ignoreUrls` or `ignoreMethods` are not mocked.
 - Rule bodies are text. A captured body that was binary or cut at `maxValueLength` does not come along; the editor says so.
 - `text/event-stream` responses through devpul_http pass through and are not paused.
+- Replay needs the request in full: `MultipartRequest` and `StreamedRequest` through devpul_http and stream bodies through Dio are not replayable.

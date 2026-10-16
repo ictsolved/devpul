@@ -50,4 +50,4 @@ What it records:
 
 Response bodies are read in full before your code gets them, which suits API calls. `text/event-stream` responses pass through untouched and show as `<stream>`, as do `StreamedRequest` bodies. Images show as previews while their base64 fits `maxValueLength`; other binary bodies show their size.
 
-[Mock rules and breakpoints](/docs/mocking/) apply to its calls.
+[Mock rules and breakpoints](/docs/mocking/) apply to its calls. Calls made with a `Request`, as `get`, `post` and the other helpers make them, can be [replayed](/docs/mocking/#replay); a replay goes out through the wrapped client.
