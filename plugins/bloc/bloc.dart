@@ -4,10 +4,17 @@ import 'package:devpul/devpul.dart';
 /// Sends bloc and cubit changes to DevPul for the Bloc tab.
 abstract final class DevpulBloc {
   /// Sets [Bloc.observer] to one that sends every change to DevPul and then
-  /// calls the observer set before. Does nothing unless [Devpul.included].
+  /// calls the observer set before. Wraps [Bloc.transformer] so that HTTP
+  /// calls a handler makes link to the event it handles. Does nothing unless
+  /// [Devpul.included].
   static void install() {
     if (!Devpul.included || Bloc.observer is _Observer) return;
     Bloc.observer = _Observer(Bloc.observer);
+    final transformer = Bloc.transformer;
+    Bloc.transformer = (events, mapper) => transformer(events, (event) {
+      final cause = _Observer._causeOf(event);
+      return cause == null ? mapper(event) : cause.run(() => mapper(event));
+    });
     Devpul.handle(
       'bloc.state',
       (_) => {
@@ -27,6 +34,7 @@ final class _Observer extends BlocObserver {
   final BlocObserver _next;
 
   static final _live = <BlocBase<Object?>>{};
+  static final _causes = Expando<DevpulCause>();
 
   @override
   void onCreate(BlocBase<dynamic> bloc) {
@@ -39,8 +47,20 @@ final class _Observer extends BlocObserver {
   @override
   void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {
     super.onEvent(bloc, event);
-    Devpul.emit('bloc.event', {..._key(bloc), 'event': event});
+    final cause = DevpulCause('bloc.event', {..._key(bloc), 'event': event});
+    // Expando takes no strings, numbers, booleans, records or null.
+    try {
+      _causes[event!] = cause;
+    } catch (_) {}
     _next.onEvent(bloc, event);
+  }
+
+  static DevpulCause? _causeOf(Object? event) {
+    try {
+      return _causes[event!];
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

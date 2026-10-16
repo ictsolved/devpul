@@ -3,8 +3,8 @@
   "plugins": {
     "bloc": {
       "url": "../../plugins/bloc",
-      "version": "0.1.0",
-      "hash": "47c669b178a855640e7dfc7ef63ae0a2700999abd9f3b2e8176974f25a736d45"
+      "version": "0.2.0",
+      "hash": "7c8c3e0636810d7e4a6d612fd025d810fc5120440bd076d2dc0ebbade97300c6"
     },
     "files": {
       "url": "../../plugins/files",

@@ -91,7 +91,11 @@ final class Increment extends CounterEvent {
 
 class CounterBloc extends Bloc<CounterEvent, int> {
   CounterBloc() : super(0) {
-    on<Increment>((_, emit) => emit(state + 1));
+    // The request links to the bloc.event that started it.
+    on<Increment>((_, emit) async {
+      emit(state + 1);
+      await dio.post<Object?>('/anything/counter', data: {'count': state});
+    });
   }
 }
 
