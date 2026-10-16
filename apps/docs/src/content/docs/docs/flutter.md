@@ -41,7 +41,7 @@ runZonedGuarded(
 DevpulFlutter.captureDebugPrint();
 ```
 
-Every `debugPrint` line also goes to the Logs tab at level `debug`. Console output is unchanged.
+Every `debugPrint` line also goes to the Logs tab at level `debug`, except Flutter's console report of an error `install()` already sent to Errors. Console output is unchanged.
 
 ## Routes
 

@@ -14,6 +14,7 @@ import 'simulator.dart' if (dart.library.io) 'simulator_io.dart';
 abstract final class DevpulFlutter {
   static bool _installed = false;
   static bool _capturing = false;
+  static bool _presenting = false;
 
   /// Keeps the handlers already set, so crash reporters still run. Turns
   /// console colors off on the iOS simulator unless `DevpulConfig.ansiColors`
@@ -27,7 +28,14 @@ abstract final class DevpulFlutter {
     final flutterPrevious = FlutterError.onError;
     FlutterError.onError = (details) {
       _report(details);
-      flutterPrevious?.call(details);
+      // The console report it prints goes through debugPrint; the Errors tab
+      // already has it.
+      _presenting = true;
+      try {
+        flutterPrevious?.call(details);
+      } finally {
+        _presenting = false;
+      }
     };
 
     final dispatcher = PlatformDispatcher.instance;
@@ -49,13 +57,14 @@ abstract final class DevpulFlutter {
     }
   }
 
-  /// Sends every `debugPrint` line to the Logs tab as well.
+  /// Sends `debugPrint` lines to the Logs tab as well, except the console
+  /// report of an error [install] sent to the Errors tab.
   static void captureDebugPrint() {
     if (!Devpul.enabled || _capturing) return;
     _capturing = true;
     final previous = debugPrint;
     debugPrint = (message, {wrapWidth}) {
-      if (message != null) {
+      if (message != null && !_presenting) {
         Devpul.log(message, level: 'debug', name: 'debugPrint');
       }
       previous(message, wrapWidth: wrapWidth);

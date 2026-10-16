@@ -1,6 +1,7 @@
 ## 1.1.0
 
 - On devpul 1.1.0.
+- `DevpulFlutter.captureDebugPrint` leaves out Flutter's console report of an error that `install` already sent to the Errors tab.
 
 ## 1.0.0
 
