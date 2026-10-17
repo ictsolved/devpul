@@ -299,6 +299,26 @@ describe('Store rows', () => {
     expect(byId['3']?.size).toBe(2048);
   });
 
+  it('lists the calls an event started', () => {
+    const store = new Store();
+    const cause = { type: 'event', kind: 'cart.checkout', seq: 1 };
+    store.add([
+      vmEvent('cart.checkout', { session: 's1', seq: 1, ts: 90 }),
+      req(2, 3, 110, { cause }),
+      req(1, 2, 100, { cause }),
+      req(3, 4, 120, { cause: { type: 'action', name: 'Ping' } }),
+      res(1, 5, 130),
+    ]);
+    expect(store.started('s1|1').map((r) => [r.id, r.state])).toEqual([
+      ['1', 'done'],
+      ['2', 'pending'],
+    ]);
+    expect(store.caused.map((r) => r.id)).toEqual(['1', '2']);
+    expect(store.started('s1|3')).toEqual([]);
+    store.remove((e) => e.kind === 'http.request' && e.data.id === 2);
+    expect(store.started('s1|1').map((r) => r.id)).toEqual(['1']);
+  });
+
   it('removes events by predicate', () => {
     const store = new Store();
     store.add([

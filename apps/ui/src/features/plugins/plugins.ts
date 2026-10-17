@@ -1,5 +1,6 @@
 import { type DevEvent, isObject, type JsonObject } from '../../core/events';
 import { rpcMessage } from '../../core/rpc';
+import type { HttpRow, HttpState } from '../../core/store';
 
 /** The plugin API this UI implements. */
 export const API = 1;
@@ -20,6 +21,19 @@ export interface PluginEvent {
   ts: number;
   session: string;
   run: string;
+}
+
+/** An HTTP call an event the plugin matches started. */
+export interface PluginRequest {
+  key: string;
+  /** Key of the event that started it. */
+  event: string;
+  method: string;
+  url: string;
+  /** Set once the response arrives. */
+  status?: number;
+  state: HttpState;
+  ts: number;
 }
 
 /** Elements in the UI's own style, for plugins that do not bring their own. */
@@ -45,6 +59,12 @@ export interface PluginContext {
   call: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
   /** Calls a `Devpul.handle` handler on the same app and resolves to its result. */
   request: (name: string, args?: Record<string, unknown>) => Promise<unknown>;
+  /** The calls events the plugin matches started, oldest first, current when read. */
+  readonly requests: PluginRequest[];
+  /** Calls [listener] with calls that are new or changed, oldest first. */
+  onRequests: (listener: (requests: PluginRequest[]) => void) => () => void;
+  /** Opens a call from [requests] in the HTTP tab; Back returns here. */
+  openRequest: (key: string) => void;
   /** Whether Allow writes is on. */
   readonly writes: boolean;
   onWritesChange: (listener: (writes: boolean) => void) => () => void;
@@ -134,6 +154,16 @@ export const toPluginEvent = (e: DevEvent): PluginEvent => ({
   ts: e.ts,
   session: e.session,
   run: e.run,
+});
+
+export const toPluginRequest = (row: HttpRow): PluginRequest => ({
+  key: row.key,
+  event: row.cause?.type === 'event' ? `${row.session}|${row.cause.seq}` : '',
+  method: row.method,
+  url: row.url,
+  ...(row.status !== undefined && { status: row.status }),
+  state: row.state,
+  ts: row.ts,
 });
 
 export const registry = new Registry();

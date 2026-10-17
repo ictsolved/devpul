@@ -14,6 +14,7 @@ function rows() {
       method: 'GET',
       url: 'https://example.com/items?page=1',
       tags: { env: 'dev' },
+      cause: { type: 'action', name: 'Load items' },
     }),
     vmEvent('http.response', { session: 's', seq: 2, ts: 2, id: 1, status: 200, body: { name: 'Widget' } }),
     vmEvent('http.request', {
@@ -25,6 +26,7 @@ function rows() {
       url: 'https://example.com/orders',
       body: { sku: 'abc-1' },
       tags: { env: 'qa' },
+      cause: { type: 'event', kind: 'cart.checkout', seq: 0 },
     }),
     vmEvent('http.response', { session: 's', seq: 4, ts: 4, id: 2, status: 503 }),
     vmEvent('http.request', {
@@ -43,6 +45,7 @@ function rows() {
       id: 4,
       method: 'DELETE',
       url: 'https://example.com/items/9',
+      cause: { type: 'replay', id: '2' },
     }),
     vmEvent('http.error', { session: 's', seq: 7, ts: 7, id: 4, errorType: 'connectionTimeout', message: 'timed out' }),
   ]);
@@ -120,6 +123,16 @@ describe('filterRows', () => {
     expect(ids({ text: 'tag:env=qa' })).toEqual(['2']);
     expect(ids({ text: 'tag:env' })).toEqual(['2', '1']);
     expect(ids({ text: 'size:>10' })).toEqual(['1']);
+  });
+
+  it('filters by cause', () => {
+    expect(ids({ text: 'cause:replay' })).toEqual(['4']);
+    expect(ids({ text: 'cause:#2' })).toEqual(['4']);
+    expect(ids({ text: 'cause:event' })).toEqual(['2']);
+    expect(ids({ text: 'cause:cart' })).toEqual(['2']);
+    expect(ids({ text: 'cause:action' })).toEqual(['1']);
+    expect(ids({ text: 'cause:load' })).toEqual(['1']);
+    expect(ids({ text: '-cause:replay,action,event' })).toEqual(['3']);
   });
 
   it('filters by host', () => {

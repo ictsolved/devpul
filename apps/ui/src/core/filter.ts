@@ -1,3 +1,4 @@
+import type { Cause } from './cause';
 import type { HttpRow } from './store';
 
 export type StatusFilter = '2xx' | '3xx' | '4xx' | '5xx' | 'err' | 'pending';
@@ -106,7 +107,7 @@ export function matchesTag(tags: Record<string, string>, expr: string): boolean 
   return tags[expr.slice(0, eq)]?.toLowerCase() === expr.slice(eq + 1).toLowerCase();
 }
 
-export const HTTP_KEYS = ['status', 'method', 'host', 'ms', 'size', 'tag'] as const;
+export const HTTP_KEYS = ['status', 'method', 'host', 'ms', 'size', 'tag', 'cause'] as const;
 
 const searchCache = new WeakMap<HttpRow, string>();
 
@@ -160,6 +161,21 @@ export function matchesTags(tags: Record<string, string>, wanted: Record<string,
   return true;
 }
 
+/** `replay`, `action` or `event`, an event kind or action name in part, or `#id` of the call a replay repeats. */
+export function matchesCause(cause: Cause | undefined, expr: string): boolean {
+  if (!cause) return false;
+  const v = expr.toLowerCase();
+  if (v === cause.type) return true;
+  switch (cause.type) {
+    case 'replay':
+      return v === `#${cause.id}`;
+    case 'action':
+      return cause.name.toLowerCase().includes(v);
+    case 'event':
+      return cause.kind.toLowerCase().includes(v);
+  }
+}
+
 const rowTags = (row: HttpRow): Record<string, string> => {
   const e = row.request ?? row.response ?? row.error;
   return e?.tags ?? {};
@@ -179,6 +195,8 @@ function httpField(row: HttpRow, key: string, value: string): boolean {
       return compare(row.size, value);
     case 'tag':
       return matchesTag(rowTags(row), value);
+    case 'cause':
+      return matchesCause(row.cause, value);
     default:
       return false;
   }

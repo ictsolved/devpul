@@ -27,17 +27,18 @@ Type in the filter box. Plain words must all match; `-word` excludes. In HTTP, w
 
 Fields narrow further. A comma means any of them, and a leading `-` negates.
 
-| Field                        | Tab    | Examples                                                                       |
-| ---------------------------- | ------ | ------------------------------------------------------------------------------ |
-| `status:`                    | HTTP   | `status:4xx,5xx`, `status:>=400`, `status:404`, `status:err`, `status:pending` |
-| `method:`                    | HTTP   | `method:post`, `-method:options`                                               |
-| `host:`                      | HTTP   | `host:api.example.com`, `-host:cdn`                                            |
-| `ms:`                        | HTTP   | `ms:>500`, `ms:<=100`                                                          |
-| `size:`                      | HTTP   | `size:>100k`, `size:<1mb`                                                      |
-| `tag:`                       | all    | `tag:env=qa`, `tag:user` (any value)                                           |
-| `kind:`                      | lists  | `kind:cart`, `-kind:route`                                                     |
-| `source:`, `type:`, `route:` | Errors | `source:flutter`, `type:StateError`, `route:cart`                              |
-| `level:`, `name:`, `source:` | Logs   | `level:warn,error`, `name:auth`, `source:developer.log`                        |
+| Field                        | Tab    | Examples                                                                          |
+| ---------------------------- | ------ | --------------------------------------------------------------------------------- |
+| `status:`                    | HTTP   | `status:4xx,5xx`, `status:>=400`, `status:404`, `status:err`, `status:pending`    |
+| `method:`                    | HTTP   | `method:post`, `-method:options`                                                  |
+| `host:`                      | HTTP   | `host:api.example.com`, `-host:cdn`                                               |
+| `ms:`                        | HTTP   | `ms:>500`, `ms:<=100`                                                             |
+| `size:`                      | HTTP   | `size:>100k`, `size:<1mb`                                                         |
+| `tag:`                       | all    | `tag:env=qa`, `tag:user` (any value)                                              |
+| `cause:`                     | HTTP   | `cause:replay,action,event`, `cause:bloc` (event kind or action name), `cause:#6` |
+| `kind:`                      | lists  | `kind:cart`, `-kind:route`                                                        |
+| `source:`, `type:`, `route:` | Errors | `source:flutter`, `type:StateError`, `route:cart`                                 |
+| `level:`, `name:`, `source:` | Logs   | `level:warn,error`, `name:auth`, `source:developer.log`                           |
 
 Chips do the same for values seen in the data: status classes, methods, hosts, tags, app runs, sources, levels and kinds. Filters are remembered per tab.
 
@@ -47,7 +48,7 @@ Click a column header in HTTP to sort by it; click again to flip the direction. 
 
 ## Details
 
-Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch between **Tree** and **Raw** in the header. The choice holds for every detail that shows JSON: HTTP bodies, Events, and plugin events the plugin does not render. Copy the URL, any section, a curl command or a `fetch()` call for the browser console. A JWT in a bearer `Authorization` header shows decoded under **Bearer token**: claims, with `exp`, `iat` and `nbf` as times and how long before or after the request it expires, and the header. The signature is not checked. **Started by** shows what made the request when the app knows: the call it [replays](/docs/mocking/#replay), an action run from the Actions menu, or an event such as `bloc.event` from the bloc plugin or a [`DevpulCause`](/docs/api/#causes); click it to open that call or event, and **Back** returns. Image bodies show as a preview with their type, dimensions and size, and so do SVG bodies sent as text. In Tree view, `data:` image strings anywhere in the JSON show as thumbnails; click one to enlarge it.
+Select a row to see it on the right. Headers and params show as tables, bodies as raw JSON; switch between **Tree** and **Raw** in the header. The choice holds for every detail that shows JSON: HTTP bodies, Events, and plugin events the plugin does not render. Copy the URL, any section, a curl command or a `fetch()` call for the browser console. A JWT in a bearer `Authorization` header shows decoded under **Bearer token**: claims, with `exp`, `iat` and `nbf` as times and how long before or after the request it expires, and the header. The signature is not checked. **Started by** shows what made the request when the app knows: the call it [replays](/docs/mocking/#replay), an action run from the Actions menu, or an event such as `bloc.event` from the bloc plugin or a [`DevpulCause`](/docs/api/#causes); click it to open that call or event, and **Back** returns. The `#` column marks such rows: a loop for a replay, a pointer for an action, an arrow for an event. The other way, an event's detail lists the calls it started under **Requests started**. Image bodies show as a preview with their type, dimensions and size, and so do SVG bodies sent as text. In Tree view, `data:` image strings anywhere in the JSON show as thumbnails; click one to enlarge it.
 
 In Tree view and in tables, plugin views included, values carry hints: a **JWT** or **JSON** chip on a string that holds one, which expands it in place, and the local time beside an epoch number under `exp`, `iat`, `nbf`, `auth_time` or a key ending in `_at` or `At`, beside the `Date`, `Expires`, `Last-Modified` and `If-Modified-Since` headers, and beside `Retry-After` and rate limit resets. Right-click a value, or use the `...` button that shows on hover, to decode it as Base64, URL, JWT, JSON or a timestamp, or to copy the value or its path. Seconds and milliseconds are told apart by size.
 

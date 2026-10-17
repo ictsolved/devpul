@@ -231,6 +231,28 @@ function Started({ by }: { by: StartedBy }) {
   );
 }
 
+/** The calls an event started, for its detail. */
+export function StartedRequests({ rows, onOpen }: { rows: HttpRow[]; onOpen: (row: HttpRow) => void }) {
+  if (!rows.length) return null;
+  return (
+    <Section id="started" title="Requests started" summary={String(rows.length)}>
+      {rows.map((row) => (
+        <button
+          key={row.key}
+          type="button"
+          className={cn(startedClass, 'cursor-pointer hover:bg-secondary')}
+          onClick={() => onOpen(row)}
+        >
+          <span className="text-muted-foreground">#{row.id}</span>
+          <Method method={row.method} />
+          <StatusBadge row={row} />
+          <span className="truncate">{row.url}</span>
+        </button>
+      ))}
+    </Section>
+  );
+}
+
 function Part(props: {
   id: string;
   title: string;

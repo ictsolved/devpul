@@ -5,7 +5,8 @@
 - `http.paused`, `http.resumed` and `http.mocks` events; HTTP events of a call a rule changed carry `mock`.
 - The UI's HTTP tab has Mocks: a rule from a captured call, rules turned on and off, and paused calls edited in the detail panel.
 - Replay: `DevpulHttp.request(replay:, replayBody:)` lets the UI and agents send an adapter's call again, edited or not, through the `http.sent` and `http.replay` handlers. The app keeps the last 100 such calls. The UI's request detail has Replay.
-- `DevpulCause` posts an event and names it as the cause of the HTTP calls made inside `run`. `http.request` carries `cause`: the call a replay repeats, an action run from the UI, or an event. The UI shows it under Started by and opens it on a click.
+- `DevpulCause` posts an event and names it as the cause of the HTTP calls made inside `run`. `http.request` carries `cause`: the call a replay repeats, an action run from the UI, or an event. The UI shows it under Started by and opens it on a click, marks such rows, filters them with `cause:`, and lists the calls an event started in its detail.
+- Plugin API: `context.requests`, `context.onRequests` and `context.openRequest` give plugins the HTTP calls their events started.
 - The UI folds framework frames in stack traces, lists events by time, keeps `lifecycle` events out of Events until turned on, shows a run column only with more than one run, and leaves out what DDS replays from an ended run.
 
 ## 1.0.0

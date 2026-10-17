@@ -4,8 +4,19 @@ import { EventList, type ListSelection } from '../../components/EventList';
 import { JsonModeToggle, JsonView } from '../../components/JsonView';
 import type { DevEvent } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
+import type { HttpRow } from '../../core/store';
+import { StartedRequests } from '../http/DetailPanel';
 import { pluginUi } from './pluginUi';
-import { type DevpulPlugin, type PluginContext, type PluginEvent, pluginCalls, toPluginEvent, writes } from './plugins';
+import {
+  type DevpulPlugin,
+  type PluginContext,
+  type PluginEvent,
+  type PluginRequest,
+  pluginCalls,
+  toPluginEvent,
+  toPluginRequest,
+  writes,
+} from './plugins';
 
 export type AppCall = (e: DevEvent, method: string, params?: Record<string, unknown>) => Promise<unknown>;
 
@@ -20,9 +31,26 @@ interface Props extends ListSelection {
   multiRun: boolean;
   filterRef: RefObject<HTMLInputElement | null>;
   call: AppCall;
+  /** Calls the plugin's events started, oldest first. */
+  requests: HttpRow[];
+  /** The calls an event started. */
+  started: (e: DevEvent) => HttpRow[];
+  /** Opens [row] in the HTTP tab, Back returning to the event with [key]. */
+  onOpenRequest: (key: string, row: HttpRow) => void;
 }
 
 type Listener = (events: PluginEvent[]) => void;
+type RequestListener = (requests: PluginRequest[]) => void;
+
+function emit<T>(listeners: Set<(items: T[]) => void>, items: T[]): void {
+  for (const fn of listeners) {
+    try {
+      fn(items);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
 
 /** Feeds `context.events` and `context.onEvents` without re-rendering plugins. */
 function useFeed(events: DevEvent[]) {
@@ -33,20 +61,35 @@ function useFeed(events: DevEvent[]) {
     const fresh = events.filter((e) => e.n > f.lastN).toReversed();
     if (!fresh.length) return;
     f.lastN = Math.max(f.lastN, ...fresh.map((e) => e.n));
-    const out = fresh.map(toPluginEvent);
-    for (const fn of f.listeners) {
-      try {
-        fn(out);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    emit(f.listeners, fresh.map(toPluginEvent));
   }, [events]);
+  return feed;
+}
+
+/** Feeds `context.requests` and `context.onRequests`; a row is a new object whenever its call changes. */
+function useRequestFeed(rows: HttpRow[], open: (row: HttpRow) => void) {
+  const feed = useRef({
+    rows,
+    open,
+    listeners: new Set<RequestListener>(),
+    seen: new Map(rows.map((r) => [r.key, r])),
+  });
+  useEffect(() => {
+    feed.current.open = open;
+  });
+  useEffect(() => {
+    const f = feed.current;
+    f.rows = rows;
+    const fresh = rows.filter((r) => f.seen.get(r.key) !== r);
+    f.seen = new Map(rows.map((r) => [r.key, r]));
+    if (fresh.length) emit(f.listeners, fresh.map(toPluginRequest));
+  }, [rows]);
   return feed;
 }
 
 function makeContext(
   feed: ReturnType<typeof useFeed>,
+  requests: ReturnType<typeof useRequestFeed>,
   call: (method: string, params?: Record<string, unknown>) => Promise<unknown>,
   stops: Set<() => void>,
 ): PluginContext {
@@ -66,6 +109,18 @@ function makeContext(
       const listeners = feed.current.listeners;
       listeners.add(fn);
       return track(() => listeners.delete(fn));
+    },
+    get requests() {
+      return requests.current.rows.map(toPluginRequest);
+    },
+    onRequests: (fn) => {
+      const listeners = requests.current.listeners;
+      listeners.add(fn);
+      return track(() => listeners.delete(fn));
+    },
+    openRequest: (key) => {
+      const row = requests.current.rows.find((r) => r.key === key);
+      if (row) requests.current.open(row);
     },
     ...pluginCalls(call),
     get writes() {
@@ -110,7 +165,9 @@ export function PluginTab(props: Props) {
   return <PluginList {...props} />;
 }
 
-function PluginList({ plugin, events, runLabel, multiRun, filterRef, call, selected, onSelect, onBack }: Props) {
+function PluginList(props: Props) {
+  const { plugin, events, runLabel, multiRun, filterRef, call, selected, onSelect, onBack } = props;
+  const { requests, started, onOpenRequest } = props;
   const cells = useCallback(
     (e: DevEvent) => (
       <>
@@ -155,15 +212,26 @@ function PluginList({ plugin, events, runLabel, multiRun, filterRef, call, selec
           <CopyButton text={() => pretty(e.data)} />
         </>
       )}
-      body={(e) =>
-        plugin.render ? (
-          <PluginView key={e.key} plugin={plugin} event={e} events={events} call={call} />
-        ) : (
-          <div className="px-3 py-2">
-            <JsonView value={e.data} />
-          </div>
-        )
-      }
+      body={(e) => (
+        <>
+          <StartedRequests rows={started(e)} onOpen={(row) => onOpenRequest(e.key, row)} />
+          {plugin.render ? (
+            <PluginView
+              key={e.key}
+              plugin={plugin}
+              event={e}
+              events={events}
+              call={call}
+              requests={requests}
+              onOpenRequest={onOpenRequest}
+            />
+          ) : (
+            <div className="px-3 py-2">
+              <JsonView value={e.data} />
+            </div>
+          )}
+        </>
+      )}
     />
   );
 }
@@ -176,26 +244,30 @@ function summary(plugin: DevpulPlugin, e: DevEvent): string {
   }
 }
 
-function PluginView(props: { plugin: DevpulPlugin; event: DevEvent; events: DevEvent[]; call: AppCall }) {
-  const { plugin, event, events, call } = props;
+function PluginView(
+  props: Pick<Props, 'plugin' | 'events' | 'call' | 'requests' | 'onOpenRequest'> & { event: DevEvent },
+) {
+  const { plugin, event, events, call, requests, onOpenRequest } = props;
   const ref = useRef<HTMLDivElement>(null);
   const feed = useFeed(events);
+  const requestFeed = useRequestFeed(requests, (row) => onOpenRequest(event.key, row));
   usePluginRender(
     ref,
     (el, stops) =>
       plugin.render?.(
         el,
         toPluginEvent(event),
-        makeContext(feed, (method, params) => call(event, method, params), stops),
+        makeContext(feed, requestFeed, (method, params) => call(event, method, params), stops),
       ),
     [plugin, event, call],
   );
   return <div ref={ref} className="plugin-view px-3 py-2" />;
 }
 
-function WholeTab({ plugin, events, fallback, call }: Props) {
+function WholeTab({ plugin, events, fallback, call, requests, onOpenRequest }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const feed = useFeed(events);
+  const requestFeed = useRequestFeed(requests, (row) => onOpenRequest(eventKey(row), row));
   const target = useRef(events[0] ?? fallback);
   useEffect(() => {
     target.current = events[0] ?? fallback;
@@ -207,6 +279,7 @@ function WholeTab({ plugin, events, fallback, call }: Props) {
         el,
         makeContext(
           feed,
+          requestFeed,
           (method, params) => {
             const e = target.current;
             return e ? call(e, method, params) : Promise.reject(new Error('No app has sent events for this tab.'));
@@ -218,3 +291,5 @@ function WholeTab({ plugin, events, fallback, call }: Props) {
   );
   return <div ref={ref} className="plugin-view min-w-0 flex-1 overflow-auto px-3 py-2" />;
 }
+
+const eventKey = (row: HttpRow) => toPluginRequest(row).event;

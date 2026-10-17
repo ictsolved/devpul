@@ -5,6 +5,8 @@ import { Chip } from '../../components/list';
 import { JsonModeToggle, JsonView } from '../../components/JsonView';
 import { type DevEvent, preview } from '../../core/events';
 import { formatTime, pretty } from '../../core/json';
+import type { HttpRow } from '../../core/store';
+import { StartedRequests } from '../http/DetailPanel';
 
 interface Props extends ListSelection {
   events: DevEvent[];
@@ -15,12 +17,16 @@ interface Props extends ListSelection {
   lifecycle: { on: boolean; count: number };
   onLifecycle: (on: boolean) => void;
   filterRef: RefObject<HTMLInputElement | null>;
+  /** The calls an event started. */
+  started: (e: DevEvent) => HttpRow[];
+  onOpenRequest: (e: DevEvent, row: HttpRow) => void;
 }
 
 const FACETS: Facet[] = [{ id: 'kind', label: 'Kind', of: (e) => e.kind }];
 
 export function EventsTab(props: Props) {
   const { events, runLabel, multiRun, lifecycle, onLifecycle, filterRef, selected, onSelect, onBack } = props;
+  const { started, onOpenRequest } = props;
   const cells = useCallback(
     (e: DevEvent) => (
       <>
@@ -73,10 +79,13 @@ export function EventsTab(props: Props) {
         </>
       )}
       body={(e) => (
-        <div className="px-3 py-2">
-          <JsonView value={e.data} />
-          <p className="my-[1em] text-muted-foreground">{runLabel(e.run)}</p>
-        </div>
+        <>
+          <StartedRequests rows={started(e)} onOpen={(row) => onOpenRequest(e, row)} />
+          <div className="px-3 py-2">
+            <JsonView value={e.data} />
+            <p className="my-[1em] text-muted-foreground">{runLabel(e.run)}</p>
+          </div>
+        </>
       )}
     />
   );

@@ -540,6 +540,11 @@ export function App() {
   ];
   const activeLoaded = plugins.find(({ plugin: p }) => `plugin:${p.id}` === tab);
   const activePlugin = activeLoaded?.plugin;
+  const caused = store.caused;
+  const pluginRequests = useMemo(
+    () => (activePlugin ? caused.filter((r) => r.cause?.type === 'event' && matches(activePlugin, r.cause.kind)) : []),
+    [caused, activePlugin],
+  );
   // Calls from a whole-tab plugin before any of its events go to the app that offered it.
   const pluginFallback = activeLoaded ? offeredBy(runs, activeLoaded.origin) : undefined;
   const activeTab = tabs.some((t) => t.id === tab) ? tab : 'http';
@@ -642,6 +647,7 @@ export function App() {
     if ('request' in to) openIn('http', to.request, from);
     else openIn(eventTab(to.event.kind), to.event.key, from);
   };
+  const openRequest = (from: string, event: string, row: HttpRow) => openIn('http', row.key, { tab: from, key: event });
   const replayer = (row: HttpRow): Replayer | undefined => {
     const run = openRuns.find((r) => r.run === row.run);
     if (!row.replayable || !run || !handles(run, REPLAY)) return undefined;
@@ -867,6 +873,8 @@ export function App() {
                     filterRef={filterRef}
                     {...selection('events')}
                     onBack={backFrom('events')}
+                    started={(e) => store.started(e.key)}
+                    onOpenRequest={(e, row) => openRequest('events', e.key, row)}
                   />
                 )}
                 {activeTab === 'plugins' && (
@@ -895,6 +903,9 @@ export function App() {
                     multiRun={runs.size > 1}
                     filterRef={filterRef}
                     call={callApp}
+                    requests={pluginRequests}
+                    started={(e) => store.started(e.key)}
+                    onOpenRequest={(key, row) => openRequest(activeTab, key, row)}
                   />
                 )}
               </TabsContent>

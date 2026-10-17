@@ -148,6 +148,20 @@ export interface PluginEvent {
   run: string;
 }
 
+/** An HTTP call that an event the plugin matches started. */
+export interface PluginRequest {
+  key: string;
+  /** Key of the event that started it. */
+  event: string;
+  method: string;
+  url: string;
+  /** Set once the response arrives. */
+  status?: number;
+  state: 'pending' | 'paused' | 'done' | 'error';
+  /** Milliseconds since the epoch. */
+  ts: number;
+}
+
 /** Elements in the UI's own style. */
 export interface PluginUi {
   /** A collapsible JSON tree. */
@@ -184,6 +198,18 @@ export interface PluginContext {
    * stops it on cleanup.
    */
   onWritesChange: (listener: (writes: boolean) => void) => () => void;
+  /**
+   * The HTTP calls that events the plugin matches started, oldest first, current when read.
+   * DevPul 1.0 has no `requests`, `onRequests` or `openRequest`; check before use.
+   */
+  readonly requests?: PluginRequest[];
+  /**
+   * Calls `listener` with each batch of calls that are new or changed, oldest first. Returns a
+   * function that stops it; DevPul also stops it on cleanup.
+   */
+  onRequests?: (listener: (requests: PluginRequest[]) => void) => () => void;
+  /** Opens a call from `requests` in the HTTP tab; Back returns to the plugin. */
+  openRequest?: (key: string) => void;
   ui: PluginUi;
 }
 

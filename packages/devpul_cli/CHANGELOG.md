@@ -1,6 +1,7 @@
 ## 1.1.0
 
 - `devpul mcp`: `list_requests` and `get_request` show calls paused at a breakpoint, the mock rule that changed a call, and what started it; `get_request` gives the id `http.replay` takes.
+- `devpul create` writes `devpul.d.ts` with `context.requests`, `onRequests` and `openRequest`.
 
 ## 1.0.0
 

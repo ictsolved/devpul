@@ -509,6 +509,46 @@ test.describe('with a plugin that writes', () => {
   });
 });
 
+test.describe('with a plugin that lists the requests its events started', () => {
+  const linker = `export default {
+  api: 1,
+  id: 'cart',
+  label: 'Cart',
+  kinds: (kind) => kind.startsWith('cart.'),
+  renderTab(el, context) {
+    const add = (r) => {
+      const b = document.createElement('button');
+      b.textContent = r.method + ' ' + (r.status ?? r.state) + ' ' + r.url;
+      b.onclick = () => context.openRequest(r.key);
+      el.append(b);
+    };
+    context.requests.forEach(add);
+    return context.onRequests((requests) => requests.forEach(add));
+  },
+};
+`;
+  test.use({ vmOptions: { plugins: { my_plugin: linker } } });
+
+  test('lists them, hears of new ones and opens one', async ({ page, vm }) => {
+    await connect(page, vm);
+    await page.getByRole('alert').getByRole('button', { name: 'Allow' }).click();
+    await page.getByRole('tab', { name: /^Cart/ }).click();
+    await expect(page.getByRole('button', { name: 'POST 502 https://example.com/pay' })).toBeVisible();
+    vm.emit('http.request', {
+      id: 80,
+      method: 'GET',
+      url: 'https://example.com/cart',
+      cause: { type: 'event', kind: 'cart.checkout', seq: 22 },
+    });
+    await expect(page.getByRole('button', { name: 'GET pending https://example.com/cart' })).toBeVisible();
+    await page.getByRole('button', { name: 'POST 502 https://example.com/pay' }).click();
+    const detail = page.getByRole('complementary', { name: 'Request detail' });
+    await expect(detail).toContainText('#6');
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('tab', { name: /^Cart/ })).toHaveAttribute('aria-selected', 'true');
+  });
+});
+
 test.describe('with two plugins and a limit', () => {
   const info = {
     ...(JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract/info.json'), 'utf8')) as object),
@@ -893,9 +933,15 @@ test.describe('with replay handlers', () => {
     const detail = page.getByRole('complementary', { name: 'Request detail' });
     const cause = detail.getByRole('button', { name: /cart\.checkout/ });
     await expect(cause).toContainText('items: 2');
+    await expect(page.getByRole('row', { name: /started by cart\.checkout/ })).toContainText('502');
     await cause.click();
-    await expect(page.getByRole('complementary', { name: 'Detail' })).toContainText('cart.checkout');
-    await page.getByRole('button', { name: 'Back' }).click();
+    const event = page.getByRole('complementary', { name: 'Detail' });
+    await expect(event).toContainText('cart.checkout');
+    await event.getByRole('button', { name: /#6 POST 502/ }).click();
+    await expect(detail.getByRole('button', { name: /cart\.checkout/ })).toBeVisible();
+    await page.getByLabel('Filter requests').fill('cause:cart');
+    await expect(page.getByRole('row', { name: /https:/ })).toHaveCount(1);
+    await page.getByLabel('Filter requests').fill('');
 
     await detail.getByRole('button', { name: 'Replay' }).click();
     const form = page.getByRole('region', { name: 'Replay' });

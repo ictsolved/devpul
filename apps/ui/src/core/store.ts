@@ -111,6 +111,9 @@ export class Store implements ProfileLookup {
   // Start times of adapter requests by isolate, method and URL.
   private sent = new Map<string, number[]>();
   private httpSorted: HttpRow[] | null = null;
+  // Row keys of the calls each event started, by event key.
+  private startedMap = new Map<string, Set<string>>();
+  private causedSnapshot: HttpRow[] | null = null;
   private errorList: DevEvent[] = [];
   private errorsSnapshot: DevEvent[] | null = null;
   private otherList: DevEvent[] = [];
@@ -243,6 +246,21 @@ export class Store implements ProfileLookup {
 
   httpRow(key: string): HttpRow | undefined {
     return this.http.get(key);
+  }
+
+  /** The calls the event with [key] started, oldest first. */
+  started(key: string): HttpRow[] {
+    const keys = this.startedMap.get(key);
+    if (!keys) return [];
+    return [...keys].flatMap((k) => this.http.get(k) ?? []).toSorted((a, b) => a.ts - b.ts || a.seq - b.seq);
+  }
+
+  /** Calls an event started, oldest first. */
+  get caused(): HttpRow[] {
+    this.causedSnapshot ??= [...this.http.values()]
+      .filter((r) => r.cause?.type === 'event' && r.cause.seq !== undefined)
+      .toSorted((a, b) => a.ts - b.ts || a.seq - b.seq);
+    return this.causedSnapshot;
   }
 
   selected(tab: string): Selection | undefined {
@@ -406,6 +424,13 @@ export class Store implements ProfileLookup {
     row.state = row.error ? 'error' : row.response ? 'done' : held ? 'paused' : 'pending';
     this.http.set(key, row);
     this.httpSorted = null;
+    if (row.cause?.type === 'event' && row.cause.seq !== undefined) {
+      const by = `${row.session}|${row.cause.seq}`;
+      const keys = this.startedMap.get(by);
+      if (keys) keys.add(key);
+      else this.startedMap.set(by, new Set([key]));
+      this.causedSnapshot = null;
+    }
   }
 
   // Down to 90%, so a steady stream does not reindex on every batch. The newest event always stays.
@@ -435,6 +460,8 @@ export class Store implements ProfileLookup {
     this.http.clear();
     this.sent.clear();
     this.httpSorted = null;
+    this.startedMap.clear();
+    this.causedSnapshot = null;
     this.errorList = [];
     this.errorsSnapshot = null;
     this.otherList = [];

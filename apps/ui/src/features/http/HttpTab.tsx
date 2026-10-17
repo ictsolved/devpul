@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { ArrowDown, ArrowUp, FlaskConical, Repeat } from 'lucide-react';
+import { ArrowDown, ArrowUp, CornerDownRight, FlaskConical, MousePointerClick, Repeat } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ import {
   type StatusFilter,
 } from '../../core/filter';
 import { formatBytes, formatTime } from '../../core/json';
+import type { Cause } from '../../core/cause';
 import type { DevEvent, JsonObject } from '../../core/events';
 import type { HttpRow, Store } from '../../core/store';
 import { type Settings, useStored } from '../../lib/storage';
@@ -41,7 +42,7 @@ const ROW = 26;
 const SYNTAX = `Words match URL, id and bodies; all must match. -word excludes.
 status:4xx,5xx  status:>=400  status:err  status:pending
 method:post  host:api.example.com  ms:>500  size:>10k
-tag:env=qa  tag:env
+tag:env=qa  tag:env  cause:replay,action,event  cause:bloc
 Comma means OR. A leading - negates: -host:cdn`;
 
 const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
@@ -285,6 +286,13 @@ export function HttpTab(props: Props) {
   );
 }
 
+function CauseMark({ cause }: { cause: Cause }) {
+  if (cause.type === 'replay') return <Repeat size={11} className="flex-none" aria-label={`replay of #${cause.id}`} />;
+  if (cause.type === 'action')
+    return <MousePointerClick size={11} className="flex-none" aria-label={`action: ${cause.name}`} />;
+  return <CornerDownRight size={11} className="flex-none" aria-label={`started by ${cause.kind}`} />;
+}
+
 // The row element changes with the selection; its cells only when the request does.
 const Cells = memo(function Cells({ row, slow }: { row: HttpRow; slow?: string }) {
   return (
@@ -292,9 +300,7 @@ const Cells = memo(function Cells({ row, slow }: { row: HttpRow; slow?: string }
       <span role="gridcell" className="flex items-center gap-0.5 truncate text-muted-foreground">
         {row.source ?? row.id}
         {row.mock && <FlaskConical size={11} className="flex-none text-warning" aria-label={`mock: ${row.mock}`} />}
-        {row.cause?.type === 'replay' && (
-          <Repeat size={11} className="flex-none" aria-label={`replay of #${row.cause.id}`} />
-        )}
+        {row.cause && <CauseMark cause={row.cause} />}
       </span>
       <span role="gridcell" className="text-muted-foreground">
         {formatTime(row.ts)}
