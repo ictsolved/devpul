@@ -20,7 +20,7 @@ dependencies:
   devpul_flutter: ^1.0.0 # Flutter errors, debugPrint and routes
 ```
 
-Only [devpul](https://pub.dev/packages/devpul) is required. It is pure Dart and works on every platform, including the web. The others are [devpul_dio](https://pub.dev/packages/devpul_dio), [devpul_http](https://pub.dev/packages/devpul_http) and [devpul_flutter](https://pub.dev/packages/devpul_flutter); the command line is [devpul_cli](https://pub.dev/packages/devpul_cli).
+Only [devpul](https://pub.dev/packages/devpul) is required. It is pure Dart and works on every platform, including the web. The others are [devpul_dio](https://pub.dev/packages/devpul_dio), [devpul_http](https://pub.dev/packages/devpul_http) and [devpul_flutter](https://pub.dev/packages/devpul_flutter); the command line is [devpul_cli](https://pub.dev/packages/devpul_cli). [devpul_test](/docs/testing/) records failing tests.
 
 ## 2. Hook them up
 

@@ -65,7 +65,7 @@ function csp(): AstroIntegration {
 
 const docs = [
   { label: 'Start', items: ['docs', 'docs/ide', 'docs/connecting', 'docs/ui', 'docs/mocking', 'docs/mcp'] },
-  { label: 'Packages', items: ['docs/api', 'docs/dio', 'docs/http', 'docs/flutter'] },
+  { label: 'Packages', items: ['docs/api', 'docs/dio', 'docs/http', 'docs/flutter', 'docs/testing'] },
   { label: 'Extend', items: ['docs/extend', 'docs/actions', 'docs/plugins/install', 'docs/plugins', 'docs/adapters'] },
   { label: 'Reference', items: ['docs/cli', 'docs/events', 'docs/plugins/api', 'docs/plugins/format'] },
   { label: 'Help', items: ['docs/security', 'docs/limits', 'docs/compare', 'docs/help'] },

@@ -36,6 +36,14 @@ devpul mcp http://127.0.0.1:41234/AbCdEf12=/
 
 A fixed URL stops working when the app exits. `--port <n>` follows the devpul on another port.
 
+### Session files
+
+Given a session file in place of a URL, it reads that file: one the UI exported, or one [devpul_test](/docs/testing/) wrote for a failing test. `get_session` gives its `file`; `run_action` and the plugin calls have no app to call.
+
+```sh
+devpul mcp build/devpul/test/cart_test/cart_adds_an_item.json
+```
+
 On connect it reads the app's backlog, as the UI does, then records live. Hot restarts start a new run; tools read the newest run unless given another.
 
 ## Tools

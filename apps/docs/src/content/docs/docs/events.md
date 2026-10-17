@@ -53,6 +53,7 @@ Fields in `data` longer than `maxValueLength` are replaced by a marker:
 | `log`           | `level`, `message`, `name`, `error`, `stack`                                                                                                  |
 | `route`         | `action` (`push`, `pop`, `replace`, `remove`), `route`, `previous`, `arguments`                                                               |
 | `lifecycle`     | `state` (`resumed`, `inactive`, `hidden`, `paused`, `detached`)                                                                               |
+| `test`          | `name`, `suite`: a test [devpul_test](/docs/testing/) started                                                                                 |
 | anything else   | custom, shown in Events or a plugin tab                                                                                                       |
 
 HTTP events pair on `session` + `id`. A response may arrive before its request; the UI pairs them either way. `cause` on `http.request` says what started the call: `{"type": "replay", "id": ...}` with the id of the call it replays, `{"type": "action", "name": ...}`, or `{"type": "event", "kind": ..., "seq": ...}` for an event of the same session, without `seq` when a limit dropped it. `replayable: true` means `http.replay` can send it again. `finalUrl` is present only when a redirect ended somewhere else. `mock` is present on the HTTP events of a call a [mock rule](/docs/mocking/) changed: `respond`, `fail`, `delay` or `pause`. Limits never drop `http.paused`, `http.resumed` and `http.mocks`.
@@ -134,7 +135,7 @@ Export > Session file writes:
 }
 ```
 
-`kind` has no `devpul.` prefix. `run` groups events into one launch or hot restart; `tags` is present only when set.
+`kind` has no `devpul.` prefix. `run` groups events into one launch or hot restart; `tags` is present only when set. [devpul_test](/docs/testing/) writes the same format, one run per failing test, its failure an `error` with `source` `test`.
 
 The repository's [`contract/`](%REPO_URL%/tree/main/contract) folder holds sample events, a handshake and a session file that the Dart and UI tests both check.
 
