@@ -17,7 +17,7 @@ import 'server.dart';
 const usage = '''
 Usage: devpul [options] [vm-service-url]
        devpul [options] run [flutter run or dart run arguments]
-       devpul mcp [--port <n>] [vm-service-url]
+       devpul mcp [--port <n>] [vm-service-url | session-file]
        devpul add <plugin>[@version|#ref] [--path <dir>] [--yes]
        devpul remove <id>
        devpul list
@@ -38,7 +38,8 @@ one's tab.
 
 mcp serves what the app recorded to an agent over MCP on stdio: requests,
 logs, errors, events and actions. Without a URL it reads the app that the
-devpul on --port last connected to.
+devpul on --port last connected to. Given a session file, such as one
+devpul_test wrote for a failing test, it reads that.
 
 Options:
   --port <n>       UI port, default 7171. Settings and history are kept per port.
@@ -324,11 +325,19 @@ Future<int> _mcp(List<String> args) async {
     stdout.write(usage);
     return 0;
   }
-  await serveMcp(
-    version: (await devpulVersion()).toString(),
-    port: options.port ?? defaultPort,
-    vmUrl: options.rest.firstOrNull,
-  );
+  final target = options.rest.firstOrNull;
+  final file = target != null && File(target).existsSync() ? target : null;
+  try {
+    await serveMcp(
+      version: (await devpulVersion()).toString(),
+      port: options.port ?? defaultPort,
+      vmUrl: file == null ? target : null,
+      file: file,
+    );
+  } on FormatException catch (e) {
+    stderr.writeln('devpul: $target: ${e.message}');
+    return 1;
+  }
   return 0;
 }
 

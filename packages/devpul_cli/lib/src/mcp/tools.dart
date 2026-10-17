@@ -9,7 +9,7 @@ import 'store.dart';
 import 'vm.dart';
 
 const _instructions = '''
-Reads what DevPul recorded in a running Dart or Flutter app: HTTP requests, logs, errors with the steps before them, route changes and custom events. List tools return one line per item, oldest first, starting with its id; get_request and get_event take that id. Tools read the newest run (launch or hot restart) unless given another from get_session. Plugins answer handlers with their current state, such as database rows or router state; get_session lists them with the tool that calls each.''';
+Reads what DevPul recorded in a running Dart or Flutter app, or in a session file such as one a failing test wrote: HTTP requests, logs, errors with the steps before them, route changes and custom events. List tools return one line per item, oldest first, starting with its id; get_request and get_event take that id. Tools read the newest run (launch or hot restart) unless given another from get_session. Plugins answer handlers with their current state, such as database rows or router state; get_session lists them with the tool that calls each.''';
 
 /// The MCP server `devpul mcp` runs on stdio.
 base class DevpulMcp extends MCPServer with ToolsSupport {
@@ -79,8 +79,12 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
       }
     }
     return _json({
-      'vmServiceUrl': app.url,
-      'connected': app.connected,
+      if (app.file case final file?)
+        'file': file
+      else ...{
+        'vmServiceUrl': app.url,
+        'connected': app.connected,
+      },
       if (app.paused.isNotEmpty) 'pausedInDebugger': true,
       if (app.incompatible.isNotEmpty)
         'incompatible': app.incompatible.values.toSet().toList(),
@@ -349,6 +353,9 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
   /// The isolate of the run [args] picks, and its handshake read now:
   /// actions and handlers come and go.
   Future<(String, Map<String, Object?>)> _app(Map<String, Object?> args) async {
+    if (app.file != null) {
+      throw ToolException('A session file has no app to call.');
+    }
     final runs = _runs(args);
     final run = _store.runs.where((r) => runs.contains(r.key)).lastOrNull;
     final isolateId = run?.isolateId;

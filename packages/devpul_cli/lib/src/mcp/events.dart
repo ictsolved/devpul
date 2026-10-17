@@ -153,6 +153,53 @@ DevEvent? fromLogging(Map<String, Object?> event, {required String run}) {
   );
 }
 
+/// The events of a session file, as the UI's `fromSession` reads them.
+/// Throws a [FormatException] on anything else.
+List<DevEvent> fromSession(String text) {
+  final Object? parsed;
+  try {
+    parsed = jsonDecode(text);
+  } on FormatException {
+    throw const FormatException('Not a JSON file.');
+  }
+  if (parsed case {
+    'type': 'devpul.session',
+    'format': final Object? format,
+    'events': final List<Object?> events,
+  }) {
+    if (format != 1) {
+      throw FormatException(
+        'Session file format $format is not supported here; '
+        'this devpul reads format 1.',
+      );
+    }
+    return [
+      for (final e in events)
+        if (e case {
+          'kind': final String kind,
+          'run': final String run,
+          'session': final String session,
+          'seq': final num seq,
+          'ts': final num ts,
+          'data': final Map<String, Object?> data,
+        })
+          DevEvent(
+            kind: kind,
+            data: data,
+            tags: _stringMap(e['tags']),
+            session: session,
+            seq: seq.toInt(),
+            run: run,
+            isolate: _string(e['isolate']) ?? '',
+            isolateId: null,
+            ts: ts.toInt(),
+            size: jsonEncode(e).length,
+          ),
+    ];
+  }
+  throw const FormatException('Not a DevPul session file.');
+}
+
 /// The fields as `key: value` pairs, cut at [max] characters.
 String preview(DevEvent e, [int max = 200]) {
   final parts = <String>[];

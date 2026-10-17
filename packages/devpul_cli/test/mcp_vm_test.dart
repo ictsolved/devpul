@@ -334,4 +334,19 @@ void main() {
     expect(error, isTrue);
     expect(out, startsWith('No app is connected.'));
   });
+
+  test('reads a session file', () async {
+    final server = await startMcp(['../../contract/test_session.json']);
+    final session = await json(server, 'get_session');
+    expect(session['file'], '../../contract/test_session.json');
+    expect(session['app'], {'name': 'Shop', 'version': '2.3.1'});
+    final errors = await text(server, 'list_errors');
+    expect(errors, contains('TestFailure'));
+    final error = await json(server, 'get_event', {'id': idOf(errors)});
+    expect(error['before'], hasLength(3));
+    expect(await text(server, 'list_events'), contains('test name: cart'));
+    final (out, failed) = await call(server, 'run_action', {'name': 'Seed'});
+    expect(failed, isTrue);
+    expect(out, 'A session file has no app to call.');
+  });
 }

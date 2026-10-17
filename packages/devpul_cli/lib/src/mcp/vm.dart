@@ -23,12 +23,14 @@ final class ToolException implements Exception {
 
 /// The app's VM service, read into [store] as the UI's `Connection` does:
 /// handshake, backlog, then the Extension and Logging streams. [target]
-/// gives the URL to connect to on each [ensure].
+/// gives the URL to connect to on each [ensure]. With a [file], [store]
+/// holds that session file's events and there is nothing to connect to.
 final class AppConnection {
-  AppConnection(this.store, this.target);
+  AppConnection(this.store, this.target, {this.file});
 
   final Store store;
   final Future<String?> Function() target;
+  final String? file;
 
   String? url;
   VmService? _service;
@@ -50,6 +52,7 @@ final class AppConnection {
   /// Connects to the target unless already connected to it, and waits for
   /// the backlog. Throws a [ToolException] when there is no app.
   Future<void> ensure() {
+    if (file != null) return Future.value();
     final next = _queue.then((_) => _ensure());
     _queue = next.catchError((_) {});
     return next;
