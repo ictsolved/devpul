@@ -11,6 +11,7 @@ workspace:
   - packages/devpul_http
   - packages/devpul_flutter
   - packages/devpul_cli
+  - packages/devpul_test
   - contract/app
   - examples/devpul_example
   - plugins/bloc

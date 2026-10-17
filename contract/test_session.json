@@ -1,0 +1,70 @@
+{
+  "type": "devpul.session",
+  "format": 1,
+  "exported": 0,
+  "events": [
+    {
+      "kind": "app.session",
+      "run": "s1|test2",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 1,
+      "ts": 1767225600001,
+      "data": {
+        "name": "Shop",
+        "version": "2.3.1"
+      }
+    },
+    {
+      "kind": "test",
+      "run": "s1|test2",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 4,
+      "ts": 1767225600004,
+      "data": {
+        "name": "cart adds an item",
+        "suite": "test/fixtures/shop.dart"
+      }
+    },
+    {
+      "kind": "log",
+      "run": "s1|test2",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 5,
+      "ts": 1767225600005,
+      "data": {
+        "level": "debug",
+        "message": "Adding abc-1",
+        "name": "cart"
+      }
+    },
+    {
+      "kind": "cart.add",
+      "run": "s1|test2",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 6,
+      "ts": 1767225600006,
+      "data": {
+        "sku": "abc-1",
+        "qty": 2
+      }
+    },
+    {
+      "kind": "error",
+      "run": "s1|test2",
+      "isolate": "main",
+      "session": "s1",
+      "seq": 7,
+      "ts": 1767225600007,
+      "data": {
+        "source": "test",
+        "type": "TestFailure",
+        "message": "Expected: <1>\n  Actual: <2>\n",
+        "stack": "#0      main.<anonymous closure>.<anonymous closure> (file:///app/test/cart_test.dart:12:7)"
+      }
+    }
+  ]
+}

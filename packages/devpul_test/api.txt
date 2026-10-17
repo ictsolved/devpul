@@ -1,0 +1,8 @@
+environment:
+  sdk: ^3.8.0
+package:devpul_test/devpul_test.dart:
+  DevpulTest (class extends Object, abstract, final):
+    capture (static method: void Function({String directory}))
+dart:core:
+  Object (referenced)
+  String (referenced)

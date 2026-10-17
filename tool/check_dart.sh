@@ -7,13 +7,13 @@ dart format --output=none --set-exit-if-changed packages plugins examples contra
 dart analyze --fatal-infos
 # api_summary needs Dart 3.12, above the workspace floor, so it runs as a global tool.
 dart pub global list | grep -qx 'api_summary 1.2.0' || dart pub global activate api_summary 1.2.0
-for p in devpul devpul_dio devpul_http devpul_flutter; do
+for p in devpul devpul_dio devpul_http devpul_flutter devpul_test; do
   dart pub global run api_summary -p packages/$p --check
 done
 for app in contract/app examples/devpul_example; do
   (cd $app && dart ../../packages/devpul_cli/bin/devpul.dart sync --check)
 done
-for p in devpul devpul_dio devpul_http devpul_cli; do
+for p in devpul devpul_dio devpul_http devpul_cli devpul_test; do
   (cd packages/$p && dart test)
 done
 (cd plugins/bloc && dart test)

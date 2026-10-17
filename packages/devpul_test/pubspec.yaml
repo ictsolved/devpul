@@ -1,0 +1,22 @@
+name: devpul_test
+description: Records DevPul events during Dart and Flutter tests and writes a session file for each test that fails, to open in the DevPul browser UI.
+version: 1.1.0
+homepage: https://devpul.saradgajurel.com.np
+documentation: https://devpul.saradgajurel.com.np/docs/testing/
+repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_test
+issue_tracker: https://github.com/ictsolved/devpul/issues
+topics: [debugging, testing, logging, devtools]
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0
+  stack_trace: ^1.11.0
+  test_api: ^0.7.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.25.0
