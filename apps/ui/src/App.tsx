@@ -416,7 +416,8 @@ export function App() {
           const conn = connections.find((c) => c.id === info.conn);
           const name = appName(info.session) ?? (conn ? connectionLabel(conn.url) : 'app');
           const ver = str(info.session?.data.version);
-          return [info.run, `${name}${ver ? ` ${ver}` : ''} - ${formatTime(info.first)}`];
+          const label = str(info.test?.data.name) ?? `${name}${ver ? ` ${ver}` : ''}`;
+          return [info.run, `${label} - ${formatTime(info.first)}`];
         }),
       ),
     [runs, connections],

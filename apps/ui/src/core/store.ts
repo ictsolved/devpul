@@ -47,6 +47,8 @@ export interface RunInfo {
   info?: DevEvent;
   /** Latest `http.mocks` event of the run: the rules set. */
   mocks?: DevEvent;
+  /** First `test` event of the run: the test devpul_test recorded it in. */
+  test?: DevEvent;
   /** Event kinds seen, in order of arrival. */
   kinds: string[];
 }
@@ -349,6 +351,7 @@ export class Store implements ProfileLookup {
     if (e.kind === 'http.mocks' && (!run.mocks || byNewest(e, run.mocks) <= 0)) {
       run.mocks = e;
     }
+    if (e.kind === 'test' && (!run.test || byNewest(e, run.test) > 0)) run.test = e;
     this.runMap.set(e.run, run);
     this.runsSnapshot = null;
 

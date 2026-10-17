@@ -151,4 +151,20 @@ describe('contract', () => {
       ['pop /checkout', 'error Sync failed', 'replace /checkout', 'info Signed in', 'push /cart', 'push /'],
     ]);
   });
+
+  it('reads the session file devpul_test writes for a failing test', () => {
+    const store = new Store();
+    store.add(fromSession(readFileSync(contract('test_session.json'), 'utf8'), 'file', () => 0));
+    const [run, ...others] = store.runs.values();
+    expect(others).toEqual([]);
+    expect(run?.test?.data.name).toBe('cart adds an item');
+    expect(run?.session?.data.name).toBe('Shop');
+    const [error] = store.errors;
+    expect(error?.data).toMatchObject({ source: 'test', type: 'TestFailure' });
+    expect(breadcrumbs(store.all, store.httpRows, error!).map((c) => c.text)).toEqual([
+      'cart.add sku: abc-1, qty: 2',
+      'debug Adding abc-1',
+      'test name: cart adds an item, suite: test/fixtures/shop.dart',
+    ]);
+  });
 });

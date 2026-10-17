@@ -7,6 +7,7 @@
 - Replay: `DevpulHttp.request(replay:, replayBody:)` lets the UI and agents send an adapter's call again, edited or not, through the `http.sent` and `http.replay` handlers. The app keeps the last 100 such calls. The UI's request detail has Replay.
 - `DevpulCause` posts an event and names it as the cause of the HTTP calls made inside `run`. `http.request` carries `cause`: the call a replay repeats, an action run from the UI, or an event. The UI shows it under Started by and opens it on a click, marks such rows, filters them with `cause:`, and lists the calls an event started in its detail.
 - `Devpul.events` streams every event as it is posted.
+- Test capture: `devpul_test` writes a session file for each failing test; the UI names its run after the test, and `devpul mcp <file>` reads it.
 - Plugin API: `context.requests`, `context.onRequests` and `context.openRequest` give plugins the HTTP calls their events started.
 - The UI folds framework frames in stack traces, lists events by time, keeps `lifecycle` events out of Events until turned on, shows a run column only with more than one run, and leaves out what DDS replays from an ended run.
 
