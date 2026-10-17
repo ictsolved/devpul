@@ -64,13 +64,20 @@ export default {
   kinds: (kind) => kind.startsWith('bloc.'),
   renderTab(el, context) {
     const items = new Map();
+    // HTTP calls by the key of the bloc.event that started them, and the bloc of each such event.
+    const started = new Map();
+    const owner = new Map();
     let run = null;
     let selected = null;
     let shown = null;
 
     const apply = (e) => {
       // A restart starts over.
-      if (run !== null && e.run !== run) items.clear();
+      if (run !== null && e.run !== run) {
+        items.clear();
+        started.clear();
+        owner.clear();
+      }
       run = e.run;
       let item = items.get(e.data.id);
       if (!item) {
@@ -78,8 +85,23 @@ export default {
         items.set(item.id, item);
       }
       step(item, e);
-      if (item.history.length > 20) item.history.shift();
+      if (e.kind === 'bloc.event') owner.set(e.key, item.id);
+      if (item.history.length > 20) {
+        const gone = item.history.shift();
+        started.delete(gone.key);
+        owner.delete(gone.key);
+      }
       item.version++;
+    };
+
+    const link = (r) => {
+      const id = owner.get(r.event);
+      if (id === undefined) return;
+      let calls = started.get(r.event);
+      if (!calls) started.set(r.event, (calls = new Map()));
+      calls.set(r.key, r);
+      const item = items.get(id);
+      if (item) item.version++;
     };
 
     const list = document.createElement('ul');
@@ -149,11 +171,34 @@ export default {
           at.className = 'muted';
           at.textContent = `${new Date(e.ts).toLocaleTimeString()} ${e.kind.slice(5)}`;
           detail.append(at, context.ui.json(e.kind === 'bloc.event' ? e.data.event : e.data.next));
+          for (const r of started.get(e.key)?.values() ?? []) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = `${r.method} ${r.status ?? r.state} ${r.url}`;
+            style(button, {
+              display: 'block',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              border: '0',
+              background: 'transparent',
+              padding: '2px 0',
+              cursor: 'pointer',
+              color: 'var(--primary)',
+              fontFamily: 'var(--mono)',
+              fontSize: '12px',
+            });
+            button.onclick = () => context.openRequest(r.key);
+            detail.append(button);
+          }
         }
       }
     };
 
     for (const e of context.events) apply(e);
+    // DevPul 1.0 does not pass the calls events started.
+    for (const r of context.requests ?? []) link(r);
     draw();
     // The app's current values win over what events rebuilt; the next event
     // joins whatever run it belongs to.
@@ -169,6 +214,10 @@ export default {
       },
       () => {},
     );
+    context.onRequests?.((requests) => {
+      for (const r of requests) link(r);
+      draw();
+    });
     return context.onEvents((events) => {
       for (const e of events) apply(e);
       draw();
