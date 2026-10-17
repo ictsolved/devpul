@@ -12,6 +12,7 @@ package:devpul/devpul.dart:
     ansiColorsByDefault= (static setter: bool)
     config (static getter: DevpulConfig)
     enabled (static getter: bool)
+    events (static getter: Stream<({Map<String, Object?> event, String kind})>)
     included (static const getter: bool)
     route (static getter: String? Function()?)
     route= (static setter: String? Function()?)
@@ -96,6 +97,7 @@ package:devpul/devpul.dart:
 dart:async:
   Future (referenced)
   FutureOr (referenced)
+  Stream (referenced)
 dart:core:
   Duration (referenced)
   List (referenced)

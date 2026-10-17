@@ -105,6 +105,15 @@ abstract final class Devpul {
   /// `route`. `DevpulNavigatorObserver` sets it unless it is set.
   static String? Function()? route;
 
+  /// Every event as it is posted: [kind] without the `devpul.` prefix and
+  /// the envelope the UI reads. Listeners must not change it.
+  static Stream<({String kind, Map<String, Object?> event})> get events =>
+      _events.stream;
+  static final _events =
+      StreamController<({String kind, Map<String, Object?> event})>.broadcast(
+        sync: true,
+      );
+
   // Random per isolate, so ids stay unique across hot restarts and isolates.
   static final String _session = _randomId();
   static int _seq = 0;
@@ -486,6 +495,7 @@ abstract final class Devpul {
     _backlog.add(fullKind, event, size, _config.backlogSize);
     developer.postEvent(fullKind, event);
     debugOnPost?.call(kind, event);
+    if (_events.hasListener) _events.add((kind: kind, event: event));
     return seq;
   }
 

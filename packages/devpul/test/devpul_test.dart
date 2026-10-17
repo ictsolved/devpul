@@ -37,6 +37,16 @@ void main() {
     expect(event['data'], {'a': 1, 'v': 9});
   });
 
+  test('streams every posted event', () async {
+    final seen = <({String kind, Map<String, Object?> event})>[];
+    final sub = Devpul.events.listen(seen.add);
+    Devpul.emit('custom', {'a': 1});
+    await sub.cancel();
+    Devpul.emit('custom', {'a': 2});
+    expect(seen.single.kind, 'custom');
+    expect(seen.single.event, same(envelopes.first));
+  });
+
   test('increments seq', () {
     Devpul.emit('a', {});
     Devpul.emit('b', {});
