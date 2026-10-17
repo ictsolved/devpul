@@ -71,7 +71,19 @@ abstract final class DevpulFlutter {
     };
   }
 
-  static void _report(FlutterErrorDetails details) {
+  /// Wraps flutter_test's `reportTestException` so a failing `testWidgets`
+  /// test sends its exception to DevPul, for `DevpulTest.capture` in
+  /// `package:devpul_test`:
+  /// `reportTestException = DevpulFlutter.recordTestErrors(reportTestException);`
+  static void Function(FlutterErrorDetails details, String testDescription)
+  recordTestErrors(
+    void Function(FlutterErrorDetails details, String testDescription) report,
+  ) => (details, testDescription) {
+    if (Devpul.enabled) _report(details, test: true);
+    report(details, testDescription);
+  };
+
+  static void _report(FlutterErrorDetails details, {bool test = false}) {
     var nodes = const <DiagnosticsNode>[];
     Element? creator;
     Element? widget;
@@ -89,6 +101,23 @@ abstract final class DevpulFlutter {
     }
     // A route pushed in this frame goes out before an error in its build.
     flushRoutes(creator);
+    if (test) {
+      // The test runner prints the report, so no console line.
+      Devpul.emit('error', {
+        'source': 'test',
+        'type': details.exception.runtimeType.toString(),
+        'message': details.exception.toString(),
+        'library': details.library,
+        'context': details.context?.toDescription(),
+        'information': _information(nodes),
+        'widget': ?widget?.widget.runtimeType.toString(),
+        'route': ?_route(),
+        if (widget == null ? null : _location(widget) case final at?)
+          'location': {'file': at.file, 'line': at.line, 'column': at.column},
+        'stack': details.stack?.toString(),
+      });
+      return;
+    }
     Devpul.error(
       details.exception,
       details.stack,
@@ -100,6 +129,14 @@ abstract final class DevpulFlutter {
       location: widget == null ? null : _location(widget),
       silent: details.silent,
     );
+  }
+
+  static String? _route() {
+    try {
+      return Devpul.route?.call();
+    } catch (_) {
+      return null;
+    }
   }
 
   static ({String file, int line, int column})? _location(Element element) {

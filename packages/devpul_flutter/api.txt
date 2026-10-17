@@ -7,6 +7,7 @@ package:devpul_flutter/devpul_flutter.dart:
   DevpulFlutter (class extends Object, abstract, final):
     captureDebugPrint (static method: void Function())
     install (static method: void Function())
+    recordTestErrors (static method: void Function(FlutterErrorDetails, String) Function(void Function(FlutterErrorDetails, String)))
   DevpulNavigatorObserver (class extends NavigatorObserver):
     new (constructor: DevpulNavigatorObserver Function())
     didPop (method: void Function(Route<dynamic>, Route<dynamic>?))
@@ -15,6 +16,9 @@ package:devpul_flutter/devpul_flutter.dart:
     didReplace (method: void Function({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}))
 dart:core:
   Object (referenced)
+  String (referenced)
+package:flutter/src/foundation/assertions.dart:
+  FlutterErrorDetails (referenced)
 package:flutter/src/widgets/framework.dart:
   BuildContext (referenced)
   Widget (referenced)
