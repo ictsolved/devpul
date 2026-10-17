@@ -5,7 +5,7 @@
   "events": [
     {
       "kind": "app.session",
-      "run": "s1|test2",
+      "run": "s1",
       "isolate": "main",
       "session": "s1",
       "seq": 1,
@@ -17,7 +17,7 @@
     },
     {
       "kind": "test",
-      "run": "s1|test2",
+      "run": "s1",
       "isolate": "main",
       "session": "s1",
       "seq": 4,
@@ -29,7 +29,7 @@
     },
     {
       "kind": "log",
-      "run": "s1|test2",
+      "run": "s1",
       "isolate": "main",
       "session": "s1",
       "seq": 5,
@@ -42,7 +42,7 @@
     },
     {
       "kind": "cart.add",
-      "run": "s1|test2",
+      "run": "s1",
       "isolate": "main",
       "session": "s1",
       "seq": 6,
@@ -54,7 +54,7 @@
     },
     {
       "kind": "error",
-      "run": "s1|test2",
+      "run": "s1",
       "isolate": "main",
       "session": "s1",
       "seq": 7,

@@ -4,7 +4,7 @@ import 'package:devpul/devpul.dart';
 import 'package:devpul_test/devpul_test.dart';
 import 'package:test/test.dart';
 
-// Run by capture_test.dart: one test passes, one fails, one is skipped.
+// Run by capture_test.dart: one test passes, two fail, one is skipped.
 void main() {
   Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
   DevpulTest.capture(directory: Platform.environment['DEVPUL_OUT']!);
@@ -20,5 +20,7 @@ void main() {
     });
 
     test('checks out', () {}, skip: 'no payments here');
+
+    test('pays', () => throw StateError('declined'));
   });
 }

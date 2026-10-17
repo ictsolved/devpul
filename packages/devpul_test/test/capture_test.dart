@@ -18,12 +18,30 @@ void main() {
 
   tearDownAll(() => out.delete(recursive: true));
 
-  test('writes a session file for the failing test only', () {
+  test('writes a session file for each failing test only', () {
     expect(run.exitCode, 1, reason: '${run.stdout}${run.stderr}');
     final files = out.listSync(recursive: true).whereType<File>();
-    final path = '${out.path}/test/fixtures/shop/cart_adds_an_item.json';
-    expect([for (final f in files) f.path], [path]);
-    expect(run.stdout, contains('DevPul session file: $path'));
+    final dir = '${out.path}/test/fixtures/shop';
+    expect(
+      {for (final f in files) f.path},
+      {'$dir/cart_adds_an_item.json', '$dir/cart_pays.json'},
+    );
+    expect(run.stdout, contains('DevPul session file: $dir/cart_pays.json'));
+  });
+
+  test('keeps the files of two tests apart', () {
+    Set<String> keys(String name) {
+      final file = File('${out.path}/test/fixtures/shop/$name.json');
+      final session = jsonDecode(file.readAsStringSync()) as Map;
+      return {
+        for (final e in (session['events'] as List).cast<Map>())
+          '${e['session']}|${e['seq']}',
+      };
+    }
+
+    final pays = keys('cart_pays');
+    expect(pays, isNotEmpty);
+    expect(keys('cart_adds_an_item').intersection(pays), isEmpty);
   });
 
   test('holds the session, its events and the failure', () {
@@ -34,7 +52,7 @@ void main() {
       [for (final e in events) e['kind']],
       ['app.session', 'test', 'log', 'cart.add', 'error'],
     );
-    expect({for (final e in events) e['run']}, hasLength(1));
+    expect({for (final e in events) e['run']}, {events.first['session']});
     final error = events.last['data']! as Map<String, Object?>;
     expect(error['source'], 'test');
     expect(error['type'], 'TestFailure');
@@ -65,7 +83,7 @@ Object? normalize(Object? value) => switch (value) {
       key: switch (key) {
         'exported' => 0,
         'session' => 's1',
-        'run' => 's1|test2',
+        'run' => 's1',
         'ts' => 1767225600000 + (map['seq']! as int),
         'stack' =>
           '#0      main.<anonymous closure>.<anonymous closure> '

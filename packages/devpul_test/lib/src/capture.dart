@@ -93,7 +93,9 @@ final class _Recorder {
         if (!_events.contains(e)) e,
       ..._events,
     ];
-    final session = events.firstOrNull?.event['session'];
+    // A session per test: files of tests from one isolate repeat its
+    // app.session and app.info, and the UI would join runs that share a key.
+    final session = '${events.firstOrNull?.event['session']}-$_tests';
     return jsonEncode({
       'type': 'devpul.session',
       'format': 1,
@@ -102,10 +104,9 @@ final class _Recorder {
         for (final (:kind, :event) in events)
           {
             'kind': kind,
-            // One run per test, so tests from several files stay apart.
-            'run': '$session|test$_tests',
+            'run': session,
             'isolate': 'main',
-            'session': event['session'],
+            'session': session,
             'seq': event['seq'],
             'ts': event['ts'],
             'tags': ?event['tags'],
