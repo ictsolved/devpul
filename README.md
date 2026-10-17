@@ -82,7 +82,6 @@ The [example app](examples/devpul_example) uses every package.
 - Debug builds, and profile builds that opt in. Never release builds.
 - Events cross the VM service as JSON. Very large or very frequent events cost app memory and time; `maxValueLength`, `backlogSize` and `ignoreUrls` keep that bounded.
 - Configuration does not cross isolates.
-- No request replay or mocking.
 
 The [limits](https://devpul.saradgajurel.com.np/docs/limits/) page has the rest, and [DevPul, DevTools and talker](https://devpul.saradgajurel.com.np/docs/compare/) when another tool fits better.
 

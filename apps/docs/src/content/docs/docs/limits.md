@@ -44,7 +44,6 @@ Events are encoded as JSON on the app's isolate, about 0.1 ms for a 2 KB event i
 
 ## Other limits
 
-- No request replay, mocking or breakpoints on requests.
 - Calls from the UI into the app, such as actions and plugin requests, are disabled while the app is paused in the debugger and fail after 5 s without an answer.
 - Plugin sources are limited to 512 KB.
 - From Dart 3.14 the hosted site cannot connect to apps; use `devpul` or DevTools. Safari does not let it reach `127.0.0.1` on any version.
