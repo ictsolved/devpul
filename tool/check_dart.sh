@@ -22,3 +22,4 @@ done
 (cd packages/devpul && dart test -p chrome)
 (cd packages/devpul_flutter && flutter test)
 (cd packages/devpul_flutter && flutter test --no-track-widget-creation test/locations_test.dart)
+(cd examples/devpul_example && flutter test)

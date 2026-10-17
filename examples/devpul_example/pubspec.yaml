@@ -27,5 +27,10 @@ dependencies:
   sqflite_common: ">=2.4.0+2 <3.0.0"
   sqflite_common_ffi: ^2.3.0
 
+dev_dependencies:
+  devpul_test: ^1.0.0
+  flutter_test:
+    sdk: flutter
+
 flutter:
   uses-material-design: true
