@@ -32,9 +32,12 @@ void main() {
   test('keeps the files of two tests apart', () {
     Set<String> keys(String name) {
       final file = File('${out.path}/test/fixtures/shop/$name.json');
-      final session = jsonDecode(file.readAsStringSync()) as Map;
+      final session =
+          jsonDecode(file.readAsStringSync()) as Map<String, Object?>;
       return {
-        for (final e in (session['events'] as List).cast<Map>())
+        for (final e
+            in (session['events']! as List<Object?>)
+                .cast<Map<String, Object?>>())
           '${e['session']}|${e['seq']}',
       };
     }
