@@ -7,7 +7,8 @@ import 'package:flutter/widgets.dart';
 
 import 'inspector.dart';
 import 'navigator.dart';
-import 'simulator.dart' if (dart.library.io) 'simulator_io.dart';
+import 'platform.dart' if (dart.library.io) 'platform_io.dart';
+import 'report.dart';
 
 /// Reports Flutter framework errors, uncaught platform errors and app
 /// lifecycle changes to DevPul.
@@ -16,9 +17,10 @@ abstract final class DevpulFlutter {
   static bool _capturing = false;
   static bool _presenting = false;
 
-  /// Keeps the handlers already set, so crash reporters still run. Turns
-  /// console colors off on the iOS simulator unless `DevpulConfig.ansiColors`
-  /// is set.
+  /// Keeps the handlers already set, so crash reporters still run. Adds the
+  /// `flutter.screenshot` and `flutter.device` handlers a bug report reads.
+  /// Turns console colors off on the iOS simulator unless
+  /// `DevpulConfig.ansiColors` is set.
   static void install() {
     if (!Devpul.enabled || _installed) return;
     _installed = true;
@@ -45,6 +47,7 @@ abstract final class DevpulFlutter {
       return platformPrevious?.call(error, stack) ?? false;
     };
     _watchLifecycle();
+    handleReports();
   }
 
   // Creating the binding here would break an app or test that creates its

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:devpul/devpul.dart';
-import 'package:devpul/src/devpul.dart' show debugOnPost;
+import 'package:devpul/src/devpul.dart' show debugOnPost, debugRunCall;
 import 'package:devpul_flutter/devpul_flutter.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -75,6 +75,28 @@ void main() {
         'f1',
       ),
     );
+  });
+
+  testWidgets('flutter.device matches contract/device.json', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    tester.platformDispatcher
+      ..textScaleFactorTestValue = 1.3
+      ..accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        boldText: true,
+      );
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    Devpul.configure(const DevpulConfig(console: ConsoleMode.off));
+    DevpulFlutter.install();
+
+    final device = await debugRunCall('flutter.device') as Map<String, Object?>;
+    expectGolden('device.json', {
+      ...device,
+      'os': 'Android 15',
+      'flutter': '3.32.0',
+      'dart': '3.8.0',
+    });
   });
 }
 

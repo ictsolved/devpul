@@ -1,6 +1,7 @@
 ## 1.1.0
 
 - On devpul 1.1.0.
+- `install` registers the `flutter.screenshot` and `flutter.device` handlers, read by the UI's bug report and by agents.
 - `DevpulFlutter.recordTestErrors` wraps flutter_test's `reportTestException`, so `devpul_test` gets the exception a failing `testWidgets` test caught.
 - `DevpulFlutter.captureDebugPrint` leaves out Flutter's console report of an error that `install` already sent to the Errors tab.
 
