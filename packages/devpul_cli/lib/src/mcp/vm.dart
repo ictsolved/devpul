@@ -26,11 +26,14 @@ final class ToolException implements Exception {
 /// gives the URL to connect to on each [ensure]. With a [file], [store]
 /// holds that session file's events and there is nothing to connect to.
 final class AppConnection {
-  AppConnection(this.store, this.target, {this.file});
+  AppConnection(this.store, this.target, {this.file, this.report});
 
   final Store store;
   final Future<String?> Function() target;
   final String? file;
+
+  /// The bug report in [file], if it holds one.
+  final Map<String, Object?>? report;
 
   String? url;
   VmService? _service;

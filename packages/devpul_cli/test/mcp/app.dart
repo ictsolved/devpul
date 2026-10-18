@@ -20,6 +20,7 @@ void main() {
   Devpul.handle('cart.items', (_) => cart, description: 'Skus in the cart.');
   Devpul.handle('cart.clear', (_) => cart.clear(), writes: true);
   Devpul.handle('cart.token', (_) => 'secret', sensitive: true);
+  Devpul.handle('cart.photo', (_) => {'image': pixel, 'width': 1});
   Devpul.handle('flags.list', (_) => {'beta': true});
   Devpul.emit('route', {'action': 'push', 'route': '/cart'});
   Devpul.log('cart opened');
@@ -40,3 +41,7 @@ void main() {
   );
   ReceivePort();
 }
+
+// A 1x1 PNG.
+const pixel =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';

@@ -38,7 +38,7 @@ A fixed URL stops working when the app exits. `--port <n>` follows the devpul on
 
 ### Session files
 
-Given a session file in place of a URL, it reads that file: one the UI exported, or one [devpul_test](/docs/testing/) wrote for a failing test. `get_session` gives its `file`; `run_action` and the plugin calls have no app to call.
+Given a session file in place of a URL, it reads that file: one the UI exported, a [bug report](/docs/ui/#bug-reports), or one [devpul_test](/docs/testing/) wrote for a failing test. `get_session` gives its `file`, and a bug report's device with its screenshot as an image; `run_action` and the plugin calls have no app to call.
 
 ```sh
 devpul mcp build/devpul/test/cart_test/cart_adds_an_item.json
@@ -50,7 +50,7 @@ On connect it reads the app's backlog, as the UI does, then records live. Hot re
 
 | Tool                | Returns                                                                                                                                                |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `get_session`       | The app's session fields, devpul version, actions with their parameters, plugins with their handlers, rate limits and the runs recorded.               |
+| `get_session`       | The app's session fields, devpul version, actions with their parameters, plugins with their handlers, rate limits, the runs recorded, a bug report.    |
 | `list_requests`     | One line per request: id, time, method, status, duration, size, mock mode, what started it, URL. Filters: method, host, status range, state, text.     |
 | `get_request`       | One request with headers and bodies of request and response, or its error, and its cause.                                                              |
 | `list_errors`       | One line per error: id, time, type and message, route.                                                                                                 |
@@ -77,8 +77,9 @@ Plugins read the app through handlers it registers with [`Devpul.handle`](/docs/
 | Riverpod, Bloc | `riverpod.state`, `bloc.state`                                                                        |
 | Secure storage | `secure_storage.keys`; `secure_storage.read`, `secure_storage.write`, `secure_storage.delete` (write) |
 | Overrides      | `overrides.state`; `overrides.set` (write), from [`DevpulApp.builder`](/docs/flutter/#overrides)      |
+| devpul_flutter | `flutter.screenshot`, `flutter.device`, from [`DevpulFlutter.install()`](/docs/flutter/#bug-reports)  |
 
-`call_plugin` runs handlers that only read. `call_plugin_write` runs `writes` handlers and `sensitive` ones, such as reading a secure storage value or navigating; each tool refuses the other's handlers. The agent asks before a tool call unless you allowed the tool or set it to approve calls on its own, as Claude Code's auto mode does, so allow `call_plugin` and keep `call_plugin_write` on ask. In Claude Code that is `"allow": ["mcp__devpul__call_plugin"]` under `permissions` in its settings. The UI's Allow writes switch does not apply: it lives in the browser tab, not in the app. Results are cut at 20,000 characters like the other tools.
+`call_plugin` runs handlers that only read. `call_plugin_write` runs `writes` handlers and `sensitive` ones, such as reading a secure storage value or navigating; each tool refuses the other's handlers. The agent asks before a tool call unless you allowed the tool or set it to approve calls on its own, as Claude Code's auto mode does, so allow `call_plugin` and keep `call_plugin_write` on ask. In Claude Code that is `"allow": ["mcp__devpul__call_plugin"]` under `permissions` in its settings. The UI's Allow writes switch does not apply: it lives in the browser tab, not in the app. Results are cut at 20,000 characters like the other tools. Data images in a result, such as `flutter.screenshot`'s, come as images the model sees.
 
 ## Next to dart mcp-server
 

@@ -19,13 +19,17 @@ Future<void> serveMcp({
   String? file,
 }) async {
   final store = Store();
-  if (file != null) store.add(fromSession(await File(file).readAsString()));
+  final session = file == null
+      ? null
+      : fromSession(await File(file).readAsString());
+  if (session != null) store.add(session.events);
   final app = AppConnection(
     store,
     vmUrl != null
         ? () async => vmUrl
         : () async => (await RemoteServer.find(port))?.vmUrl(),
     file: file,
+    report: session?.report,
   );
   final server = DevpulMcp(
     stdioChannel(input: stdin, output: stdout),

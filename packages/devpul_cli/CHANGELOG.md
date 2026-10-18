@@ -1,6 +1,7 @@
 ## 1.1.0
 
-- `devpul mcp <session file>` reads a session file, such as one `devpul_test` wrote for a failing test.
+- `devpul mcp <session file>` reads a session file, such as one `devpul_test` wrote for a failing test. `get_session` gives a bug report's device, and its screenshot as an image.
+- `devpul mcp`: data images in a handler's result, such as `flutter.screenshot`'s, come back as images.
 - `devpul mcp`: `list_requests` and `get_request` show calls paused at a breakpoint, the mock rule that changed a call, and what started it; `get_request` gives the id `http.replay` takes.
 - `devpul create` writes `devpul.d.ts` with `context.requests`, `onRequests` and `openRequest`.
 

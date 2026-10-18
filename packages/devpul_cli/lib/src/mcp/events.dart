@@ -153,9 +153,11 @@ DevEvent? fromLogging(Map<String, Object?> event, {required String run}) {
   );
 }
 
-/// The events of a session file, as the UI's `fromSession` reads them.
-/// Throws a [FormatException] on anything else.
-List<DevEvent> fromSession(String text) {
+/// The events of a session file and its bug report, as the UI's
+/// `fromSession` reads them. Throws a [FormatException] on anything else.
+({List<DevEvent> events, Map<String, Object?>? report}) fromSession(
+  String text,
+) {
   final Object? parsed;
   try {
     parsed = jsonDecode(text);
@@ -165,7 +167,7 @@ List<DevEvent> fromSession(String text) {
   if (parsed case {
     'type': 'devpul.session',
     'format': final Object? format,
-    'events': final List<Object?> events,
+    'events': final List<Object?> list,
   }) {
     if (format != 1) {
       throw FormatException(
@@ -173,8 +175,8 @@ List<DevEvent> fromSession(String text) {
         'this devpul reads format 1.',
       );
     }
-    return [
-      for (final e in events)
+    final events = [
+      for (final e in list)
         if (e case {
           'kind': final String kind,
           'run': final String run,
@@ -196,6 +198,15 @@ List<DevEvent> fromSession(String text) {
             size: jsonEncode(e).length,
           ),
     ];
+    return (
+      events: events,
+      report: switch (parsed['report']) {
+        final Map<String, Object?> r
+            when r['ts'] is num && r['run'] is String =>
+          r,
+        _ => null,
+      },
+    );
   }
   throw const FormatException('Not a DevPul session file.');
 }

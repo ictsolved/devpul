@@ -9,6 +9,8 @@ import 'package:dart_mcp/client.dart';
 import 'package:dart_mcp/stdio.dart';
 import 'package:test/test.dart';
 
+import 'mcp/app.dart' show pixel;
+
 final devpul = File('bin/devpul.dart').absolute.path;
 
 /// `devpul mcp` with [args], connected and initialized.
@@ -128,6 +130,7 @@ void main() {
           },
           {'name': 'cart.clear', 'tool': 'call_plugin_write'},
           {'name': 'cart.token', 'tool': 'call_plugin_write'},
+          {'name': 'cart.photo', 'tool': 'call_plugin'},
         ],
       },
     ]);
@@ -258,6 +261,15 @@ void main() {
     expect(await json(server, 'call_plugin_write', {'name': 'cart.token'}), {
       'result': 'secret',
     });
+    final photo = await server.callTool(
+      CallToolRequest(name: 'call_plugin', arguments: {'name': 'cart.photo'}),
+    );
+    final [out, image] = photo.content;
+    expect(jsonDecode((out as TextContent).text), {
+      'result': {'image': 'image 1, attached', 'width': 1},
+    });
+    image as ImageContent;
+    expect('data:${image.mimeType};base64,${image.data}', pixel);
     for (final (tool, name, message) in [
       (
         'call_plugin',
@@ -348,5 +360,22 @@ void main() {
     final (out, failed) = await call(server, 'run_action', {'name': 'Seed'});
     expect(failed, isTrue);
     expect(out, 'A session file has no app to call.');
+  });
+
+  test('shows the bug report in a session file', () async {
+    final server = await startMcp(['../../contract/session.json']);
+    final result = await server.callTool(CallToolRequest(name: 'get_session'));
+    final [out, image] = result.content;
+    final session =
+        jsonDecode((out as TextContent).text) as Map<String, Object?>;
+    expect(session['report'], {
+      'taken': isA<String>(),
+      'run': 1,
+      'screenshot': {'image': 'image 1, attached', 'width': 1, 'height': 1},
+      'device': jsonDecode(
+        File('../../contract/device.json').readAsStringSync(),
+      ),
+    });
+    expect((image as ImageContent).mimeType, 'image/png');
   });
 }

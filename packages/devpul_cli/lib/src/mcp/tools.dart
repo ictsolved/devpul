@@ -19,7 +19,7 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
         instructions: _instructions,
       ) {
     for (final (tool, run)
-        in <(Tool, FutureOr<String> Function(Map<String, Object?>))>[
+        in <(Tool, FutureOr<Object> Function(Map<String, Object?>))>[
           (_getSession, _session),
           (_listRequests, _requests),
           (_getRequest, _request),
@@ -41,12 +41,14 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
 
   Future<CallToolResult> _guard(
     CallToolRequest request,
-    FutureOr<String> Function(Map<String, Object?> args) run,
+    FutureOr<Object> Function(Map<String, Object?> args) run,
   ) async {
     try {
       await app.ensure();
-      final text = await run(request.arguments ?? const {});
-      return CallToolResult(content: [TextContent(text: text)]);
+      final out = await run(request.arguments ?? const {});
+      return CallToolResult(
+        content: out is List<Content> ? out : [TextContent(text: '$out')],
+      );
     } on ToolException catch (e) {
       return CallToolResult(
         content: [TextContent(text: e.message)],
@@ -68,7 +70,7 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
     return {run.key};
   }
 
-  Future<String> _session(Map<String, Object?> args) async {
+  Future<Object> _session(Map<String, Object?> args) async {
     final latest = _store.latest;
     Map<String, Object?>? info = latest?.info?.data;
     if (latest?.isolateId case final id?) {
@@ -78,7 +80,16 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
         // The app.info event then.
       }
     }
-    return _json({
+    final (report, images) = _images(switch (app.report) {
+      final r? => {
+        'taken': _time((r['ts']! as num).toInt(), full: true),
+        'run': ?_store.runs.where((x) => x.key == r['run']).firstOrNull?.number,
+        'screenshot': ?r['screenshot'],
+        'device': ?r['device'],
+      },
+      _ => null,
+    });
+    final text = _json({
       if (app.file case final file?)
         'file': file
       else ...{
@@ -113,7 +124,11 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
             'events': r.events,
           },
       ],
+      'report': ?report,
     });
+    return images.isEmpty
+        ? text
+        : <Content>[TextContent(text: text), ...images];
   }
 
   /// Plugins with their handlers, by the `<plugin id>.` prefix, and the
@@ -386,7 +401,7 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
     return _json({'result': result['result']});
   }
 
-  Future<String> _call(Map<String, Object?> args, {required bool write}) async {
+  Future<Object> _call(Map<String, Object?> args, {required bool write}) async {
     final (isolateId, info) = await _app(args);
     final name = args['name'] as String;
     final handlers = {
@@ -417,11 +432,15 @@ base class DevpulMcp extends MCPServer with ToolsSupport {
       if (write) 'writes': 'true',
     });
     final max = (args['max_chars'] as int?) ?? _maxChars;
+    final (value, images) = _images(result['result']);
     // _cut drops null fields; a handler returning nothing says so.
-    return _json({
+    final text = _json({
       'result': null,
-      ..._cut({'result': result['result']}, max),
+      ..._cut({'result': value}, max),
     });
+    return images.isEmpty
+        ? text
+        : <Content>[TextContent(text: text), ...images];
   }
 }
 
@@ -469,8 +488,9 @@ final _getSession = Tool(
   description:
       'The connected app: name and version from its session, devpul '
       'version, actions with their parameters, plugins with their handlers '
-      'and the tool that calls each, rate limits, and the runs (launches '
-      'and hot restarts) recorded.',
+      'and the tool that calls each, rate limits, the runs (launches and '
+      'hot restarts) recorded, and a session file\'s bug report: device and '
+      'screenshot.',
   annotations: _readOnly,
   inputSchema: Schema.object(),
 );
@@ -618,9 +638,10 @@ final _callPlugin = Tool(
   name: 'call_plugin',
   description:
       'Calls a plugin handler that only reads, such as the rows of a SQL '
-      'query, the files list or the router state, and returns its result as '
-      'JSON. get_session lists the handlers with their arguments and the '
-      'tool for each.',
+      'query, the files list, the router state or a screenshot '
+      '(flutter.screenshot), and returns its result as JSON, with images '
+      'attached as images. get_session lists the handlers with their '
+      'arguments and the tool for each.',
   annotations: _readOnly,
   inputSchema: Schema.object(properties: _callParams, required: ['name']),
 );
@@ -640,6 +661,29 @@ final _callPluginWrite = Tool(
 );
 
 String _json(Object? value) => const JsonEncoder.withIndent(' ').convert(value);
+
+final _dataImage = RegExp(
+  r'^data:(image/(?:png|jpeg|gif|webp));base64,(.+)$',
+  dotAll: true,
+);
+
+/// [value] with each base64 data image replaced by a note, and the images,
+/// which a client shows the model as pictures rather than text.
+(Object?, List<ImageContent>) _images(Object? value) {
+  final images = <ImageContent>[];
+  Object? walk(Object? v) {
+    if (v is Map<String, Object?>) {
+      return {for (final e in v.entries) e.key: walk(e.value)};
+    }
+    if (v is List<Object?>) return [for (final e in v) walk(e)];
+    final m = v is String ? _dataImage.firstMatch(v) : null;
+    if (m == null) return v;
+    images.add(ImageContent(data: m[2]!, mimeType: m[1]!));
+    return 'image ${images.length}, attached';
+  }
+
+  return (walk(value), images);
+}
 
 String? _needle(Map<String, Object?> args) =>
     (args['text'] as String?)?.toLowerCase();
