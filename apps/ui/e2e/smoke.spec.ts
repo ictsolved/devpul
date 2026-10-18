@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { connect, expect, test } from './fixtures.ts';
 import { FakeDtd, FakeVm, fixtureEvents, PLUGIN } from './vm.ts';
 
+type JsonObject = Record<string, unknown>;
+
 const site = JSON.parse(readFileSync(join(import.meta.dirname, '../../../site.json'), 'utf8')) as {
   url: string;
   registry: string;
@@ -959,5 +961,51 @@ test.describe('with replay handlers', () => {
     await expect(page.getByRole('row', { name: /^77 replay of #6/ })).toBeVisible();
     await detail.getByRole('button', { name: /replay of #6/ }).click();
     await expect(detail.getByRole('button', { name: /cart\.checkout/ })).toBeVisible();
+  });
+});
+
+test.describe('with bug report handlers', () => {
+  const contract = (file: string) =>
+    JSON.parse(readFileSync(join(import.meta.dirname, '../../../contract', file), 'utf8')) as JsonObject;
+  const info = contract('info.json');
+  const pixel =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  test.use({
+    vmOptions: {
+      handlers: {
+        'flutter.screenshot': () => ({ image: pixel, width: 1, height: 1 }),
+        'flutter.device': () => contract('device.json'),
+      },
+    },
+  });
+
+  test('saves the screenshot and device with the events and shows them from the file', async ({ page, vm }) => {
+    await connect(page, vm);
+    // As devpul_flutter's install() adds its handlers after the first handshake.
+    const handlers = [...(info.handlers as JsonObject[]), { name: 'flutter.screenshot' }, { name: 'flutter.device' }];
+    vm.emit('app.info', { ...info, handlers });
+    await page.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('menuitem', { name: 'Bug report' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Bug report' });
+    await expect(dialog.getByRole('img', { name: 'Screenshot of the app' })).toBeVisible();
+    await expect(dialog).toContainText('360 x 800 at 3x');
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Save report' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^devpul-report-.*\.devpul\.json$/);
+    const path = await download.path();
+    const file = JSON.parse(readFileSync(path, 'utf8')) as { events: unknown[]; report: JsonObject };
+    expect(file.events.length).toBeGreaterThan(10);
+    expect(file.report).toMatchObject({ screenshot: { image: pixel }, device: contract('device.json') });
+    await expect(dialog).toBeHidden();
+
+    await page.locator('input[type=file]').setInputFiles(path);
+    await expect(dialog).toContainText('Shop 2.3.1');
+    await expect(dialog).toContainText('Android 15');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('menuitem', { name: 'Opened bug report' }).click();
+    await expect(dialog.getByRole('img', { name: 'Screenshot of the app' })).toBeVisible();
   });
 });

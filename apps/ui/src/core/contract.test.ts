@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { breadcrumbs } from './breadcrumbs';
 import { type DevEvent, fromVm, type JsonObject } from './events';
-import { fromSession, toSession } from './export';
+import { deviceRows, fromSession, type Report, toSession } from './export';
 import { parseInfo } from './info';
 import { describeRule, parsePaused, parseRules } from './mocks';
 import { readLocation } from './location';
@@ -34,6 +34,10 @@ function load(name: string): DevEvent[] {
 const core = load('events.json');
 const flutter = load('flutter.json');
 const events = [...core, ...flutter];
+
+// A 1x1 PNG.
+const PIXEL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 describe('contract', () => {
   it('parses every event into the right tab', () => {
@@ -111,13 +115,21 @@ describe('contract', () => {
   });
 
   it('writes contract/session.json and reads it back', () => {
-    const text = `${JSON.stringify(JSON.parse(toSession(events).replace(/"exported":\d+/, '"exported":0')), null, 2)}\n`;
+    const report: Report = {
+      ts: 1767225600100,
+      run: events[0]!.run,
+      screenshot: { image: PIXEL, width: 1, height: 1 },
+      device: read('device.json') as JsonObject,
+    };
+    const session = toSession(events, report).replace(/"exported":\d+/, '"exported":0');
+    const text = `${JSON.stringify(JSON.parse(session), null, 2)}\n`;
     if (process.env.DEVPUL_UPDATE_GOLDENS) writeFileSync(contract('session.json'), text);
     expect(readFileSync(contract('session.json'), 'utf8')).toBe(text);
-    const back = fromSession(text, 'file', () => 0);
+    const { events: back, report: backReport } = fromSession(text, 'file', () => 0);
     expect(back.map((e) => [e.key, e.kind, e.data, e.tags])).toEqual(
       events.map((e) => [e.key, e.kind, e.data, e.tags]),
     );
+    expect(backReport).toEqual(report);
 
     const store = new Store();
     store.add(back);
@@ -152,9 +164,23 @@ describe('contract', () => {
     ]);
   });
 
+  it('lists contract/device.json as a bug report shows it', () => {
+    expect(deviceRows(read('device.json') as JsonObject)).toEqual([
+      ['Platform', 'android'],
+      ['OS', 'Android 15'],
+      ['Build', 'debug'],
+      ['Flutter', '3.32.0, Dart 3.8.0'],
+      ['Locale', 'en-US'],
+      ['Window', '360 x 800 at 3x'],
+      ['Text scale', '1.3'],
+      ['Brightness', 'light'],
+      ['Accessibility', 'boldText'],
+    ]);
+  });
+
   it('reads the session file devpul_test writes for a failing test', () => {
     const store = new Store();
-    store.add(fromSession(readFileSync(contract('test_session.json'), 'utf8'), 'file', () => 0));
+    store.add(fromSession(readFileSync(contract('test_session.json'), 'utf8'), 'file', () => 0).events);
     const [run, ...others] = store.runs.values();
     expect(others).toEqual([]);
     expect(run?.test?.data.name).toBe('cart adds an item');

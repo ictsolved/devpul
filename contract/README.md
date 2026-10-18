@@ -10,7 +10,8 @@ What the Dart packages send and the UI reads, with session ids, times, durations
 | `call.json`         | An `ext.devpul.call` request, its result and a writes refusal.                                                                       |
 | `logging.json`      | `developer.log` records from the Logging stream, and the `getObject` and `invoke` answers that read the rest.                        |
 | `http_profile.json` | dart:io's `getHttpProfile` and `getHttpProfileRequest` answers for a JSON GET, a POST, a followed redirect and a refused connection. |
-| `session.json`      | A session file, format 1, holding both event files.                                                                                  |
+| `session.json`      | A session file, format 1, holding both event files and a bug report.                                                                 |
+| `device.json`       | devpul_flutter's `flutter.device` answer, which a bug report holds.                                                                  |
 | `breadcrumbs.json`  | The steps before each error in `events.json` and `flutter.json`, as `devpul mcp` builds them; the UI must build the same.            |
 
 `app/` is an app as devpul leaves it after adding plugins, and `registry.json` a plugin registry; `devpul_cli` tests check both. `create/my_plugin/` is what `devpul create my_plugin` writes; the UI's `tsc` checks its module and `devpul.d.ts` against the plugin types the UI implements.

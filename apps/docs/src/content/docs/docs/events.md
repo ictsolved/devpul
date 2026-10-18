@@ -137,6 +137,8 @@ Export > Session file writes:
 
 `kind` has no `devpul.` prefix. `run` groups events into one launch or hot restart; `tags` is present only when set. [devpul_test](/docs/testing/) writes the same format, one run per failing test, its failure an `error` with `source` `test`.
 
+A [bug report](/docs/ui/#bug-reports) adds `report`: `ts`, the `run` it was taken from, `screenshot` (`image` as a PNG data URL, `width` and `height` in physical pixels) and `device`, the answer of `flutter.device`. Readers that do not know it read the events.
+
 The repository's [`contract/`](%REPO_URL%/tree/main/contract) folder holds sample events, a handshake and a session file that the Dart and UI tests both check.
 
 ## Versioning

@@ -1,4 +1,4 @@
-import { type DevEvent, isObject, type Json, type JsonObject, str, stringMap, TRUNCATED } from './events';
+import { type DevEvent, isObject, type Json, type JsonObject, num, str, stringMap, TRUNCATED } from './events';
 import { headerValue } from './fetch';
 import type { HttpRow } from './store';
 
@@ -84,11 +84,45 @@ export function toHar(rows: readonly HttpRow[], version: string): string {
 const TYPE = 'devpul.session';
 export const SESSION_FORMAT = 1;
 
-export function toSession(events: readonly DevEvent[]): string {
+/** A bug report: the app's window and device when the session file was saved. */
+export interface Report {
+  ts: number;
+  /** The run the screenshot and device come from. */
+  run: string;
+  screenshot?: Screenshot;
+  /** `flutter.device`'s answer. */
+  device?: JsonObject;
+}
+
+export interface Screenshot {
+  /** A PNG data URL. */
+  image: string;
+  width: number;
+  height: number;
+}
+
+export function parseScreenshot(v: unknown): Screenshot | undefined {
+  if (!isObject(v) || !str(v.image)?.startsWith('data:image/')) return undefined;
+  const width = num(v.width);
+  const height = num(v.height);
+  return width && height ? { image: v.image as string, width, height } : undefined;
+}
+
+function parseReport(v: unknown): Report | undefined {
+  if (!isObject(v)) return undefined;
+  const ts = num(v.ts);
+  const run = str(v.run);
+  if (ts === undefined || run === undefined) return undefined;
+  const screenshot = parseScreenshot(v.screenshot);
+  return { ts, run, ...(screenshot && { screenshot }), ...(isObject(v.device) && { device: v.device }) };
+}
+
+export function toSession(events: readonly DevEvent[], report?: Report): string {
   return JSON.stringify({
     type: TYPE,
     format: SESSION_FORMAT,
     exported: Date.now(),
+    ...(report && { report }),
     events: events.map((e) => ({
       kind: e.kind,
       run: e.run,
@@ -103,7 +137,7 @@ export function toSession(events: readonly DevEvent[]): string {
 }
 
 /** Throws on anything that is not a DevPul session file this UI reads. */
-export function fromSession(text: string, conn: string, nextN: () => number): DevEvent[] {
+export function fromSession(text: string, conn: string, nextN: () => number): { events: DevEvent[]; report?: Report } {
   const parsed: unknown = JSON.parse(text);
   if (!isObject(parsed) || parsed.type !== TYPE || !Array.isArray(parsed.events)) {
     throw new Error('Not a DevPul session file.');
@@ -140,5 +174,45 @@ export function fromSession(text: string, conn: string, nextN: () => number): De
       size: JSON.stringify(e).length,
     });
   }
-  return out;
+  const report = parseReport(parsed.report);
+  return { events: out, ...(report && { report }) };
+}
+
+const round = (n: number) => Math.round(n * 100) / 100;
+
+/** `flutter.device`'s answer as labeled rows, keys it does not know last. */
+export function deviceRows(device: JsonObject): [string, string][] {
+  const {
+    platform,
+    os,
+    mode,
+    flutter,
+    dart,
+    locale,
+    width,
+    height,
+    pixelRatio,
+    textScale,
+    brightness,
+    accessibility,
+    ...rest
+  } = device;
+  const rows: [string, string | undefined][] = [
+    ['Platform', str(platform)],
+    ['OS', str(os)],
+    ['Build', str(mode)],
+    ['Flutter', str(flutter) && `${str(flutter)}${str(dart) ? `, Dart ${str(dart)}` : ''}`],
+    ['Locale', str(locale)],
+    [
+      'Window',
+      num(width) !== undefined && num(height) !== undefined
+        ? `${round(num(width)!)} x ${round(num(height)!)}${num(pixelRatio) ? ` at ${round(num(pixelRatio)!)}x` : ''}`
+        : undefined,
+    ],
+    ['Text scale', num(textScale) === undefined ? undefined : String(round(num(textScale)!))],
+    ['Brightness', str(brightness)],
+    ['Accessibility', Array.isArray(accessibility) && accessibility.length ? accessibility.join(', ') : undefined],
+    ...Object.entries(rest).map(([k, v]): [string, string] => [k, typeof v === 'string' ? v : JSON.stringify(v)]),
+  ];
+  return rows.filter((r): r is [string, string] => r[1] !== undefined);
 }

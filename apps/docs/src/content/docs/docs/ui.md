@@ -102,6 +102,12 @@ Settings lists the event kinds of each connected app. Mute a kind or cap it per 
 
 Exports contain whatever the app sent, tokens included. Use [redaction](/docs/api/#redaction) before sharing.
 
+## Bug reports
+
+More > **Bug report** takes a screenshot of the connected app and reads its device: platform, OS version, build mode, Flutter and Dart versions, locale, window size, text scale, brightness and accessibility settings. **Save report** writes them into a session file with every event on the page, for the tester to attach to the issue (GitHub takes `.json` files up to 25 MB). Opening the file shows the screenshot and device, and More > **Opened bug report** shows them again.
+
+The screenshot and device come from [`DevpulFlutter.install()`](/docs/flutter/#bug-reports) in devpul_flutter 1.1 or later; for other apps the file holds the events only. The screenshot is the Flutter window as it last drew, without platform views such as maps and web views. Check it for personal data before sharing.
+
 ## History
 
 DevPul keeps up to 50 MB of events by default, oldest dropped first, and stores them in the browser (IndexedDB), so a reload keeps them. Change the limit, turn storage off or clear it in Settings, which also shows how many events the limit dropped. Nothing leaves the browser.

@@ -14,7 +14,7 @@ import { approve } from './core/approvals';
 import type { Crumb } from './core/breadcrumbs';
 import { openInEditor } from './core/editor';
 import { type DevEvent, isObject, str } from './core/events';
-import { fromSession } from './core/export';
+import { fromSession, type Report, toSession } from './core/export';
 import { parseInfo } from './core/info';
 import { formatTime } from './core/json';
 import { type SourceLocation, shortPath } from './core/location';
@@ -28,7 +28,8 @@ import { RunNotice } from './features/connections/RunNotice';
 import { ConnectionBar, type ConnEntry } from './features/connections/ConnectionBar';
 import { ErrorsTab } from './features/errors/ErrorsTab';
 import { EventsTab } from './features/events/EventsTab';
-import { ExportItems } from './features/export/ExportItems';
+import { ExportItems, stamp } from './features/export/ExportItems';
+import { ReportDialog } from './features/export/ReportDialog';
 import { Home } from './features/home/Home';
 import { HttpTab } from './features/http/HttpTab';
 import { MocksDialog } from './features/http/MocksDialog';
@@ -44,6 +45,7 @@ import { SettingsDialog } from './features/settings/SettingsDialog';
 import { type Limited, StatusBar } from './features/status/StatusBar';
 import { cli, listenCli } from './lib/cli';
 import { devtools, hostDtd, hostUri, listenHost } from './lib/devtools';
+import { download } from './lib/download';
 import { onSite, pageUrl } from './lib/links';
 import { defaultSettings, load, save, type Settings, useStored } from './lib/storage';
 
@@ -90,6 +92,9 @@ export function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mocksOpen, setMocksOpen] = useState<{ run?: string; draft?: MockRule; note?: string } | null>(null);
+  // 'take' a report from a live app, or 'view' the last one opened from a file.
+  const [reportOpen, setReportOpen] = useState<'take' | 'view' | null>(null);
+  const [openedReport, setOpenedReport] = useState<Report | null>(null);
   const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [seenData, setSeenData] = useState(false);
@@ -295,9 +300,13 @@ export function App() {
   const importFile = useCallback(
     async (file: File) => {
       try {
-        const events = fromSession(await file.text(), `file:${file.name}`, nextN);
+        const { events, report } = fromSession(await file.text(), `file:${file.name}`, nextN);
         onEvents(events);
         flash(`Opened ${events.length} events from ${file.name}.`);
+        if (report) {
+          setOpenedReport(report);
+          setReportOpen('view');
+        }
       } catch (err) {
         flash(err instanceof SyntaxError ? 'Not a JSON file.' : String((err as Error).message ?? err));
       }
@@ -444,6 +453,12 @@ export function App() {
     (r: RunInfo) => appName(r.session) ?? connectionLabel(connections.find((c) => c.id === r.conn)?.url ?? r.conn),
     [connections],
   );
+
+  const reportApp = (run: string) => {
+    const r = runs.get(run);
+    const ver = str(r?.session?.data.version);
+    return r ? `${runName(r)}${ver ? ` ${ver}` : ''}` : 'The app';
+  };
 
   const pluginUrls = useMemo(() => [...settings.pluginUrls, ...cliPlugins], [settings.pluginUrls, cliPlugins]);
   const pluginOffers = usePlugins({
@@ -792,7 +807,12 @@ export function App() {
                 onSettings={openSettings}
                 onShortcuts={() => setShortcutsOpen(true)}
               >
-                <ExportItems store={store} onOpenFile={() => fileRef.current?.click()} />
+                <ExportItems
+                  store={store}
+                  onOpenFile={() => fileRef.current?.click()}
+                  onReport={openRuns.length ? () => setReportOpen('take') : undefined}
+                  onViewReport={openedReport ? () => setReportOpen('view') : undefined}
+                />
               </MoreMenu>
             </nav>
           </header>
@@ -969,6 +989,19 @@ export function App() {
         onKeep={(keepMocks) => setSettings({ ...latest.current.settings, keepMocks })}
         onSet={mocks.set}
         onClose={() => setMocksOpen(null)}
+      />
+      <ReportDialog
+        open={reportOpen !== null}
+        opened={
+          reportOpen === 'view' && openedReport ? { report: openedReport, app: reportApp(openedReport.run) } : undefined
+        }
+        apps={openRuns.map((run) => ({ run, name: runName(run) }))}
+        call={mocks.call}
+        onSave={(report) => {
+          download(`devpul-report-${stamp()}.devpul.json`, toSession(store.all, report));
+          setReportOpen(null);
+        }}
+        onClose={() => setReportOpen(null)}
       />
       <SettingsDialog
         open={settingsOpen}

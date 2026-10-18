@@ -64,7 +64,7 @@ describe('session files', () => {
   it('round trips events with fresh arrival numbers', () => {
     const original = events();
     let n = 100;
-    const back = fromSession(toSession(original), 'file', () => ++n);
+    const back = fromSession(toSession(original), 'file', () => ++n).events;
     expect(back.map((e) => e.key)).toEqual(original.map((e) => e.key));
     expect(back.map((e) => e.n)).toEqual([101, 102, 103, 104]);
     expect(back[0]?.data).toEqual(original[0]?.data);
@@ -74,6 +74,8 @@ describe('session files', () => {
   it('rejects other files and formats and skips broken events', () => {
     expect(() => fromSession('{"log":{}}', 'f', () => 1)).toThrow('Not a DevPul session file.');
     expect(() => fromSession('{"type":"devpul.session","format":2,"events":[]}', 'f', () => 1)).toThrow('format 2');
-    expect(fromSession('{"type":"devpul.session","format":1,"events":[{"kind":1},null]}', 'f', () => 1)).toEqual([]);
+    expect(fromSession('{"type":"devpul.session","format":1,"events":[{"kind":1},null]}', 'f', () => 1)).toEqual({
+      events: [],
+    });
   });
 });

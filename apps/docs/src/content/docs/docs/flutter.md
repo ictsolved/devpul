@@ -31,6 +31,10 @@ runZonedGuarded(
 );
 ```
 
+## Bug reports
+
+`install()` also registers two [handlers](/docs/api/#handlers) that run only when called: `flutter.screenshot`, the window as a PNG, and `flutter.device`, the platform, OS version, build mode, Flutter and Dart versions, locale, window size, text scale, brightness and accessibility settings. The UI's [bug report](/docs/ui/#bug-reports) reads both, and agents call them through [MCP](/docs/mcp/#plugin-handlers).
+
 ## Lifecycle
 
 `install()` also sends each app lifecycle change as a `lifecycle` event with `state`: `resumed`, `inactive`, `hidden`, `paused` or `detached`, as Flutter reports them, so the breadcrumbs before an error show whether the app had just come back from the background. On desktop and web the app goes `inactive` whenever its window or tab loses focus. Events lists them only with **Lifecycle** on.
