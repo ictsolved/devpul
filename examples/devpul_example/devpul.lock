@@ -16,6 +16,11 @@
       "version": "0.1.0",
       "hash": "a325fbc91169bf16f78ed01b5223f7fa3252f1bc238daafd3881562a66db6a42"
     },
+    "local_notifications": {
+      "url": "../../plugins/local_notifications",
+      "version": "0.1.0",
+      "hash": "0ec7fe97db24472e270bd7fb6dbc645e72149c7247056b043cee1f05442241c0"
+    },
     "riverpod": {
       "url": "../../plugins/riverpod",
       "version": "0.1.0",

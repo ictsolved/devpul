@@ -14,6 +14,7 @@ import 'package:devpul_http/devpul_http.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -63,10 +64,12 @@ void main() {
   DevpulFiles.install();
   DevpulSecureStorage.install(storage: storage);
   DevpulGoRouter.attach(router);
+  DevpulLocalNotifications.install();
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
   if (!kIsWeb) unawaited(_openShop());
+  if (!kIsWeb) unawaited(_initNotifications());
 }
 
 final container = ProviderContainer(observers: devpulRiverpodObservers());
@@ -208,6 +211,40 @@ void _closeSocket() {
   _socket?.sink.close(1000, 'Done');
   _socket = null;
 }
+
+// Something to look at in the Notifications tab; a tap opens the payload's
+// route.
+Future<void> _initNotifications() async {
+  await FlutterLocalNotificationsPlugin().initialize(
+    settings: const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+      macOS: DarwinInitializationSettings(),
+      linux: LinuxInitializationSettings(defaultActionName: 'Open'),
+      windows: WindowsInitializationSettings(
+        appName: 'DevPul example',
+        appUserModelId: 'com.example.devpul_example',
+        guid: '6f1d2c1e-8a4b-4f0e-9c3d-2b7a5e9f1c04',
+      ),
+    ),
+    onDidReceiveNotificationResponse: DevpulLocalNotifications.wrap((response) {
+      final payload = response.payload;
+      if (payload != null && payload.startsWith('/')) router.go(payload);
+    }),
+  );
+}
+
+var _notifications = 0;
+
+void _showNotification() => FlutterLocalNotificationsPlugin().show(
+  id: ++_notifications,
+  title: 'Order shipped',
+  body: 'Order $_notifications is on its way.',
+  payload: '/details/$_notifications',
+  notificationDetails: const NotificationDetails(
+    android: AndroidNotificationDetails('orders', 'Orders'),
+  ),
+);
 
 Database? shop;
 
@@ -445,6 +482,7 @@ class _HomePageState extends State<HomePage> {
     if (!kIsWeb) ('Write files', _writeFiles),
     ('WebSocket: send', _sendSocket),
     ('WebSocket: close', _closeSocket),
+    if (!kIsWeb) ('Notification: show', _showNotification),
     if (!kIsWeb)
       (
         'Background isolate',

@@ -17,6 +17,7 @@ dependencies:
   dio: ^5.2.0
   flutter:
     sdk: flutter
+  flutter_local_notifications: ">=20.0.0 <23.0.0"
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.0.0

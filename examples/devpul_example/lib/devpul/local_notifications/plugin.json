@@ -1,0 +1,15 @@
+{
+  "id": "local_notifications",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": "^1.0.0",
+  "description": "The app's flutter_local_notifications in a Notifications tab: scheduled and shown ones, the one that launched the app, responses, cancel, and a test one.",
+  "tags": ["notifications"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["DevpulLocalNotifications.install();"],
+  "requires": { "flutter_local_notifications": ">=20.0.0 <23.0.0" },
+  "source": "local_notifications.js",
+  "dart": "local_notifications.dart",
+  "files": ["icon.svg", "local_notifications.dart", "local_notifications.js"]
+}
