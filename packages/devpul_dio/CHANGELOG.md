@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Requires dio 5.3.1, the first with `FormData.clone`, which replay uses.
+
 ## 1.1.0
 
 - Acts on mock rules: answers, fails, delays or pauses calls, as the UI or an agent sets them. Mocked responses and failures pass through every interceptor, and a status that fails `validateStatus` throws as a real one does.
