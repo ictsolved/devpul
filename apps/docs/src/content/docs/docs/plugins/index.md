@@ -132,6 +132,7 @@ CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks 
 - [go_router](%REPO_URL%/tree/main/plugins/go_router), in the repository: an event per location change carries the match stack; the tab asks for the route tree once and calls `go` through a handler.
 - [web_socket_channel](%REPO_URL%/tree/main/plugins/web_socket_channel), in the repository: a wrapper the app puts around each channel sends an event per connect, message and close; the tab rebuilds each connection from them, asks a handler for the live ones and sends through a `writes` handler.
 - [local_notifications](%REPO_URL%/tree/main/plugins/local_notifications), in the repository: a handler returns scheduled and shown notifications with `null` for a list the platform does not have; a wrapper around the app's response callback sends taps as events; cancel and a test notification are `writes` handlers.
+- [app_links](%REPO_URL%/tree/main/plugins/app_links), in the repository: the app wraps its link stream, which sends an event per link; a handler returns the launch link, and a `writes` handler puts a test link on the wrapped stream.
 
 ## Security
 

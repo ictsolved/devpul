@@ -14,6 +14,7 @@ workspace:
   - packages/devpul_test
   - contract/app
   - examples/devpul_example
+  - plugins/app_links
   - plugins/bloc
   - plugins/files
   - plugins/go_router

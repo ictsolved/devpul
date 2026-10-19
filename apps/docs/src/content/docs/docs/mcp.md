@@ -76,6 +76,7 @@ Plugins read the app through handlers it registers with [`Devpul.handle`](/docs/
 | go_router      | `go_router.state`; `go_router.go` (write)                                                             |
 | WebSocket      | `web_socket_channel.connections`; `web_socket_channel.send` (write)                                   |
 | Notifications  | `local_notifications.list`; `local_notifications.show`, `local_notifications.cancel` (write)          |
+| Links          | `app_links.initial`; `app_links.open` (write)                                                         |
 | Riverpod, Bloc | `riverpod.state`, `bloc.state`                                                                        |
 | Secure storage | `secure_storage.keys`; `secure_storage.read`, `secure_storage.write`, `secure_storage.delete` (write) |
 | Overrides      | `overrides.state`; `overrides.set` (write), from [`DevpulApp.builder`](/docs/flutter/#overrides)      |
