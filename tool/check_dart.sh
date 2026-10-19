@@ -20,6 +20,7 @@ done
 (cd plugins/sqflite && dart test)
 (cd plugins/web_socket_channel && dart test)
 (cd plugins/go_router && flutter test)
+(cd plugins/local_notifications && flutter test)
 (cd packages/devpul && dart test -p chrome)
 (cd packages/devpul_flutter && flutter test)
 (cd packages/devpul_flutter && flutter test --no-track-widget-creation test/locations_test.dart)

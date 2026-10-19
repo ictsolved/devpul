@@ -17,6 +17,7 @@ workspace:
   - plugins/bloc
   - plugins/files
   - plugins/go_router
+  - plugins/local_notifications
   - plugins/riverpod
   - plugins/secure_storage
   - plugins/sqflite

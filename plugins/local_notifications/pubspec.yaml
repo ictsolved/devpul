@@ -1,0 +1,19 @@
+name: devpul_plugin_local_notifications
+description: Analyzes and tests the local_notifications plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ">=20.0.0 <23.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
