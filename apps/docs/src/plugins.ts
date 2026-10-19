@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Marked, type Tokens } from 'marked';
+import site from '../../../site.json' with { type: 'json' };
 
 /** A registry.json entry, as tool/build_registry.dart writes it. */
 export interface Listed {
@@ -109,7 +110,7 @@ export function pluginPages({ plugins, readmes }: Registry): Page[] {
     id: 'plugins',
     title: 'Plugins',
     description: 'Plugins for DevPul: tabs for app state and adapters, installed with devpul add.',
-    html: `<p><code>devpul add &lt;id&gt;</code> copies a plugin into your app, or runs <code>pub add</code> for a pub package. <a href="/docs/plugins/install/">Installing plugins</a> covers wiring and upgrades, <a href="/docs/plugins/#publishing">Writing plugins</a> how to list your own.</p>
+    html: `<p><code>devpul add &lt;id&gt;</code> copies a plugin into your app, or runs <code>pub add</code> for a pub package. <a href="/docs/plugins/install/">Installing plugins</a> covers wiring and upgrades, <a href="/docs/plugins/#publishing">Writing plugins</a> how to list your own. Missing one? <a href="${site.repo}/issues/new?template=plugin_request.yml">Request a plugin</a>.</p>
 ${cards ? `<ul class="plugin-cards not-content">${cards}</ul>` : '<p>No plugins listed yet.</p>'}`,
   };
 

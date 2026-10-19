@@ -41,6 +41,7 @@ describe('pluginPages', () => {
   it('writes the index and a page per plugin', () => {
     expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags', 'plugins/net']);
     expect(pages[0]?.html).toContain('<a href="/plugins/cart/">');
+    expect(pages[0]?.html).toContain('/issues/new?template=plugin_request.yml">Request a plugin</a>');
   });
 
   it('shows icons as masks and the README', () => {

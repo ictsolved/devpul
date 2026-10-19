@@ -1,0 +1,18 @@
+name: Plugin request
+description: Ask for a DevPul plugin for a package or kind of app state.
+title: 'Plugin: '
+labels: ['plugin request']
+body:
+  - type: input
+    id: package
+    attributes:
+      label: Package
+      description: The pub package or library the plugin is for, if any.
+      placeholder: https://pub.dev/packages/example
+  - type: textarea
+    id: show
+    attributes:
+      label: What it should show or do
+      description: The tab, events or actions you want, and what you use today instead.
+    validations:
+      required: true
