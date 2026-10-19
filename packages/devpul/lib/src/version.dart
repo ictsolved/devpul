@@ -1,2 +1,2 @@
 // Written by tool/release.dart.
-const packageVersion = '1.0.0';
+const packageVersion = '1.1.0';

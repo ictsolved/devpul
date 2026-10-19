@@ -9,7 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  devpul: ^1.0.0
+  devpul: ^1.1.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.0.0

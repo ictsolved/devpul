@@ -25,9 +25,9 @@ const HOME_PRIVACY =
   'mt-[18px] flex max-w-[560px] items-start gap-1.5 rounded-lg border bg-card px-3 py-2 text-left text-[12.5px]';
 
 const SETUP = `dependencies:
-  devpul: ^1.0.0
-  devpul_dio: ^1.0.0      # Dio, or devpul_http for package:http
-  devpul_flutter: ^1.0.0  # Flutter errors and routes`;
+  devpul: ^1.1.0
+  devpul_dio: ^1.1.0      # Dio, or devpul_http for package:http
+  devpul_flutter: ^1.1.0  # Flutter errors and routes`;
 
 const MAIN = `void main() {
   DevpulFlutter.install();

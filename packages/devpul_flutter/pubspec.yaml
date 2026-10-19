@@ -1,6 +1,6 @@
 name: devpul_flutter
 description: Flutter error hooks for DevPul. Sends FlutterError and uncaught platform errors to the DevPul browser UI.
-version: 1.0.0
+version: 1.1.0
 homepage: https://devpul.saradgajurel.com.np
 documentation: https://devpul.saradgajurel.com.np/docs/flutter/
 repository: https://github.com/ictsolved/devpul/tree/main/packages/devpul_flutter
@@ -14,12 +14,12 @@ environment:
 resolution: workspace
 
 dependencies:
-  devpul: ^1.0.0
+  devpul: ^1.1.0
   flutter:
     sdk: flutter
 
 dev_dependencies:
-  devpul_test: ^1.0.0
+  devpul_test: ^1.1.0
   flutter_test:
     sdk: flutter
   lints: ^6.1.0

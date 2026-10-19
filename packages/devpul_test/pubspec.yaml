@@ -13,7 +13,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  devpul: ^1.0.0
+  devpul: ^1.1.0
   stack_trace: ^1.11.0
   test_api: ^0.7.0
 

@@ -7,8 +7,8 @@ description: DevpulClient wraps any package:http client and shows its requests, 
 
 ```yaml
 dependencies:
-  devpul: ^1.0.0
-  devpul_http: ^1.0.0
+  devpul: ^1.1.0
+  devpul_http: ^1.1.0
 ```
 
 Or run `devpul add http`, which runs `pub add` for both.

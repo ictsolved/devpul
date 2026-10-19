@@ -6,7 +6,7 @@ Test capture for [DevPul](https://devpul.saradgajurel.com.np). Records what the 
 
 ```yaml
 dev_dependencies:
-  devpul_test: ^1.0.0
+  devpul_test: ^1.1.0
 ```
 
 ## Usage

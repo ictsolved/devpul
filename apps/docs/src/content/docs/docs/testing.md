@@ -7,7 +7,7 @@ description: devpul_test records DevPul events during dart test and flutter test
 
 ```yaml
 dev_dependencies:
-  devpul_test: ^1.0.0
+  devpul_test: ^1.1.0
 ```
 
 ## Dart
