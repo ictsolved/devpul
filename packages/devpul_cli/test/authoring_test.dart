@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:devpul_cli/src/cli.dart';
@@ -7,10 +8,12 @@ import 'package:devpul_cli/src/plugins/commands.dart' show Console, add;
 import 'package:devpul_cli/src/plugins/create.dart';
 import 'package:devpul_cli/src/plugins/fetch.dart';
 import 'package:devpul_cli/src/plugins/lock.dart';
+import 'package:devpul_cli/src/plugins/manifest.dart';
 import 'package:devpul_cli/src/plugins/render.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 import 'plugin_commands_test.dart' show copyDir, fakeApp;
 
@@ -146,6 +149,25 @@ void main() {
   test('the first-party plugins pass check', () {
     for (final plugin in Directory('../../plugins').listSync()) {
       if (plugin is Directory) expect(problems(plugin.path), isEmpty);
+    }
+  });
+
+  // Renovate widens the pubspec on a new major; requires has to follow.
+  test('the first-party plugins require what their pubspecs depend on', () {
+    for (final plugin in Directory('../../plugins').listSync()) {
+      if (plugin is! Directory) continue;
+      final manifest = Manifest.parse(
+        jsonDecode(File(p.join(plugin.path, 'plugin.json')).readAsStringSync()),
+      );
+      final pubspec =
+          loadYaml(File(p.join(plugin.path, 'pubspec.yaml')).readAsStringSync())
+              as YamlMap;
+      expect({...manifest.requires}..remove('flutter'), {
+        for (final MapEntry(:key, :value)
+            in (pubspec['dependencies'] as YamlMap).entries)
+          if (key != 'devpul' && value is String)
+            key as String: VersionConstraint.parse(value),
+      }, reason: plugin.path);
     }
   });
 
