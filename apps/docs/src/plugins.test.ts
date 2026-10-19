@@ -8,8 +8,8 @@ const registry: Registry = {
 };
 
 describe('renderReadme', () => {
-  it('drops HTML and unsafe links', () => {
-    const html = renderReadme(
+  it('drops HTML and unsafe links', async () => {
+    const html = await renderReadme(
       [
         '<script>alert(1)</script>',
         '',
@@ -30,13 +30,25 @@ describe('renderReadme', () => {
     expect(html).toContain('&lt;script&gt;x&lt;/script&gt;');
   });
 
-  it('drops a leading title and moves headings down a level', () => {
-    expect(renderReadme('# A\n\nText\n\n# B\n## C')).toBe('<p>Text</p>\n<h2>B</h2>\n<h3>C</h3>\n');
+  it('drops a leading title and moves headings down a level', async () => {
+    expect(await renderReadme('# A\n\nText\n\n# B\n## C')).toBe('<p>Text</p>\n<h2>B</h2>\n<h3>C</h3>\n');
+  });
+
+  it('hands code blocks to the site pipeline with only a plain language', async () => {
+    const fences: string[] = [];
+    const html = await renderReadme(
+      ['```dart title="<x>"', 'a ```` b', '```', '', '- ```js;alert(1)', '  c', '  ```', '', 'e', '', '    d'].join(
+        '\n',
+      ),
+      async (markdown) => `<figure>${fences.push(markdown)}</figure>`,
+    );
+    expect(fences).toEqual(['`````dart\na ```` b\n`````\n', '```\nc\n```\n', '```\nd\n```\n']);
+    expect(html).toBe('<figure>1</figure><ul>\n<li><figure>2</figure></li>\n</ul>\n<p>e</p>\n<figure>3</figure>');
   });
 });
 
-describe('pluginPages', () => {
-  const pages = pluginPages(registry);
+describe('pluginPages', async () => {
+  const pages = await pluginPages(registry);
 
   it('writes the index and a page per plugin', () => {
     expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags', 'plugins/net']);
