@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CopyButton } from '../../components/Copy';
 import { codeClass } from '../../components/JsonView';
 import { marketUrl, onSite, pageUrl, repoUrl } from '../../lib/links';
+import { tokenize, type Kind, type Lang } from './snippet';
 
 interface Props {
   icon: string;
@@ -62,6 +63,26 @@ const FEATURES = [
   { title: 'MCP', text: 'The same requests, logs, errors and actions for coding agents.', page: 'docs/mcp/' },
 ];
 
+const COLOR: Record<Kind, string> = {
+  key: 'text-json-key',
+  string: 'text-json-string',
+  number: 'text-json-number',
+  keyword: 'text-json-literal',
+  comment: 'text-muted-foreground',
+};
+
+function Code({ code, lang }: { code: string; lang: Lang }) {
+  return tokenize(code, lang).map((s, i) =>
+    s.kind ? (
+      <span key={i} className={COLOR[s.kind]}>
+        {s.text}
+      </span>
+    ) : (
+      s.text
+    ),
+  );
+}
+
 const NAV_LINK = 'text-muted-foreground hover:text-foreground';
 const SNIPPET = `${codeClass} mt-1.5 overflow-x-auto whitespace-pre`;
 // The cards scroll their code sideways; the packaged home wraps it.
@@ -109,7 +130,7 @@ export function Home({ icon, connect, tools, waiting, onOpenFile, onOpenPlugins 
               </p>
               <div className="flex w-full max-w-[420px] items-center gap-2 rounded-lg border bg-card py-1.5 pr-1.5 pl-3">
                 <code className="min-w-0 flex-1 overflow-x-auto font-mono text-xs whitespace-nowrap sm:text-[13px]">
-                  {INSTALL}
+                  <Code code={INSTALL} lang="sh" />
                 </code>
                 <CopyButton text={() => INSTALL} />
               </div>
@@ -142,16 +163,24 @@ export function Home({ icon, connect, tools, waiting, onOpenFile, onOpenPlugins 
             <ol className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <li className={CARD}>
                 <h3 className={CARD_TITLE}>1. Add the packages</h3>
-                <pre className={CARD_SNIPPET}>{SETUP}</pre>
-                <pre className={CARD_SNIPPET}>{MAIN}</pre>
+                <pre className={CARD_SNIPPET}>
+                  <Code code={SETUP} lang="yaml" />
+                </pre>
+                <pre className={CARD_SNIPPET}>
+                  <Code code={MAIN} lang="dart" />
+                </pre>
               </li>
               <li className={CARD}>
                 <h3 className={CARD_TITLE}>2. Install the CLI</h3>
-                <pre className={CARD_SNIPPET}>{INSTALL}</pre>
+                <pre className={CARD_SNIPPET}>
+                  <Code code={INSTALL} lang="sh" />
+                </pre>
               </li>
               <li className={CARD}>
                 <h3 className={CARD_TITLE}>3. Run</h3>
-                <pre className={CARD_SNIPPET}>devpul run</pre>
+                <pre className={CARD_SNIPPET}>
+                  <Code code="devpul run" lang="sh" />
+                </pre>
                 <p className="mt-2 text-muted-foreground">
                   In place of <code>flutter run</code>, with the same arguments. Or open the DevPul tab in DevTools from
                   your IDE.
@@ -226,11 +255,15 @@ export function Home({ icon, connect, tools, waiting, onOpenFile, onOpenPlugins 
             <ol className="list-decimal pl-5">
               <li className="my-2.5">
                 Add the packages:
-                <pre className={SNIPPET}>{SETUP}</pre>
+                <pre className={SNIPPET}>
+                  <Code code={SETUP} lang="yaml" />
+                </pre>
               </li>
               <li className="my-2.5">
                 Hook them up:
-                <pre className={SNIPPET}>{MAIN}</pre>
+                <pre className={SNIPPET}>
+                  <Code code={MAIN} lang="dart" />
+                </pre>
               </li>
               <li className="my-2.5">
                 Run the app in debug mode and click the DevPul link it prints.{' '}
