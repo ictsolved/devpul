@@ -92,7 +92,8 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
       // Asked on resume.
       if (!info || state?.status !== 'open' || isPaused(state, info.isolateId)) continue;
       for (const { id, version, origin, description, hash: reported } of parseInfo(info.data).plugins) {
-        const once = `${run.run}|${id}`;
+        // A hot reload can change a source within a run.
+        const once = `${run.run}|${id}|${reported}`;
         if (asked.current.has(once) || approvedAndCached(approvals, id, reported, (h) => cache.has(h))) continue;
         asked.current.add(once);
         void fetchOffer(info, id, call).then(
@@ -102,7 +103,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
             const hash = await sha256(source);
             sources.current.set(hash, source);
             setFetched((f) => ({
-              ...f,
+              ...Object.fromEntries(Object.entries(f).filter(([k]) => !k.startsWith(`${run.run}|${id}|`))),
               [once]: { id, version, origin, description, size: source.length, hash, app: appName(run) },
             }));
           },
@@ -118,7 +119,7 @@ export function usePlugins({ runs, states, approvals, urls, call, appName, onApp
         run.info
           ? parseInfo(run.info.data).plugins.map(({ id, hash }): Listed => ({
               id,
-              hash: fetched[`${run.run}|${id}`]?.hash ?? hash,
+              hash: fetched[`${run.run}|${id}|${hash}`]?.hash ?? hash,
             }))
           : [],
       ),

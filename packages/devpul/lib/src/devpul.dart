@@ -49,7 +49,7 @@ int? emitSeq(String kind, Map<String, Object?> data) =>
     Devpul._post(kind, data, limited: !kind.startsWith('app.'));
 
 /// What `ext.devpul.info` returns. Tests only.
-Map<String, Object?> debugInfo() => Devpul._info();
+Map<String, Object?> debugInfo() => Devpul._handshake();
 
 /// What `ext.devpul.plugin` returns. Tests only.
 String debugPluginSource(String id) => Devpul._pluginSource(id);
@@ -74,7 +74,25 @@ final class _Plugin {
   final String? origin;
   final String? description;
 
-  late final String hash = sha256Hex(source());
+  String? _text;
+  String _hash = '';
+
+  String get hash {
+    refresh();
+    return _hash;
+  }
+
+  /// Whether the source changed since it was last hashed, as a hot reload
+  /// that edits the generated file does.
+  bool refresh() {
+    final text = source();
+    if (identical(text, _text)) return false;
+    final first = _text == null;
+    final old = _hash;
+    _text = text;
+    _hash = sha256Hex(text);
+    return !first && _hash != old;
+  }
 }
 
 abstract final class Devpul {
@@ -361,6 +379,13 @@ abstract final class Devpul {
     return plugin.source();
   }
 
+  // The UI asks again after a hot reload, which may change a plugin's source.
+  static Map<String, Object?> _handshake() {
+    final changed = [for (final p in _plugins.values) p.refresh()];
+    if (changed.contains(true)) _infoChanged();
+    return _info();
+  }
+
   static Map<String, Object?> _info() => {
     'protocol': protocolVersion,
     'version': packageVersion,
@@ -571,7 +596,7 @@ final class _Backlog {
     // Before the handshake, so no app.info for them.
     Mocks.register(Devpul._addHandler);
     Replays.register(Devpul._addHandler);
-    _extension('info', (_) => Devpul._info());
+    _extension('info', (_) => Devpul._handshake());
     return true;
   }
 

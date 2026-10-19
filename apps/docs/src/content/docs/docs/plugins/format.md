@@ -157,19 +157,21 @@ abstract final class DevpulPlugins {
     if (!Devpul.included) return;
     Devpul.plugin(
       'cart',
-      () => r'''
-export default { ... };
-export const icon = "<svg ...>";
-''',
+      _cart,
       version: '1.2.0',
       origin: 'https://example.com/plugins.git',
       description: 'Cart contents and totals in a Cart tab.',
     );
   }
 }
+
+String _cart() => r'''
+export default { ... };
+export const icon = "<svg ...>";
+''';
 ```
 
-The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. A plugin with no `source` is exported and not offered. The handshake lists `origin`, the lock's `url`, and the manifest's `description`.
+The file is written whole from `devpul.lock` and the copied files, so it is never edited. Each plugin's `usage` is in the header. A plugin with no `source` is exported and not offered. The handshake lists `origin`, the lock's `url`, and the manifest's `description`. Each module is returned by a top-level function, so after `devpul sync` a hot reload hands the UI the new source and it asks to allow it again.
 
 - Not named `.g.dart`, so ignore rules for build_runner output leave it committed.
 - `// dart format off` keeps it the same under any formatter settings.

@@ -11,6 +11,7 @@
 - Bug reports: More > Bug report saves a session file with a screenshot and the device of a Flutter app, and the UI shows them when the file opens. Session files carry them in `report`.
 - Plugin API: `context.requests`, `context.onRequests` and `context.openRequest` give plugins the HTTP calls their events started.
 - The UI folds framework frames in stack traces, lists events by time, keeps `lifecycle` events out of Events until turned on, shows a run column only with more than one run, and leaves out what DDS replays from an ended run.
+- A plugin's source and hash follow a hot reload: the UI asks for `ext.devpul.info` again on `IsolateReload`, and the app posts `app.info` when a source changed.
 
 ## 1.0.0
 

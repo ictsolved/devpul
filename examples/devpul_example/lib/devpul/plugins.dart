@@ -41,7 +41,60 @@ abstract final class DevpulPlugins {
     if (!Devpul.included) return;
     Devpul.plugin(
       'bloc',
-      () => r'''
+      _bloc,
+      version: '0.2.0',
+      origin: '../../plugins/bloc',
+      description: 'Blocs and cubits in a Bloc tab: each one\'s current state and recent events.',
+    );
+    Devpul.plugin(
+      'files',
+      _files,
+      version: '0.1.0',
+      origin: '../../plugins/files',
+      description: 'The app\'s path_provider directories in a Files tab: sizes, preview, download and delete.',
+    );
+    Devpul.plugin(
+      'go_router',
+      _go_router,
+      version: '0.1.0',
+      origin: '../../plugins/go_router',
+      description: 'The app\'s GoRouter in a GoRouter tab: the route tree, the location and its matches, recent locations and a box that calls go.',
+    );
+    Devpul.plugin(
+      'riverpod',
+      _riverpod,
+      version: '0.1.0',
+      origin: '../../plugins/riverpod',
+      description: 'Riverpod providers in a Riverpod tab: each provider\'s current value and recent changes.',
+    );
+    Devpul.plugin(
+      'secure_storage',
+      _secure_storage,
+      version: '0.1.0',
+      origin: '../../plugins/secure_storage',
+      description: 'The app\'s flutter_secure_storage keys in a Secure storage tab: values hidden until revealed, add, edit and delete.',
+    );
+    Devpul.plugin(
+      'sqflite',
+      _sqflite,
+      version: '0.1.0',
+      origin: '../../plugins/sqflite',
+      description: 'The app\'s sqflite databases in an SQLite tab: tables and views, paged rows and a SQL console.',
+    );
+    Devpul.plugin(
+      'web_socket_channel',
+      _web_socket_channel,
+      version: '0.1.0',
+      origin: '../../plugins/web_socket_channel',
+      description: 'WebSockets in a WebSocket tab: each connection with its state and close, and the messages sent and received.',
+    );
+  }
+}
+
+// Functions, not closures: a hot reload keeps a closure's old code, so only
+// these hand DevPul a source that devpul sync changed.
+
+String _bloc() => r'''
 // The Bloc tab: every bloc and cubit with its current state and recent events.
 
 // What an event does to the bloc it names.
@@ -229,14 +282,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/></svg>";
-''',
-      version: '0.2.0',
-      origin: '../../plugins/bloc',
-      description: 'Blocs and cubits in a Bloc tab: each one\'s current state and recent events.',
-    );
-    Devpul.plugin(
-      'files',
-      () => r'''
+''';
+
+String _files() => r'''
 // The Files tab: the app's path_provider directories with sizes, preview, download and delete.
 
 const CHUNK = 1024 * 1024;
@@ -711,14 +759,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\"/></svg>";
-''',
-      version: '0.1.0',
-      origin: '../../plugins/files',
-      description: 'The app\'s path_provider directories in a Files tab: sizes, preview, download and delete.',
-    );
-    Devpul.plugin(
-      'go_router',
-      () => r'''
+''';
+
+String _go_router() => r'''
 // The GoRouter tab: the app's route tree, its location and match stack, recent locations and a box that calls go.
 
 const HISTORY = 50;
@@ -988,14 +1031,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 13v8\"/><path d=\"M12 3v3\"/><path d=\"M18 6a2 2 0 0 1 1.387.56l2.307 2.22a1 1 0 0 1 0 1.44l-2.307 2.22A2 2 0 0 1 18 13H6a2 2 0 0 1-1.387-.56l-2.306-2.22a1 1 0 0 1 0-1.44l2.306-2.22A2 2 0 0 1 6 6z\"/></svg>";
-''',
-      version: '0.1.0',
-      origin: '../../plugins/go_router',
-      description: 'The app\'s GoRouter in a GoRouter tab: the route tree, the location and its matches, recent locations and a box that calls go.',
-    );
-    Devpul.plugin(
-      'riverpod',
-      () => r'''
+''';
+
+String _riverpod() => r'''
 // The Riverpod tab: every provider with its current value and recent changes.
 
 // What an event does to the provider it names.
@@ -1132,14 +1170,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><path d=\"M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z\"/><path d=\"M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z\"/></svg>";
-''',
-      version: '0.1.0',
-      origin: '../../plugins/riverpod',
-      description: 'Riverpod providers in a Riverpod tab: each provider\'s current value and recent changes.',
-    );
-    Devpul.plugin(
-      'secure_storage',
-      () => r'''
+''';
+
+String _secure_storage() => r'''
 // The Secure storage tab: the app's flutter_secure_storage keys, each value read only when revealed.
 
 const style = (el, css) => Object.assign(el.style, css);
@@ -1383,14 +1416,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z\"/><circle cx=\"16.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/></svg>";
-''',
-      version: '0.1.0',
-      origin: '../../plugins/secure_storage',
-      description: 'The app\'s flutter_secure_storage keys in a Secure storage tab: values hidden until revealed, add, edit and delete.',
-    );
-    Devpul.plugin(
-      'sqflite',
-      () => r'''
+''';
+
+String _sqflite() => r'''
 // The SQLite tab: the databases the app passed to DevpulSqflite.add, their tables and views, and a SQL console.
 
 const PAGE = 100;
@@ -1796,14 +1824,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"/><path d=\"M3 5V19A9 3 0 0 0 21 19V5\"/><path d=\"M3 12A9 3 0 0 0 21 12\"/></svg>";
-''',
-      version: '0.1.0',
-      origin: '../../plugins/sqflite',
-      description: 'The app\'s sqflite databases in an SQLite tab: tables and views, paged rows and a SQL console.',
-    );
-    Devpul.plugin(
-      'web_socket_channel',
-      () => r'''
+''';
+
+String _web_socket_channel() => r'''
 // The WebSocket tab: each channel the app wrapped, its state and close, and the messages sent and received.
 
 const PREFIX = 'web_socket_channel.';
@@ -2192,10 +2215,4 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg>";
-''',
-      version: '0.1.0',
-      origin: '../../plugins/web_socket_channel',
-      description: 'WebSockets in a WebSocket tab: each connection with its state and close, and the messages sent and received.',
-    );
-  }
-}
+''';

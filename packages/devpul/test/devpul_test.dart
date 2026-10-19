@@ -145,6 +145,29 @@ void main() {
     expect(events[3].$2['stack'], isA<String>());
   });
 
+  test('info posts app.info when a plugin source changed', () async {
+    var source = 'export default {}';
+    Devpul.plugin('reloaded', () => source);
+    await pumpEventQueue();
+    String hash() =>
+        [
+              for (final p in debugInfo()['plugins']! as List)
+                if ((p as Map)['id'] == 'reloaded') p['hash'],
+            ].single
+            as String;
+    final before = hash();
+    events.clear();
+    debugInfo();
+    await pumpEventQueue();
+    expect(events, isEmpty);
+    source = 'export default { id: "reloaded" }';
+    final after = hash();
+    expect(after, isNot(before));
+    expect(debugPluginSource('reloaded'), source);
+    await pumpEventQueue();
+    expect(events.map((e) => e.$1), ['app.info']);
+  });
+
   test('info reports protocol, version, actions, plugins and limits', () async {
     Devpul.action('Clear cache', (_) => 3);
     Devpul.plugin(

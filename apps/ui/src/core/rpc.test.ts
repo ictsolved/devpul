@@ -237,6 +237,16 @@ describe('Connection pause state', () => {
     expect(events.map((e) => e.kind)).toEqual(['custom']);
   });
 
+  it('asks for info again after a hot reload', async () => {
+    const ws = await connect(vm('Resume'));
+    const infos = () => ws.methods().filter((m) => m === 'ext.devpul.info').length;
+    expect(infos()).toBe(1);
+    ws.notify('Isolate', { kind: 'IsolateReload', isolateGroup: { id: 'g1' } });
+    await settle();
+    expect(infos()).toBe(2);
+    expect(events.map((e) => e.kind)).toEqual(['custom']);
+  });
+
   it('forgets pause state on exit and on close', async () => {
     const ws = await connect(vm('PauseStart'));
     expect(conn.state.paused).toEqual([ISO]);

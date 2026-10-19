@@ -19,7 +19,25 @@ abstract final class DevpulPlugins {
     if (!Devpul.included) return;
     Devpul.plugin(
       'cart',
-      () => r'''
+      _cart,
+      version: '1.2.0',
+      origin: 'https://example.com/plugins.git',
+      description: 'Cart contents and totals in a Cart tab.',
+    );
+    Devpul.plugin(
+      'flags',
+      _flags,
+      version: '0.3.1',
+      origin: 'https://example.com/flags/plugin.json',
+      description: 'Feature flags the app reports, as a table.',
+    );
+  }
+}
+
+// Functions, not closures: a hot reload keeps a closure's old code, so only
+// these hand DevPul a source that devpul sync changed.
+
+String _cart() => r'''
 // The Cart tab: item count and total for each cart change.
 export default {
   api: 1,
@@ -32,14 +50,9 @@ export default {
   },
 };
 export const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"8\" cy=\"21\" r=\"1\"/><circle cx=\"19\" cy=\"21\" r=\"1\"/><path d=\"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12\"/></svg>";
-''',
-      version: '1.2.0',
-      origin: 'https://example.com/plugins.git',
-      description: 'Cart contents and totals in a Cart tab.',
-    );
-    Devpul.plugin(
-      'flags',
-      () => r'''
+''';
+
+String _flags() => r'''
 // The Flags tab: feature flags the app reports, as a table.
 export default {
   api: 1,
@@ -50,10 +63,4 @@ export default {
     el.append(context.ui.keyValues(e.data));
   },
 };
-''',
-      version: '0.3.1',
-      origin: 'https://example.com/flags/plugin.json',
-      description: 'Feature flags the app reports, as a table.',
-    );
-  }
-}
+''';

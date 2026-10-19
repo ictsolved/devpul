@@ -386,6 +386,12 @@ export class Connection {
       this.log(event);
       return;
     }
+    // A reload may change a plugin's source; the app then posts app.info. The
+    // event names only the isolate group.
+    if (streamId === 'Isolate' && event.kind === 'IsolateReload') {
+      for (const isolateId of this.runs.keys()) this.call(INFO, { isolateId }).catch(() => {});
+      return;
+    }
     if (!isObject(event.isolate) || typeof event.isolate.id !== 'string') return;
     const iso = event.isolate as IsolateRef;
     if (streamId === 'Debug') {

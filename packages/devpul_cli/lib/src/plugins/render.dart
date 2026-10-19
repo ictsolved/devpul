@@ -46,13 +46,15 @@ abstract final class DevpulPlugins {
   static void install() {
 ''');
   if (offers) out.write('    if (!Devpul.included) return;\n');
+  final sources = <String, String>{};
   for (final (:id, :entry, :manifest) in plugins) {
     final source = module(manifest, vendored[id]!);
     if (source == null) continue;
+    sources[id] = source;
     out.write('''
     Devpul.plugin(
       ${_string(id)},
-      () => ${multiline(source)},
+      _$id,
       version: ${_string('${entry.version}')},
       origin: ${_string(entry.url)},
       description: ${_string(manifest.description)},
@@ -60,6 +62,16 @@ abstract final class DevpulPlugins {
 ''');
   }
   out.write('  }\n}\n');
+  if (sources.isNotEmpty) {
+    out.write('''
+
+// Functions, not closures: a hot reload keeps a closure's old code, so only
+// these hand DevPul a source that devpul sync changed.
+''');
+  }
+  for (final MapEntry(key: id, value: source) in sources.entries) {
+    out.write('\nString _$id() => ${multiline(source)};\n');
+  }
   return out.toString();
 }
 
