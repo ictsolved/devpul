@@ -74,7 +74,7 @@ Plugins read the app through handlers it registers with [`Devpul.handle`](/docs/
 | sqflite        | `sqflite.databases`, `sqflite.query` (read-only SQL); `sqflite.execute` (any statement, write)        |
 | Files          | `files.roots`, `files.list`, `files.size`, `files.read`; `files.delete` (write)                       |
 | go_router      | `go_router.state`; `go_router.go` (write)                                                             |
-| WebSocket      | `web_socket_channel.connections`                                                                      |
+| WebSocket      | `web_socket_channel.connections`; `web_socket_channel.send` (write)                                   |
 | Riverpod, Bloc | `riverpod.state`, `bloc.state`                                                                        |
 | Secure storage | `secure_storage.keys`; `secure_storage.read`, `secure_storage.write`, `secure_storage.delete` (write) |
 | Overrides      | `overrides.state`; `overrides.set` (write), from [`DevpulApp.builder`](/docs/flutter/#overrides)      |

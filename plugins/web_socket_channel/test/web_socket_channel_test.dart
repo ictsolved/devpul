@@ -189,4 +189,69 @@ void main() {
     await channel.sink.close();
     expect(kinds().where((k) => k == 'web_socket_channel.send'), hasLength(2));
   });
+
+  test('sends a message from the tab, marked', () async {
+    final channel = DevpulWebSocketChannel.wrap(
+      WebSocketChannel.connect(url),
+      url,
+    );
+    await channel.ready;
+    final id = events.first.$2['id'];
+    final received = channel.stream.first;
+    expect(
+      await debugRunCall('web_socket_channel.send', {
+        'id': id,
+        'message': 'again',
+      }, true),
+      null,
+    );
+    expect(await received, 'again');
+    await channel.sink.close();
+    expect(all().sublist(2, 4), [
+      [
+        'web_socket_channel.send',
+        {'id': id, 'message': 'again', 'devpul': true},
+      ],
+      [
+        'web_socket_channel.receive',
+        {'id': id, 'message': 'again'},
+      ],
+    ]);
+  });
+
+  test('send needs writes, an open connection and a message', () async {
+    final channel = DevpulWebSocketChannel.wrap(
+      WebSocketChannel.connect(url),
+      url,
+    );
+    final id = events.first.$2['id'];
+    Future<Object?> send(Map<String, Object?> args, [bool writes = true]) =>
+        debugRunCall('web_socket_channel.send', args, writes);
+    Matcher refused(String message) =>
+        throwsA(predicate((e) => '$e' == message, message));
+
+    await expectLater(
+      send({'id': id, 'message': 'x'}),
+      refused('WebSocket $id is still connecting.'),
+    );
+    await channel.ready;
+    await expectLater(
+      send({'id': id, 'message': 'x'}, false),
+      refused(
+        'web_socket_channel.send changes the app; turn on Allow writes in '
+        'the Plugins tab.',
+      ),
+    );
+    await expectLater(send({'id': id}), refused('No message given.'));
+    await expectLater(
+      send({'id': 'nope', 'message': 'x'}),
+      refused('No open WebSocket with id nope.'),
+    );
+    await channel.sink.close();
+    await expectLater(
+      send({'id': id, 'message': 'x'}),
+      refused('No open WebSocket with id $id.'),
+    );
+    expect(kinds(), isNot(contains('web_socket_channel.send')));
+  });
 }

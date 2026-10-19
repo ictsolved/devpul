@@ -10,7 +10,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 abstract final class DevpulWebSocketChannel {
   /// Returns a channel over [channel] that sends its connection, the
   /// messages the app sends and receives, and its close to DevPul, under
-  /// [url]. Returns [channel] itself unless [Devpul.included].
+  /// [url]. With Allow writes on, the tab sends text on it. Returns
+  /// [channel] itself unless [Devpul.included].
   static WebSocketChannel wrap(WebSocketChannel channel, Uri url) {
     if (!Devpul.included) return channel;
     if (!_handling) {
@@ -21,6 +22,30 @@ abstract final class DevpulWebSocketChannel {
           'connections': [for (final c in _Channel._live.values) c._info()],
         },
         description: 'Open and connecting WebSockets with their URLs.',
+      );
+      Devpul.handle(
+        'web_socket_channel.send',
+        (args) {
+          final id = args['id'];
+          final channel = _Channel._live[id];
+          if (channel == null) {
+            throw _WebSocketError('No open WebSocket with id $id.');
+          }
+          if (!channel._open) {
+            throw _WebSocketError('WebSocket $id is still connecting.');
+          }
+          final message = args['message'];
+          if (message is! String) {
+            throw const _WebSocketError('No message given.');
+          }
+          channel.sink._add(message, devpul: true);
+          return null;
+        },
+        writes: true,
+        description:
+            'Sends a text message on an open WebSocket, as the app would; '
+            'its send event carries devpul: true. Args: id (from '
+            'web_socket_channel.connections), message.',
       );
     }
     return _Channel(channel, url);
@@ -103,9 +128,9 @@ final class _Channel extends StreamChannelMixin<dynamic>
   );
 
   @override
-  late final WebSocketSink sink = _Sink(this);
+  late final _Sink sink = _Sink(this);
 
-  void _message(String direction, Object? message) {
+  void _message(String direction, Object? message, {bool devpul = false}) {
     final redact = Devpul.config.redactBody;
     final value = redact == null ? message : redact(_url, message);
     Devpul.emit('web_socket_channel.$direction', {
@@ -117,6 +142,7 @@ final class _Channel extends StreamChannelMixin<dynamic>
         ),
       } else
         'message': value,
+      if (devpul) 'devpul': true,
     });
   }
 
@@ -148,8 +174,10 @@ final class _Sink implements WebSocketSink {
   WebSocketSink get _inner => _channel._inner.sink;
 
   @override
-  void add(dynamic data) {
-    _channel._message('send', data);
+  void add(dynamic data) => _add(data);
+
+  void _add(Object? data, {bool devpul = false}) {
+    _channel._message('send', data, devpul: devpul);
     _inner.add(data);
   }
 
@@ -173,4 +201,13 @@ final class _Sink implements WebSocketSink {
 
   @override
   Future<dynamic> get done => _inner.done;
+}
+
+final class _WebSocketError implements Exception {
+  const _WebSocketError(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
