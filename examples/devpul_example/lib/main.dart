@@ -22,6 +22,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'
     show databaseFactoryFfi, sqfliteFfiInit;
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'devpul/plugins.dart';
 
@@ -174,6 +175,38 @@ Future<void> _writeFiles() async {
   final image = await recorder.endRecording().toImage(64, 64);
   final png = await image.toByteData(format: ui.ImageByteFormat.png);
   await File('$dir/dot.png').writeAsBytes(png!.buffer.asUint8List());
+}
+
+// Something to look at in the WebSocket tab; the server echoes each message.
+final _echoUrl = Uri.parse('wss://echo.websocket.org');
+WebSocketChannel? _socket;
+var _pings = 0;
+
+void _sendSocket() {
+  final socket = _socket ??= _openSocket();
+  socket.sink
+    ..add(jsonEncode({'type': 'ping', 'n': ++_pings}))
+    ..add(Uint8List.fromList([0xca, 0xfe, _pings]));
+}
+
+WebSocketChannel _openSocket() {
+  final channel = DevpulWebSocketChannel.wrap(
+    WebSocketChannel.connect(_echoUrl),
+    _echoUrl,
+  );
+  channel.stream.listen(
+    (_) {},
+    onError: (Object _) {},
+    onDone: () {
+      if (identical(_socket, channel)) _socket = null;
+    },
+  );
+  return channel;
+}
+
+void _closeSocket() {
+  _socket?.sink.close(1000, 'Done');
+  _socket = null;
 }
 
 Database? shop;
@@ -410,6 +443,8 @@ class _HomePageState extends State<HomePage> {
         () => shop?.insert('order', _order(Random().nextInt(1000))),
       ),
     if (!kIsWeb) ('Write files', _writeFiles),
+    ('WebSocket: send', _sendSocket),
+    ('WebSocket: close', _closeSocket),
     if (!kIsWeb)
       (
         'Background isolate',

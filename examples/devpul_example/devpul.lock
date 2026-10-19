@@ -30,6 +30,11 @@
       "url": "../../plugins/sqflite",
       "version": "0.1.0",
       "hash": "2ee9c173f41caaba189d6ed358ed2484fa8c3d9b1ac982d418ffbd67efdb5aa3"
+    },
+    "web_socket_channel": {
+      "url": "../../plugins/web_socket_channel",
+      "version": "0.1.0",
+      "hash": "fc8049ceb833910502106db1b4f589695eeb7e39e494484b02214a7294fac139"
     }
   }
 }
