@@ -1,0 +1,15 @@
+{
+  "id": "web_socket_channel",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": "^1.0.0",
+  "description": "WebSockets in a WebSocket tab: each connection with its state and close, and the messages sent and received.",
+  "tags": ["network", "websocket"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["final channel = DevpulWebSocketChannel.wrap(WebSocketChannel.connect(url), url);"],
+  "requires": { "stream_channel": "^2.1.0", "web_socket_channel": "^3.0.0" },
+  "source": "web_socket_channel.js",
+  "dart": "web_socket_channel.dart",
+  "files": ["icon.svg", "web_socket_channel.dart", "web_socket_channel.js"]
+}

@@ -1,0 +1,16 @@
+name: devpul_plugin_web_socket_channel
+description: Analyzes and tests the web_socket_channel plugin in place. Not part of the plugin and not copied into apps.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+dependencies:
+  devpul: ^1.0.0
+  stream_channel: ^2.1.0
+  web_socket_channel: ^3.0.0
+
+dev_dependencies:
+  test: ^1.25.0

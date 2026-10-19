@@ -18,6 +18,7 @@ for p in devpul devpul_dio devpul_http devpul_cli devpul_test; do
 done
 (cd plugins/bloc && dart test)
 (cd plugins/sqflite && dart test)
+(cd plugins/web_socket_channel && dart test)
 (cd plugins/go_router && flutter test)
 (cd packages/devpul && dart test -p chrome)
 (cd packages/devpul_flutter && flutter test)
