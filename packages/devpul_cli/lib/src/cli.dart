@@ -214,16 +214,16 @@ Future<int> _plugins(List<String> args) async {
   final Source? source;
   try {
     parsed = parsePluginArgs(args);
+    if (parsed.flags.contains('--help')) {
+      stdout.write(usage);
+      return 0;
+    }
     source = parsed.command == 'add'
         ? parseSource(parsed.rest.single, path: parsed.options['--path'])
         : null;
   } on FormatException catch (e) {
     stderr.writeln('devpul: ${e.message}\n\n$usage');
     return 64;
-  }
-  if (parsed.flags.contains('--help')) {
-    stdout.write(usage);
-    return 0;
   }
   final terminal = stdin.hasTerminal && stdout.hasTerminal;
   final console = plugins.Console(
