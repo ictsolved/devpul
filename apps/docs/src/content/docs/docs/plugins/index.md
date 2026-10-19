@@ -130,7 +130,7 @@ CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks 
 - [Secure storage](%REPO_URL%/tree/main/plugins/secure_storage), in the repository: the tab lists keys and asks for one value when the user reveals it, so secrets stay in the app until then; add, edit and delete are `writes` handlers.
 - [sqflite](%REPO_URL%/tree/main/plugins/sqflite), in the repository: the app passes each database with `DevpulSqflite.add`; the tab sends SQL through a read handler, which refuses statements that write, and a `writes` handler for the rest.
 - [go_router](%REPO_URL%/tree/main/plugins/go_router), in the repository: an event per location change carries the match stack; the tab asks for the route tree once and calls `go` through a handler.
-- [web_socket_channel](%REPO_URL%/tree/main/plugins/web_socket_channel), in the repository: a wrapper the app puts around each channel sends an event per connect, message and close; the tab rebuilds each connection from them and asks a handler for the live ones.
+- [web_socket_channel](%REPO_URL%/tree/main/plugins/web_socket_channel), in the repository: a wrapper the app puts around each channel sends an event per connect, message and close; the tab rebuilds each connection from them, asks a handler for the live ones and sends through a `writes` handler.
 
 ## Security
 

@@ -34,7 +34,7 @@
     "web_socket_channel": {
       "url": "../../plugins/web_socket_channel",
       "version": "0.1.0",
-      "hash": "fc8049ceb833910502106db1b4f589695eeb7e39e494484b02214a7294fac139"
+      "hash": "9c16bf6d178dddc4183e6a3cf535ea34110b5901a004385dc575bab268bbbd01"
     }
   }
 }

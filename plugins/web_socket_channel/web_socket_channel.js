@@ -1,4 +1,4 @@
-// The WebSocket tab: each channel the app wrapped, its state and close, and the messages sent and received.
+// The WebSocket tab: each channel the app wrapped, its state and close, the messages sent and received, and a box that sends.
 
 const PREFIX = 'web_socket_channel.';
 // Messages kept and drawn per connection, newest first.
@@ -25,6 +25,12 @@ const CLOSE_CODES = {
 const STATES = { connecting: 'Connecting', open: 'Open', closed: 'Closed', failed: 'Failed' };
 
 const style = (el, css) => Object.assign(el.style, css);
+
+const shows = (el, on) => {
+  el.style.display = on ? '' : 'none';
+};
+
+const SEND_KEY = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd+Enter' : 'Ctrl+Enter';
 
 function h(tag, text, css) {
   const el = document.createElement(tag);
@@ -196,9 +202,65 @@ export default {
     const rows = h('div', undefined, { fontFamily: 'var(--mono)', fontSize: '12px' });
     const more = muted('', 'p');
 
+    // One box for every connection, so its text stays across a switch.
+    const box = h('div', undefined, { margin: '8px 0 12px' });
+    const input = h('textarea', undefined, {
+      display: 'block',
+      width: '100%',
+      boxSizing: 'border-box',
+      fontFamily: 'var(--mono)',
+      fontSize: '12px',
+      resize: 'vertical',
+    });
+    input.rows = 3;
+    input.spellcheck = false;
+    input.placeholder = `Text to send. ${SEND_KEY} sends.`;
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        send();
+      }
+    };
+    const sendButton = h('button', 'Send');
+    sendButton.type = 'button';
+    sendButton.onclick = () => send();
+    const bar = h('div', undefined, { display: 'flex', justifyContent: 'flex-end', marginTop: '6px' });
+    bar.append(sendButton);
+    const note = muted('', 'p');
+    box.append(input, bar, note);
+    const hint = muted('Turn on Allow writes in the Plugins tab to send.', 'p');
+    let sending = false;
+
+    const send = async () => {
+      const c = conns.get(selected);
+      if (!c || sending || !input.value) return;
+      sending = true;
+      sendButton.disabled = true;
+      try {
+        await context.request(`${PREFIX}send`, { id: c.id, message: input.value });
+        if (!alive) return;
+        input.value = '';
+        note.textContent = '';
+      } catch (err) {
+        if (alive) note.textContent = err instanceof Error ? err.message : String(err);
+      }
+      sending = false;
+      sendButton.disabled = false;
+    };
+
+    const canSend = () => context.writes && conns.get(selected)?.state === 'open';
+
+    const drawBox = () => {
+      const open = conns.get(selected)?.state === 'open';
+      shows(box, open && context.writes);
+      shows(hint, open && !context.writes);
+      for (const b of rows.querySelectorAll('[data-put]')) shows(b, canSend());
+    };
+
     const row = (e) => {
       const p = payload(e.data);
       const sent = e.kind === `${PREFIX}send`;
+      const ours = sent && e.data.devpul === true;
       const wrap = h('div', undefined, { borderBottom: '1px solid var(--border)' });
       const line = h('button', undefined, {
         display: 'grid',
@@ -215,13 +277,19 @@ export default {
       });
       line.type = 'button';
       const arrow = h('span', sent ? '↑' : '↓', { color: sent ? 'var(--primary)' : 'var(--success)' });
-      arrow.title = sent ? 'Sent' : 'Received';
-      line.append(
-        arrow,
-        muted(time(e.ts)),
-        muted(formatBytes(p.size), 'span', { textAlign: 'right' }),
-        h('span', preview(p), { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+      arrow.title = ours ? 'Sent from DevPul' : sent ? 'Sent' : 'Received';
+      const cell = h('span', undefined, { display: 'flex', gap: '8px', minWidth: '0' });
+      cell.append(
+        h('span', preview(p), {
+          flex: '1',
+          minWidth: '0',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }),
       );
+      if (ours) cell.append(muted('from DevPul', 'span', { flex: 'none', fontFamily: 'var(--sans)' }));
+      line.append(arrow, muted(time(e.ts)), muted(formatBytes(p.size), 'span', { textAlign: 'right' }), cell);
       let detail = null;
       line.onclick = () => {
         if (detail) {
@@ -245,7 +313,21 @@ export default {
           style(dump, { whiteSpace: 'pre', overflowX: 'auto' });
           detail.append(dump);
         } else {
-          detail.append(context.ui.copy(p.text, 'Copy'));
+          const actions = h('div', undefined, { display: 'flex', gap: '8px' });
+          actions.append(context.ui.copy(p.text, 'Copy'));
+          if (!p.cut) {
+            const put = h('button', 'Put in the box');
+            put.type = 'button';
+            put.dataset.put = '';
+            shows(put, canSend());
+            put.onclick = () => {
+              input.value = p.text;
+              note.textContent = '';
+              input.focus();
+            };
+            actions.append(put);
+          }
+          detail.append(actions);
           if (p.cut)
             detail.append(muted(`Cut at the app's maxValueLength; ${p.size.toLocaleString()} characters in all.`, 'p'));
           if (json) {
@@ -296,8 +378,10 @@ export default {
       if (shown !== c.id) {
         shown = c.id;
         drawn = 0;
-        main.replaceChildren(head, rows, more);
+        note.textContent = '';
+        main.replaceChildren(head, box, hint, rows, more);
       }
+      drawBox();
       if (!c.count) {
         rows.replaceChildren(muted('No messages yet.', 'p'));
         return;
@@ -379,9 +463,11 @@ export default {
       for (const e of events) apply(e);
       draw();
     });
+    const stopWrites = context.onWritesChange(() => drawDetail());
     return () => {
       alive = false;
       stop();
+      stopWrites();
     };
   },
 };

@@ -2,6 +2,8 @@
 
 A WebSocket tab for DevPul: each channel the app wraps, with its URL, state, protocol and close code and reason, and the messages it sends and receives, newest first. Click a message for its JSON tree or text, or a hex dump of a binary one. Each connect, open, message, error and close is also an event (`web_socket_channel.*`).
 
+With Allow writes on in the Plugins tab, a box under an open connection sends text on it through the app's channel, marked "from DevPul" in the list. An opened text message can be put in the box to edit and send again.
+
 ```sh
 devpul add web_socket_channel
 ```

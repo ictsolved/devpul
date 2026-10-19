@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "api": 1,
   "devpul": "^1.0.0",
-  "description": "WebSockets in a WebSocket tab: each connection with its state and close, and the messages sent and received.",
+  "description": "WebSockets in a WebSocket tab: each connection with its state and close, the messages sent and received, and a box that sends text.",
   "tags": ["network", "websocket"],
   "icon": "icon.svg",
   "readme": "README.md",
