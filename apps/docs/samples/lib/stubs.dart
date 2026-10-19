@@ -1,5 +1,6 @@
 // Names the samples use without defining them.
 
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

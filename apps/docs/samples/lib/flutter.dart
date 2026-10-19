@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:devpul/devpul.dart';
 import 'package:devpul_flutter/devpul_flutter.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import 'stubs.dart';

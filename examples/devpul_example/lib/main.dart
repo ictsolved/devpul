@@ -13,6 +13,7 @@ import 'package:devpul_flutter/devpul_flutter.dart';
 import 'package:devpul_http/devpul_http.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -336,6 +337,7 @@ class ExampleApp extends StatelessWidget {
       brightness: Brightness.dark,
       useMaterial3: true,
     ),
+    // ignore: deprecated_member_use
     localizationsDelegates: GlobalMaterialLocalizations.delegates,
     supportedLocales: const [Locale('en'), Locale('de'), Locale('ar')],
     routerConfig: router,

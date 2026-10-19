@@ -2,7 +2,9 @@ import 'package:devpul/devpul.dart';
 import 'package:devpul/src/devpul.dart'
     show debugInfo, debugOnPost, debugPluginSource, debugRunCall;
 import 'package:devpul_flutter/devpul_flutter.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/cupertino.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

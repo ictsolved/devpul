@@ -2,6 +2,7 @@ import 'package:devpul/devpul.dart';
 import 'package:devpul_dio/devpul_dio.dart';
 import 'package:devpul_flutter/devpul_flutter.dart';
 import 'package:dio/dio.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import 'stubs.dart';

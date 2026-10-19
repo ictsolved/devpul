@@ -16,10 +16,10 @@ const lines = (text: string) =>
   text
     .split('\n')
     .map((l) => l.trim())
-    .filter((l) => l && l !== "import 'stubs.dart';");
+    .filter((l) => l && l !== "import 'stubs.dart';" && !l.startsWith('// ignore:'));
 
-// Every Dart block in the docs and READMEs is a run of lines, indentation aside, of one file in
-// samples/, which dart analyze checks.
+// Every Dart block in the docs and READMEs is a run of lines, indentation and ignore comments aside,
+// of one file in samples/, which dart analyze checks.
 const samples = files('apps/docs/samples/lib', '.dart').map((f) => lines(readFileSync(join(root, f), 'utf8')));
 const pages = [
   ...files('apps/docs/src/content/docs', '.md'),
