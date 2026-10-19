@@ -43,6 +43,9 @@ const escape = (s: string) =>
 const external = (href: string) => /^(https?:|mailto:)/i.test(href);
 const link = (href: string, inner: string) => `<a href="${escape(href)}" rel="nofollow ugc noopener">${inner}</a>`;
 
+// Code blocks highlighted by the site's Markdown pipeline, per README render.
+const highlighted = new WeakMap<Tokens.Code, string>();
+
 // READMEs come from third parties: HTML is dropped, links keep http(s) and
 // mailto only, and images become links since the CSP blocks other hosts.
 const readme = new Marked({
@@ -53,6 +56,7 @@ const readme = new Marked({
       return `<h${level}>${this.parser.parseInline(tokens)}</h${level}>\n`;
     },
     html: () => '',
+    code: (token) => highlighted.get(token) ?? false,
     link({ href, tokens }) {
       const inner = this.parser.parseInline(tokens);
       return external(href) ? link(href, inner) : inner;
@@ -61,11 +65,26 @@ const readme = new Marked({
   },
 });
 
+/** Renders Markdown with the site's pipeline, which highlights code. */
+export type Render = (markdown: string) => Promise<string>;
+
+// A fence of only the code and a plain language name, so the README's info string adds nothing.
+function fence({ text, lang }: Tokens.Code): string {
+  const name = /^[\w#+.-]+$/.exec(lang?.match(/^\S*/)?.[0] ?? '')?.[0] ?? '';
+  const ticks = '`'.repeat(Math.max(3, ...(text.match(/`+/g) ?? []).map((run) => run.length + 1)));
+  return `${ticks}${name}\n${text}\n${ticks}\n`;
+}
+
 /** A README as HTML that is safe to put on the site, without a leading title. */
-export function renderReadme(markdown: string): string {
+export async function renderReadme(markdown: string, render?: Render): Promise<string> {
   const tokens = readme.lexer(markdown);
   const first = tokens.findIndex((t) => t.type !== 'space');
   if (tokens[first]?.type === 'heading' && (tokens[first] as Tokens.Heading).depth === 1) tokens.splice(first, 1);
+  if (render) {
+    const blocks: Tokens.Code[] = [];
+    readme.walkTokens(tokens, (t) => void (t.type === 'code' && blocks.push(t as Tokens.Code)));
+    await Promise.all(blocks.map(async (t) => highlighted.set(t, await render(fence(t)))));
+  }
   return readme.parser(tokens);
 }
 
@@ -99,7 +118,7 @@ export interface Page {
 }
 
 /** The marketplace: `/plugins/` and a page per plugin. */
-export function pluginPages({ plugins, readmes }: Registry): Page[] {
+export async function pluginPages({ plugins, readmes }: Registry, render?: (id: string) => Render): Promise<Page[]> {
   const cards = plugins
     .map(
       (p) =>
@@ -116,29 +135,31 @@ ${cards ? `<ul class="plugin-cards not-content">${cards}</ul>` : '<p>No plugins 
 
   return [
     index,
-    ...plugins.map((p) => {
-      const requires = Object.entries(p.requires ?? {}).map(([name, range]) => code(`${name} ${range}`));
-      const source = external(p.url) ? link(p.url, escape(p.url)) : escape(p.url);
-      const rows = [
-        ['Install', code(`devpul add ${p.id}`) + (p.package ? ` runs ${code(`pub add ${p.package}`)}` : '')],
-        ['Wiring', p.usage.map(code).join('<br />')],
-        ['Tab', p.api ? 'Yes' : 'No, sends events to the built-in tabs'],
-        ['devpul', p.devpul && code(p.devpul)],
-        ['Requires', requires.join('<br />')],
-        p.package
-          ? ['Package', link(p.url, escape(p.package))]
-          : ['Source', p.path ? `${source} ${code(p.path)}` : source],
-      ].filter(([, value]) => value);
-      const text = readmes[p.id];
-      return {
-        id: `plugins/${p.id}`,
-        title: p.id,
-        description: p.description,
-        html: `<p class="plugin-meta not-content">${iconOf(p)}<span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}${copyButton(`devpul add ${p.id}`)}${tagsOf(p)}</p>
+    ...(await Promise.all(
+      plugins.map(async (p) => {
+        const requires = Object.entries(p.requires ?? {}).map(([name, range]) => code(`${name} ${range}`));
+        const source = external(p.url) ? link(p.url, escape(p.url)) : escape(p.url);
+        const rows = [
+          ['Install', code(`devpul add ${p.id}`) + (p.package ? ` runs ${code(`pub add ${p.package}`)}` : '')],
+          ['Wiring', p.usage.map(code).join('<br />')],
+          ['Tab', p.api ? 'Yes' : 'No, sends events to the built-in tabs'],
+          ['devpul', p.devpul && code(p.devpul)],
+          ['Requires', requires.join('<br />')],
+          p.package
+            ? ['Package', link(p.url, escape(p.package))]
+            : ['Source', p.path ? `${source} ${code(p.path)}` : source],
+        ].filter(([, value]) => value);
+        const text = readmes[p.id];
+        return {
+          id: `plugins/${p.id}`,
+          title: p.id,
+          description: p.description,
+          html: `<p class="plugin-meta not-content">${iconOf(p)}<span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}${copyButton(`devpul add ${p.id}`)}${tagsOf(p)}</p>
 <p>${escape(p.description)}</p>
 <table><tbody>${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>
-${text ? renderReadme(text) : ''}`,
-      };
-    }),
+${text ? await renderReadme(text, render?.(p.id)) : ''}`,
+        };
+      }),
+    )),
   ];
 }

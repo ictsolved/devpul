@@ -119,7 +119,7 @@ To list a plugin on the [plugins page](/plugins/), so `devpul add <id>` finds it
 { "id": "cart", "url": "https://github.com/example/devpul-plugins.git", "path": "cart" }
 ```
 
-CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks on it and fails the pull request on any problem. Later versions need only a new tag; the next registry build lists them. The README is shown on the plugin's page as markdown without HTML, with images as links.
+CI fetches the newest tag as `devpul add` would, runs the `devpul check` checks on it and fails the pull request on any problem. Later versions need only a new tag; the next registry build lists them. The README is shown on the plugin's page as markdown without HTML, with images as links and code blocks highlighted by the language on their fence.
 
 ## Examples
 
