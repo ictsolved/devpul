@@ -9,6 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  app_links: ">=6.0.0 <8.0.0"
   bloc: ^9.1.0
   devpul: ^1.0.0
   devpul_dio: ^1.0.0

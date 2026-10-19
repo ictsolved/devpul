@@ -1,6 +1,11 @@
 {
   "format": 1,
   "plugins": {
+    "app_links": {
+      "url": "../../plugins/app_links",
+      "version": "0.1.0",
+      "hash": "230bf4ad3c0e545bd4bdee01683234f92aa89b7b80a82600bb234c4a1f9c1fc9"
+    },
     "bloc": {
       "url": "../../plugins/bloc",
       "version": "0.2.0",

@@ -6,6 +6,7 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:app_links/app_links.dart';
 import 'package:bloc/bloc.dart';
 import 'package:devpul/devpul.dart';
 import 'package:devpul_dio/devpul_dio.dart';
@@ -66,6 +67,7 @@ void main() {
   DevpulSecureStorage.install(storage: storage);
   DevpulGoRouter.attach(router);
   DevpulLocalNotifications.install();
+  DevpulAppLinks.wrap(AppLinks().uriLinkStream).listen(_openLink);
   runApp(
     UncontrolledProviderScope(container: container, child: const ExampleApp()),
   );
@@ -234,6 +236,14 @@ Future<void> _initNotifications() async {
     }),
   );
 }
+
+// Links such as example://app/details/7?tab=info open their path.
+void _openLink(Uri link) => router.go(
+  Uri(
+    path: link.path.isEmpty ? '/' : link.path,
+    query: link.hasQuery ? link.query : null,
+  ).toString(),
+);
 
 var _notifications = 0;
 

@@ -1,0 +1,15 @@
+{
+  "id": "app_links",
+  "version": "0.1.0",
+  "api": 1,
+  "devpul": "^1.0.0",
+  "description": "The app's incoming app_links in a Links tab: the initial link, each link received with its parts, and a box that opens a test link.",
+  "tags": ["navigation", "deep-links"],
+  "icon": "icon.svg",
+  "readme": "README.md",
+  "usage": ["final links = DevpulAppLinks.wrap(AppLinks().uriLinkStream);"],
+  "requires": { "app_links": ">=6.0.0 <8.0.0" },
+  "source": "app_links.js",
+  "dart": "app_links.dart",
+  "files": ["app_links.dart", "app_links.js", "icon.svg"]
+}
