@@ -7,6 +7,8 @@ import site from '../../../site.json' with { type: 'json' };
 export interface Listed {
   id: string;
   version: string;
+  /** When `version` was published: its tag's commit for git, pub.dev's date for packages. */
+  published?: string;
   api?: number;
   /** Absent on pub packages, as are `requires` and `path`. */
   devpul?: string;
@@ -109,11 +111,27 @@ const kindOf = (p: Listed) => (p.package ? '<span class="plugin-kind">pub</span>
 
 const code = (s: string) => `<code>${escape(s)}</code>`;
 
+const date = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+// GitHub shows the listed tag's folder; other hosts get the clone URL and the path in it.
+function sourceOf(p: Listed): string {
+  const repo = /^https:\/\/github\.com\/([\w.-]+\/[\w.-]+?)(?:\.git)?\/?$/.exec(p.url);
+  if (repo) {
+    const href = `https://github.com/${repo[1]}/tree/${p.id}-v${p.version}${p.path ? `/${p.path}` : ''}`;
+    return link(href, escape(`${repo[1]}${p.path ? `/${p.path}` : ''}`));
+  }
+  const source = external(p.url) ? link(p.url, escape(p.url)) : escape(p.url);
+  return p.path ? `${source} ${code(p.path)}` : source;
+}
+
 /** A page in the docs collection: `plugins` and `plugins/<id>`. */
 export interface Page {
   id: string;
   title: string;
   description: string;
+  /** Around the title: HTML before and after it, and a line below it. */
+  heading?: { before: string; after: string; below: string };
   html: string;
 }
 
@@ -137,25 +155,31 @@ ${cards ? `<ul class="plugin-cards not-content">${cards}</ul>` : '<p>No plugins 
     index,
     ...(await Promise.all(
       plugins.map(async (p) => {
-        const requires = Object.entries(p.requires ?? {}).map(([name, range]) => code(`${name} ${range}`));
-        const source = external(p.url) ? link(p.url, escape(p.url)) : escape(p.url);
+        const requires = Object.entries(p.requires ?? {}).map(([name, range]) =>
+          link(`https://pub.dev/packages/${encodeURIComponent(name)}`, code(`${name} ${range}`)),
+        );
+        const published = p.published
+          ? `<span>Published <time datetime="${escape(p.published)}">${date(p.published)}</time></span>`
+          : '';
         const rows = [
           ['Install', code(`devpul add ${p.id}`) + (p.package ? ` runs ${code(`pub add ${p.package}`)}` : '')],
           ['Wiring', p.usage.map(code).join('<br />')],
           ['Tab', p.api ? 'Yes' : 'No, sends events to the built-in tabs'],
           ['devpul', p.devpul && code(p.devpul)],
           ['Requires', requires.join('<br />')],
-          p.package
-            ? ['Package', link(p.url, escape(p.package))]
-            : ['Source', p.path ? `${source} ${code(p.path)}` : source],
+          p.package ? ['Package', link(p.url, escape(p.package))] : ['Source', sourceOf(p)],
         ].filter(([, value]) => value);
         const text = readmes[p.id];
         return {
           id: `plugins/${p.id}`,
           title: p.id,
           description: p.description,
-          html: `<p class="plugin-meta not-content">${iconOf(p)}<span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}${copyButton(`devpul add ${p.id}`)}${tagsOf(p)}</p>
-<p>${escape(p.description)}</p>
+          heading: {
+            before: iconOf(p),
+            after: `<span class="plugin-version">${escape(p.version)}</span>${copyButton(`devpul add ${p.id}`)}`,
+            below: published + kindOf(p) + tagsOf(p),
+          },
+          html: `<p>${escape(p.description)}</p>
 <table><tbody>${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>
 ${text ? await renderReadme(text, render?.(p.id)) : ''}`,
         };

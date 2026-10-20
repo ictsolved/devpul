@@ -99,9 +99,31 @@
   gap: 0.5rem;
 }
 
-.plugin-meta .plugin-icon {
+.plugin-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.plugin-title + .plugin-meta {
+  margin-top: 0.75rem;
+}
+
+.plugin-title h1 {
+  margin: 0;
+}
+
+.plugin-title .plugin-icon {
   width: 1.75rem;
   height: 1.75rem;
+}
+
+.plugin-title .plugin-version {
+  font-size: var(--sl-text-h1);
+  line-height: var(--sl-line-height-headings);
+  color: var(--sl-color-white);
 }
 
 .plugin-icon {

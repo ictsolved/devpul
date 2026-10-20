@@ -1,0 +1,21 @@
+---
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+// Plugin pages put the icon, version and install copy beside the title, and the date and tags below it.
+const { heading } = Astro.locals.starlightRoute.entry.data;
+---
+
+{
+  heading ? (
+    <>
+      <div class="plugin-title">
+        <Fragment set:html={heading.before} />
+        <Default />
+        <Fragment set:html={heading.after} />
+      </div>
+      {heading.below && <p class="plugin-meta" set:html={heading.below} />}
+    </>
+  ) : (
+    <Default />
+  )
+}

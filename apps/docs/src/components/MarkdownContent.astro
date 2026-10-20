@@ -5,7 +5,7 @@ import Default from '@astrojs/starlight/components/MarkdownContent.astro';
 <Default><slot /></Default>
 
 <script>
-  for (const button of document.querySelectorAll<HTMLButtonElement>('.sl-markdown-content [data-copy]')) {
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
     button.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(button.dataset.copy ?? '');

@@ -1,6 +1,7 @@
 import { docsLoader } from '@astrojs/starlight/loaders';
 import { docsSchema } from '@astrojs/starlight/schema';
 import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
 import type { Loader } from 'astro/loaders';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -31,7 +32,14 @@ function withRegistry(docs: Loader, dir = process.env.DEVPUL_REGISTRY): Loader {
       for (const page of await pluginPages(readRegistry(dir), render)) {
         const data = await context.parseData({
           id: page.id,
-          data: { title: page.title, description: page.description, tableOfContents: false, prev: false, next: false },
+          data: {
+            title: page.title,
+            description: page.description,
+            heading: page.heading,
+            tableOfContents: false,
+            prev: false,
+            next: false,
+          },
         });
         context.store.set({
           id: page.id,
@@ -45,5 +53,10 @@ function withRegistry(docs: Loader, dir = process.env.DEVPUL_REGISTRY): Loader {
 }
 
 export const collections = {
-  docs: defineCollection({ loader: withRegistry(docsLoader()), schema: docsSchema() }),
+  docs: defineCollection({
+    loader: withRegistry(docsLoader()),
+    schema: docsSchema({
+      extend: z.object({ heading: z.object({ before: z.string(), after: z.string(), below: z.string() }).optional() }),
+    }),
+  }),
 };
