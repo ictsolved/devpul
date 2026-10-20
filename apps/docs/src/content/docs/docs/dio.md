@@ -8,7 +8,7 @@ description: DevpulDioInterceptor shows Dio requests, responses, redirects and e
 ```yaml
 dependencies:
   devpul: ^1.1.0
-  devpul_dio: ^1.1.0
+  devpul_dio: ^1.1.1
 ```
 
 Or run `devpul add dio`, which runs `pub add` for both.

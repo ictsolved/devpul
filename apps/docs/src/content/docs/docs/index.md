@@ -15,7 +15,7 @@ DevPul shows what a running Dart or Flutter debug build is doing: HTTP calls wit
 ```yaml
 dependencies:
   devpul: ^1.1.0
-  devpul_dio: ^1.1.0 # if you use Dio
+  devpul_dio: ^1.1.1 # if you use Dio
   devpul_http: ^1.1.0 # if you use package:http
   devpul_flutter: ^1.1.0 # Flutter errors, debugPrint and routes
 ```

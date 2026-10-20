@@ -7,7 +7,7 @@ Dio interceptor for [DevPul](https://devpul.saradgajurel.com.np). Shows each req
 ```yaml
 dependencies:
   devpul: ^1.1.0
-  devpul_dio: ^1.1.0
+  devpul_dio: ^1.1.1
 ```
 
 ## Usage

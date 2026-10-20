@@ -12,7 +12,7 @@ dependencies:
   app_links: ">=6.0.0 <8.0.0"
   bloc: ^9.1.0
   devpul: ^1.1.0
-  devpul_dio: ^1.1.0
+  devpul_dio: ^1.1.1
   devpul_flutter: ^1.1.0
   devpul_http: ^1.1.0
   dio: ^5.2.0

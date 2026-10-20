@@ -20,7 +20,7 @@ Everything runs in your browser. Requests, headers and bodies go from your app t
    ```yaml
    dependencies:
      devpul: ^1.1.0
-     devpul_dio: ^1.1.0 # Dio
+     devpul_dio: ^1.1.1 # Dio
      devpul_http: ^1.1.0 # package:http
      devpul_flutter: ^1.1.0 # Flutter errors, debugPrint and routes
    ```
