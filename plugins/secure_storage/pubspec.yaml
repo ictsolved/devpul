@@ -9,7 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  devpul: ^1.1.0
+  devpul: ^1.1.1
   flutter:
     sdk: flutter
   flutter_secure_storage: ">=9.0.0 <12.0.0"

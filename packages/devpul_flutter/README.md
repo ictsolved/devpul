@@ -6,7 +6,7 @@ Flutter hooks for [DevPul](https://devpul.saradgajurel.com.np). Sends `FlutterEr
 
 ```yaml
 dependencies:
-  devpul: ^1.1.0
+  devpul: ^1.1.1
   devpul_flutter: ^1.1.0
 ```
 

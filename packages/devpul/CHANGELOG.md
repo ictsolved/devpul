@@ -1,3 +1,8 @@
+## 1.1.1
+
+- The README lists the plugins and the ways to open DevPul.
+- The UI's home page highlights its code snippets.
+
 ## 1.1.0
 
 - Mock rules for HTTP calls, set from the UI or by agents through the `http.mocks.set` handler: respond with a status, headers and body, fail as a network error, delay, or pause the request or response to edit it before it goes on. Rules live in the app until it restarts; the UI can keep them per app and send them to the next run.

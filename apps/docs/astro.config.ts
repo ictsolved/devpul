@@ -98,6 +98,7 @@ export default defineConfig({
       customCss: ['../ui/src/tokens.css', './src/styles/theme.css'],
       components: {
         MarkdownContent: './src/components/MarkdownContent.astro',
+        PageTitle: './src/components/PageTitle.astro',
         SocialIcons: './src/components/SocialIcons.astro',
         ThemeProvider: './src/components/ThemeProvider.astro',
         ThemeSelect: './src/components/ThemeSelect.astro',

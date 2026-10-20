@@ -10,7 +10,7 @@ resolution: workspace
 
 dependencies:
   app_links: ">=6.0.0 <8.0.0"
-  devpul: ^1.1.0
+  devpul: ^1.1.1
   flutter:
     sdk: flutter
 

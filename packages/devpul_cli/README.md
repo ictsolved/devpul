@@ -22,6 +22,8 @@ devpul create my_plugin      # start a plugin
 devpul --help                # every command and flag
 ```
 
+`devpul add` takes riverpod, bloc, go_router, app_links, web_socket_channel, files, secure_storage, sqflite and local_notifications, and any plugin on the [plugins page](https://devpul.saradgajurel.com.np/plugins/).
+
 The [command line](https://devpul.saradgajurel.com.np/docs/cli/) page has every command and flag, [agents](https://devpul.saradgajurel.com.np/docs/mcp/) the MCP setup; [installing plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/) and [writing plugins](https://devpul.saradgajurel.com.np/docs/plugins/) the plugin workflow.
 
 ## Limits

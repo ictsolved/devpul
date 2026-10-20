@@ -65,6 +65,7 @@ void main() {
             'latest': {
               'version': '1.1.0',
               'pubspec': {'description': 'Dio interceptor for DevPul.'},
+              'published': '2026-03-04T05:06:07.890Z',
             },
           }),
         );
@@ -135,13 +136,16 @@ void main() {
     expect(plugins[0], {
       ...cart,
       'version': '1.2.0',
+      'published': matches(r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.000Z$'),
       'url': 'https://example.com/site',
       'path': 'plugins/cart',
     });
     expect(plugins[1], containsPair('url', shop));
     expect(plugins[1], containsPair('path', 'shop'));
+    expect(plugins[1], contains('published'));
     expect(plugins[2], containsPair('url', served));
     expect(plugins[2].containsKey('path'), isFalse);
+    expect(plugins[2].containsKey('published'), isFalse);
 
     expect(parseRegistry(built.json).keys, ['cart', 'shop', 'stock']);
   });
@@ -159,6 +163,7 @@ void main() {
     expect((json['plugins'] as List).last, {
       ...dio,
       'version': '1.1.0',
+      'published': '2026-03-04T05:06:07.890Z',
       'description': 'Dio interceptor for DevPul.',
       'url': 'https://pub.dev/packages/devpul_dio',
     });

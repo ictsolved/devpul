@@ -11,21 +11,15 @@ Debug bridge between a running Dart or Flutter app and your browser. The app sen
 
 Everything runs in your browser. Requests, headers and bodies go from your app to the DevPul tab over `127.0.0.1` and are never sent to a server.
 
-**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [IDE setup](https://devpul.saradgajurel.com.np/docs/ide/), [command line](https://devpul.saradgajurel.com.np/docs/cli/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/), [agents (MCP)](https://devpul.saradgajurel.com.np/docs/mcp/), [tests](https://devpul.saradgajurel.com.np/docs/testing/), [security](https://devpul.saradgajurel.com.np/docs/security/), [limits](https://devpul.saradgajurel.com.np/docs/limits/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).** Sources in [apps/docs](apps/docs).
-
-## How it works
-
-The app posts events with `dart:developer` `postEvent`. They travel on the VM service Extension stream that every debug run already has. The browser connects to the Dart Development Service (DDS) websocket on `127.0.0.1` and reads them. Release builds have no VM service, and DevPul never emits in them. Profile builds leave DevPul out unless built with `--dart-define=DEVPUL_PROFILE=true`.
-
-Works with Flutter on Android, iOS, desktop and web, and with plain Dart programs. Any state management through [observers](https://devpul.saradgajurel.com.np/docs/extend/), any HTTP client through adapters, and dart:io calls with no adapter.
+**Docs: [getting started](https://devpul.saradgajurel.com.np/docs/), [IDE setup](https://devpul.saradgajurel.com.np/docs/ide/), [command line](https://devpul.saradgajurel.com.np/docs/cli/), [extending](https://devpul.saradgajurel.com.np/docs/extend/), [plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/), [agents (MCP)](https://devpul.saradgajurel.com.np/docs/mcp/), [tests](https://devpul.saradgajurel.com.np/docs/testing/), [security](https://devpul.saradgajurel.com.np/docs/security/), [limits](https://devpul.saradgajurel.com.np/docs/limits/), [help and FAQ](https://devpul.saradgajurel.com.np/docs/help/).**
 
 ## Quick start
 
-1. Add the packages:
+1. Add `devpul` and the packages for what your app uses:
 
    ```yaml
    dependencies:
-     devpul: ^1.1.0
+     devpul: ^1.1.1
      devpul_dio: ^1.1.1 # Dio
      devpul_http: ^1.1.0 # package:http
      devpul_flutter: ^1.1.0 # Flutter errors, debugPrint and routes
@@ -46,36 +40,61 @@ Works with Flutter on Android, iOS, desktop and web, and with plain Dart program
      );
    ```
 
-3. Run the app with the command line in place of `flutter run`; it opens DevPul connected to the app:
+3. Run the app in debug and open DevPul, whichever suits you:
+   - **DevTools:** the DevPul tab, in the browser or your IDE. Nothing else to install; every run prints a link that opens it.
+   - **Command line:** `devpul run` in place of `flutter run` opens DevPul connected to the app. Install it once with `dart pub global activate devpul_cli`.
+   - **Hosted site:** paste the app's VM service URL on [devpul.saradgajurel.com.np](https://devpul.saradgajurel.com.np).
 
-   ```sh
-   dart pub global activate devpul_cli
-   devpul run
-   ```
-
-   Any other debug run prints a link that opens DevPul in DevTools, connected to it, and IDEs show DevPul as a DevTools extension.
-
-The [example app](examples/devpul_example) uses every package.
+The [example app](examples/devpul_example) uses every package and the plugins below.
 
 ## Packages
 
+Every app adds `devpul`. The others are optional.
+
 | Package                                                   | What it does                                                                                                                                           |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [devpul](https://pub.dev/packages/devpul)                 | Pure Dart core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters. Web compatible.                         |
+| [devpul](https://pub.dev/packages/devpul)                 | Core: `Devpul.session`, `tags`, `emit`, `log`, `error`, `action`, config, `DevpulHttp` for adapters, and the DevTools tab. Pure Dart, web compatible.  |
 | [devpul_dio](https://pub.dev/packages/devpul_dio)         | `DevpulDioInterceptor` for Dio.                                                                                                                        |
 | [devpul_http](https://pub.dev/packages/devpul_http)       | `DevpulClient` for package:http.                                                                                                                       |
 | [devpul_flutter](https://pub.dev/packages/devpul_flutter) | Flutter errors with diagnostics, `debugPrint` capture, `DevpulNavigatorObserver`, `DevpulApp` overrides.                                               |
-| [devpul_cli](https://pub.dev/packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1; `devpul add` copies plugins into the app; `devpul mcp` for coding agents. |
 | [devpul_test](https://pub.dev/packages/devpul_test)       | `DevpulTest.capture` writes a session file for each failing test, from `dart test` and `flutter test`.                                                 |
+| [devpul_cli](https://pub.dev/packages/devpul_cli)         | `devpul run` in place of `flutter run`; `devpul` serves the UI on 127.0.0.1; `devpul add` copies plugins into the app; `devpul mcp` for coding agents. |
+
+`devpul` and `devpul_cli` share a version. The other packages release on their own when they change; pub picks versions that work together.
+
+## Plugins
+
+Plugins add tabs for app state, navigation and storage. `devpul add <id>` copies one into your app; see [installing plugins](https://devpul.saradgajurel.com.np/docs/plugins/install/).
+
+| Plugin                                                                                 | Tab                                                                                                |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [riverpod](https://devpul.saradgajurel.com.np/plugins/riverpod/)                       | Riverpod providers: each one's current value and recent changes.                                   |
+| [bloc](https://devpul.saradgajurel.com.np/plugins/bloc/)                               | Blocs and cubits: current state and recent events.                                                 |
+| [go_router](https://devpul.saradgajurel.com.np/plugins/go_router/)                     | The GoRouter route tree, location and matches, recent locations and a box that calls `go`.         |
+| [app_links](https://devpul.saradgajurel.com.np/plugins/app_links/)                     | Incoming links: the initial one, each one received, and a box that opens a test link.              |
+| [web_socket_channel](https://devpul.saradgajurel.com.np/plugins/web_socket_channel/)   | WebSocket connections, the messages sent and received, and a box that sends text.                  |
+| [files](https://devpul.saradgajurel.com.np/plugins/files/)                             | The app's path_provider directories: sizes, preview, download and delete.                          |
+| [secure_storage](https://devpul.saradgajurel.com.np/plugins/secure_storage/)           | flutter_secure_storage keys: values hidden until revealed, add, edit and delete.                   |
+| [sqflite](https://devpul.saradgajurel.com.np/plugins/sqflite/)                         | sqflite databases: tables and views, paged rows and a SQL console.                                 |
+| [local_notifications](https://devpul.saradgajurel.com.np/plugins/local_notifications/) | flutter_local_notifications: scheduled and shown ones, responses, cancel, and a test notification. |
+
+[Writing plugins](https://devpul.saradgajurel.com.np/docs/plugins/) covers your own, from `devpul create` to a listing on the [plugins page](https://devpul.saradgajurel.com.np/plugins/).
 
 ## In the browser
 
 - HTTP table with live pending rows, sortable columns, a filter syntax (`status:4xx ms:>500 host:api -word`), tree or raw JSON, copy as curl or fetch, HAR export.
 - Errors with stack traces and Flutter diagnostics, grouped by repeat, with the requests made just before.
-- Logs, custom events, app actions you trigger from the UI, and plugins with tabs for app state, storage, databases and your own events.
+- Logs, custom events, app actions you trigger from the UI, and plugin tabs.
+- Mock rules, breakpoints and replay for HTTP calls.
 - Several apps at once, history across reloads, session files to share, keyboard navigation.
 
 `devpul mcp` gives coding agents the same requests, logs, errors and actions over [MCP](https://devpul.saradgajurel.com.np/docs/mcp/). A failing test writes what it recorded to a session file, to open in the UI or hand to an agent.
+
+## How it works
+
+The app posts events with `dart:developer` `postEvent`. They travel on the VM service Extension stream that every debug run already has. The browser connects to the Dart Development Service (DDS) websocket on `127.0.0.1` and reads them. Release builds have no VM service, and DevPul never emits in them. Profile builds leave DevPul out unless built with `--dart-define=DEVPUL_PROFILE=true`.
+
+Works with Flutter on Android, iOS, desktop and web, and with plain Dart programs. Any state management through [observers](https://devpul.saradgajurel.com.np/docs/extend/), any HTTP client through adapters, and dart:io calls with no adapter.
 
 ## Limits
 
@@ -85,21 +104,9 @@ The [example app](examples/devpul_example) uses every package.
 
 The [limits](https://devpul.saradgajurel.com.np/docs/limits/) page has the rest, and [DevPul, DevTools and talker](https://devpul.saradgajurel.com.np/docs/compare/) when another tool fits better.
 
-## Development
+## Contributing
 
-```sh
-npm install
-npm run dev          # UI on http://localhost:5173
-npm run dev -w apps/docs   # docs on http://localhost:4321/docs/
-npm run check        # everything below
-npm run check:dart   # dart format, analyze, tests (Chrome for the web tests)
-npm run check:web    # prettier, oxlint, vitest, tsc, build
-npm run format       # prettier --write
-npm run screenshots  # docs, README and pub screenshots (needs img2webp)
-dart run tool/release.dart 1.2.3   # bump versions, check changelogs and semver, print publish commands
-```
-
-The site URL and repository link live in `site.json`. Docs are a Starlight site in `apps/docs`. `npm run build:site` builds the whole site into `dist/`: the app at `/`, docs at `/docs/` and, with `DEVPUL_REGISTRY` set to the output of `npm run build:registry`, plugin pages at `/plugins/`. The Pages workflow deploys `npm run build:pages`: app and docs from the highest `v*` tag, the registry from main. It runs on `v*` and `<id>-v*` tags, registry changes on main and by hand.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the dev setup, checks and releases.
 
 ## License
 

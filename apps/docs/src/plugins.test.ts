@@ -54,16 +54,49 @@ describe('pluginPages', async () => {
     expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags', 'plugins/net']);
     expect(pages[0]?.html).toContain('<a href="/plugins/cart/">');
     expect(pages[0]?.html).toContain('/issues/new?template=plugin_request.yml">Request a plugin</a>');
+    expect(pages[0]?.html).toContain('<time datetime="2026-01-15T09:30:00.000Z">Jan 15, 2026</time></p></li>');
   });
 
-  it('shows icons as masks and the README', () => {
-    const cart = pages[1]?.html ?? '';
-    expect(cart).toContain('mask-image: url(&quot;data:image/svg+xml;base64,');
-    expect(cart).not.toContain('cx="8" cy="21"');
+  it('shows the icon, version and install copy beside the title, and the README', () => {
+    const { heading, html: cart = '' } = pages[1] ?? {};
+    expect(heading?.before).toContain('mask-image: url(&quot;data:image/svg+xml;base64,');
+    expect(heading?.before).not.toContain('cx="8" cy="21"');
+    expect(heading?.after).toContain('<span class="plugin-version">1.3.0</span>');
+    expect(heading?.after).toContain('data-copy="devpul add cart"');
     expect(cart).toContain('<code>devpul add cart</code>');
-    expect(cart).toContain('data-copy="devpul add cart"');
     expect(cart).toContain('<p>Shows the cart.</p>\n<h3>Usage</h3>');
     expect(pages[2]?.html).not.toContain('<h3>');
+    expect(pages[0]?.heading).toBeUndefined();
+  });
+
+  it('shows when the version was published', () => {
+    expect(pages[1]?.heading?.below).toBe(
+      '<span>Published <time datetime="2026-01-15T09:30:00.000Z">Jan 15, 2026</time></span><span class="plugin-tag">shop</span><span class="plugin-tag">state</span>',
+    );
+    expect(pages[2]?.heading?.below).toBe('');
+  });
+
+  it('links the source folder at its tag on GitHub', async () => {
+    const [, cart] = await pluginPages({
+      plugins: [{ ...registry.plugins[0]!, url: 'https://github.com/example/plugins.git' }],
+      readmes: {},
+    });
+    expect(cart?.html).toContain(
+      '<td>Source</td><td><a href="https://github.com/example/plugins/tree/cart-v1.3.0/cart" rel="nofollow ugc noopener">example/plugins/cart</a></td>',
+    );
+    expect(pages[1]?.html).toContain(
+      '<td>Source</td><td><a href="https://example.com/plugins.git" rel="nofollow ugc noopener">https://example.com/plugins.git</a> <code>cart</code></td>',
+    );
+  });
+
+  it('links required packages to pub.dev', async () => {
+    const [, cart] = await pluginPages({
+      plugins: [{ ...registry.plugins[0]!, requires: { collection: '^1.18.0' } }],
+      readmes: {},
+    });
+    expect(cart?.html).toContain(
+      '<td>Requires</td><td><a href="https://pub.dev/packages/collection" rel="nofollow ugc noopener"><code>collection ^1.18.0</code></a></td>',
+    );
   });
 
   it('links a pub package and the pub add it runs', () => {
@@ -71,10 +104,10 @@ describe('pluginPages', async () => {
     expect(net).toContain('<code>devpul add net</code> runs <code>pub add example_net</code>');
     expect(net).toContain('<td>Package</td><td><a href="https://pub.dev/packages/example_net"');
     expect(net).not.toContain('<td>devpul</td>');
-    expect(net).toContain('<span class="plugin-kind">pub</span>');
+    expect(pages[3]?.heading?.below).toContain('<span class="plugin-kind">pub</span>');
     expect(pages[0]?.html).toContain(
       '<span class="plugin-version">2.1.0</span><span class="plugin-kind">pub</span></a>',
     );
-    expect(pages[1]?.html).not.toContain('plugin-kind');
+    expect(pages[1]?.heading?.below).not.toContain('plugin-kind');
   });
 });
