@@ -95,7 +95,7 @@ describe('pluginPages', async () => {
       readmes: {},
     });
     expect(cart?.html).toContain(
-      '<td>Requires</td><td><a href="https://pub.dev/packages/collection" rel="nofollow ugc noopener"><code>collection ^1.18.0</code></a></td>',
+      '<td>Requires</td><td><a href="https://pub.dev/packages/collection" rel="nofollow ugc noopener"><code>collection</code></a> ^1.18.0</td>',
     );
   });
 
