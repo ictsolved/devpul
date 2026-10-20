@@ -27,7 +27,7 @@ const HOME_PRIVACY =
 
 const SETUP = `dependencies:
   devpul: ^1.1.0
-  devpul_dio: ^1.1.0      # Dio, or devpul_http for package:http
+  devpul_dio: ^1.1.1      # Dio, or devpul_http for package:http
   devpul_flutter: ^1.1.0  # Flutter errors and routes`;
 
 const MAIN = `void main() {
