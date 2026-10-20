@@ -3,48 +3,48 @@
   "plugins": {
     "app_links": {
       "url": "../../plugins/app_links",
-      "version": "0.1.0",
-      "hash": "230bf4ad3c0e545bd4bdee01683234f92aa89b7b80a82600bb234c4a1f9c1fc9"
+      "version": "0.1.1",
+      "hash": "a95c8c3288e5616fb45bbefff146d7c0663155eb6e1bd4dd22d4cf6f605ac60d"
     },
     "bloc": {
       "url": "../../plugins/bloc",
-      "version": "0.2.0",
-      "hash": "cc6963867bf74545e17adb91e21d0383084780e454d949b6aeeb0d1d51e030e4"
+      "version": "1.0.0",
+      "hash": "5f77b2496e9a0ef506368ebc4992d8d46d38b52b50c29f9065a9e91d912ce6bb"
     },
     "files": {
       "url": "../../plugins/files",
-      "version": "0.1.0",
-      "hash": "f51068e9ca02a1a41100a5247c66671834fe947481be5408964d91c55cb44a8a"
+      "version": "0.1.1",
+      "hash": "c4047001c8b1bca3527ed322d63ab78e0b3cab4fc2f158ab1ef6b360abd6c7f3"
     },
     "go_router": {
       "url": "../../plugins/go_router",
-      "version": "0.1.0",
-      "hash": "a325fbc91169bf16f78ed01b5223f7fa3252f1bc238daafd3881562a66db6a42"
+      "version": "1.0.0",
+      "hash": "620ebeae292d36bc9656221912d559be75eae78464dccc0614625517c538e798"
     },
     "local_notifications": {
       "url": "../../plugins/local_notifications",
-      "version": "0.1.0",
-      "hash": "0ec7fe97db24472e270bd7fb6dbc645e72149c7247056b043cee1f05442241c0"
+      "version": "0.1.1",
+      "hash": "2af024d9ebaf1abf482c1da0d971e6b95cf4a8605dae680bdb8affe07c9a9d3a"
     },
     "riverpod": {
       "url": "../../plugins/riverpod",
-      "version": "0.1.0",
-      "hash": "1a9afe089672b3e0048f3cbd24b01dbca57373f74ffb6517f19ef074d8973f81"
+      "version": "1.0.0",
+      "hash": "6a7967fbc2dae01914ab78f20b8acfa6970335246e578f1028dd6871539aff77"
     },
     "secure_storage": {
       "url": "../../plugins/secure_storage",
-      "version": "0.1.0",
-      "hash": "b2084c5154240ae21d96906f1db7792a481365dca738ffb704b4f065229e79d9"
+      "version": "0.1.1",
+      "hash": "57279de43374ea09d0a2205192af95872f71ddcff56b3393e427a9b0aceabf55"
     },
     "sqflite": {
       "url": "../../plugins/sqflite",
-      "version": "0.1.0",
-      "hash": "2ee9c173f41caaba189d6ed358ed2484fa8c3d9b1ac982d418ffbd67efdb5aa3"
+      "version": "0.1.1",
+      "hash": "d9b6582e65c46fbe76fa6a0c290fe15d00e1751e97f1bb2e0d887f73f8320e0e"
     },
     "web_socket_channel": {
       "url": "../../plugins/web_socket_channel",
-      "version": "0.1.0",
-      "hash": "9c16bf6d178dddc4183e6a3cf535ea34110b5901a004385dc575bab268bbbd01"
+      "version": "1.0.0",
+      "hash": "13a9ff775ac3872d9e53ad0f7a71b9d7604c54a7ff0f5db2ec0e3da9831e683c"
     }
   }
 }

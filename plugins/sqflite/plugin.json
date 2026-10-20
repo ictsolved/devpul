@@ -1,6 +1,6 @@
 {
   "id": "sqflite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "api": 1,
   "devpul": ">=1.0.0-dev.1 <2.0.0",
   "description": "The app's sqflite databases in an SQLite tab: tables and views, paged rows and a SQL console.",

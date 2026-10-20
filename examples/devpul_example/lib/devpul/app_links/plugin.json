@@ -1,6 +1,6 @@
 {
   "id": "app_links",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "api": 1,
   "devpul": "^1.0.0",
   "description": "The app's incoming app_links in a Links tab: the initial link, each link received with its parts, and a box that opens a test link.",

@@ -1,6 +1,6 @@
 {
   "id": "secure_storage",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "api": 1,
   "devpul": ">=1.0.0-dev.1 <2.0.0",
   "description": "The app's flutter_secure_storage keys in a Secure storage tab: values hidden until revealed, add, edit and delete.",

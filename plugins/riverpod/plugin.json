@@ -1,6 +1,6 @@
 {
   "id": "riverpod",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "api": 1,
   "devpul": ">=1.0.0-dev.1 <2.0.0",
   "description": "Riverpod providers in a Riverpod tab: each provider's current value and recent changes.",

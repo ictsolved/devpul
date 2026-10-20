@@ -1,6 +1,6 @@
 {
   "id": "local_notifications",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "api": 1,
   "devpul": "^1.0.0",
   "description": "The app's flutter_local_notifications in a Notifications tab: scheduled and shown ones, the one that launched the app, responses, cancel, and a test one.",
