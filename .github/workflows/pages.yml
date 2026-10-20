@@ -2,9 +2,13 @@ name: Pages
 
 on:
   push:
-    tags: ['v*', '*-v*']
+    branches: [stable]
+    tags: ['*-v*']
+  # A push filter on registry/** would also hold back pushes to stable.
+  workflow_run:
+    workflows: [Registry]
+    types: [completed]
     branches: [main]
-    paths: [registry/**]
   workflow_dispatch:
 
 permissions:
@@ -16,11 +20,13 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The site builds from the highest v<version> tag, the registry from <id>-v<version> tags.
+          # The site builds from origin/stable, the registry from main and <id>-v<version> tags.
+          ref: main
           fetch-depth: 0
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
