@@ -35,3 +35,6 @@ write(
   `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[`${site.url}sitemap-root.xml`, ...astro].map((loc) => `  <sitemap><loc>${loc}</loc></sitemap>`).join('\n')}\n</sitemapindex>\n`,
 );
 write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${site.url}sitemap.xml\n`);
+if (site.bingSiteAuth) {
+  write('BingSiteAuth.xml', `<?xml version="1.0"?>\n<users>\n\t<user>${site.bingSiteAuth}</user>\n</users>\n`);
+}

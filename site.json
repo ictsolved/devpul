@@ -1,5 +1,6 @@
 {
   "url": "https://devpul.saradgajurel.com.np/",
   "repo": "https://github.com/ictsolved/devpul",
-  "registry": "https://devpul.saradgajurel.com.np/plugins/registry.json"
+  "registry": "https://devpul.saradgajurel.com.np/plugins/registry.json",
+  "bingSiteAuth": "069819CF72EAF850E6F9880090A89462"
 }
