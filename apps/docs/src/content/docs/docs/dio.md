@@ -7,7 +7,7 @@ description: DevpulDioInterceptor shows Dio requests, responses, redirects and e
 
 ```yaml
 dependencies:
-  devpul: ^1.1.0
+  devpul: ^1.1.1
   devpul_dio: ^1.1.1
 ```
 

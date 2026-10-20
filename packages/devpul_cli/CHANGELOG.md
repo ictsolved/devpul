@@ -1,3 +1,8 @@
+## 1.1.1
+
+- The README lists the plugins `devpul add` takes.
+- Serves the 1.1.1 UI.
+
 ## 1.1.0
 
 - `devpul mcp <session file>` reads a session file, such as one `devpul_test` wrote for a failing test. `get_session` gives a bug report's device, and its screenshot as an image.

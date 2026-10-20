@@ -7,7 +7,7 @@ description: devpul_flutter reports Flutter errors with diagnostics, captures de
 
 ```yaml
 dependencies:
-  devpul: ^1.1.0
+  devpul: ^1.1.1
   devpul_flutter: ^1.1.0
 ```
 

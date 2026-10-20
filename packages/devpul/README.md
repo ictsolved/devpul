@@ -6,7 +6,7 @@ Core of [DevPul](https://devpul.saradgajurel.com.np): streams HTTP calls, errors
 
 ```yaml
 dependencies:
-  devpul: ^1.1.0
+  devpul: ^1.1.1
 ```
 
 Then add what your app uses:
