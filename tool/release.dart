@@ -1,26 +1,44 @@
 import 'dart:convert';
 import 'dart:io';
 
-const _usage = 'Usage: dart run tool/release.dart <version>';
+const _usage = '''
+Usage: dart run tool/release.dart <package> <version>
+
+devpul releases devpul and devpul_cli together with the UI; any other package
+releases alone.''';
+
+/// The CLI serves the UI build that ships in devpul.
+const _core = ['devpul', 'devpul_cli'];
 
 final _semver = RegExp(r'^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$');
 
 Future<void> main(List<String> args) async {
-  if (args.length != 1 || !_semver.hasMatch(args.single)) {
+  if (args.length != 2 || !_semver.hasMatch(args[1])) {
     stderr.writeln(_usage);
     exit(64);
   }
-  final version = args.single;
+  final [name, version] = args;
   Directory.current = File.fromUri(Platform.script).parent.parent;
 
-  final packages = {
+  final all = {
     for (final dir in Directory('packages').listSync().whereType<Directory>())
       if (File('${dir.path}/pubspec.yaml').existsSync())
         dir.uri.pathSegments.lastWhere((s) => s.isNotEmpty): dir.path,
   };
+  if (!all.containsKey(name)) {
+    stderr.writeln('No package $name in packages/');
+    exit(64);
+  }
+  final core = _core.contains(name);
+  final packages = {
+    for (final n in core ? _core : [name]) n: all[n]!,
+  };
 
-  final pubspecs = [
-    for (final path in packages.values) File('$path/pubspec.yaml'),
+  for (final path in packages.values) {
+    _bumpPubspec(File('$path/pubspec.yaml'), version, packages.keys);
+  }
+  // Packages outside the release raise a constraint only when they need it.
+  final apps = [
     for (final dir in [
       'examples',
       'plugins',
@@ -38,29 +56,31 @@ Future<void> main(List<String> args) async {
                 !f.path.contains('/.dart_tool/'),
           ),
   ];
-  for (final pubspec in pubspecs) {
-    _bumpPubspec(pubspec, version, packages.keys);
+  for (final pubspec in apps) {
+    _bumpPubspec(pubspec, version, packages.keys, own: core);
   }
   for (final file in _snippetFiles()) {
     _bumpSnippets(file, version, packages.keys);
   }
-  _bumpJson(File('apps/ui/package.json'), version, (json) => json);
-  _bumpJson(
-    File('package-lock.json'),
-    version,
-    (json) => (json['packages'] as Map)['apps/ui'] as Map<String, Object?>,
-  );
-  final config = File('packages/devpul/extension/devtools/config.yaml');
-  config.writeAsStringSync(
-    config.readAsStringSync().replaceFirst(
-      RegExp(r'^version: .*$', multiLine: true),
-      'version: $version',
-    ),
-  );
-  File('packages/devpul/lib/src/version.dart').writeAsStringSync('''
+  if (core) {
+    _bumpJson(File('apps/ui/package.json'), version, (json) => json);
+    _bumpJson(
+      File('package-lock.json'),
+      version,
+      (json) => (json['packages'] as Map)['apps/ui'] as Map<String, Object?>,
+    );
+    final config = File('packages/devpul/extension/devtools/config.yaml');
+    config.writeAsStringSync(
+      config.readAsStringSync().replaceFirst(
+        RegExp(r'^version: .*$', multiLine: true),
+        'version: $version',
+      ),
+    );
+    File('packages/devpul/lib/src/version.dart').writeAsStringSync('''
 // Written by tool/release.dart.
 const packageVersion = '$version';
 ''');
+  }
 
   final missing = [
     for (final MapEntry(:key, :value) in packages.entries)
@@ -83,17 +103,29 @@ const packageVersion = '$version';
   });
 
   // The UI shows its version, so it is built after the bump.
-  _run('npm', ['run', 'build:extension']);
+  if (core) _run('npm', ['run', 'build:extension']);
 
-  stdout.writeln('''
-Versions set to $version and the UI built into packages/devpul. Next:
-
-  npm run check
-  git commit -am "Release $version"
-  node tool/build_extension.mjs --check
-${[for (final name in _publishOrder(packages)) '  (cd ${packages[name]} && ${name == 'devpul_flutter' ? 'flutter' : 'dart'} pub publish)'].join('\n')}
-  git tag v$version
-  git push origin main v$version''');
+  final tag = core ? 'v$version' : '$name-v$version';
+  final steps = [
+    'npm run check',
+    'git commit -am "Release ${core ? version : '$name $version'}"',
+    if (core) 'node tool/build_extension.mjs --check',
+    for (final name in _publishOrder(packages))
+      '(cd ${packages[name]} && '
+          '${name == 'devpul_flutter' ? 'flutter' : 'dart'} pub publish)',
+    'git tag $tag',
+    'git push origin main $tag',
+    // The site deploys from stable.
+    if (core) ...[
+      'git switch stable && git merge --no-edit $tag',
+      'git push origin stable && git switch main',
+    ],
+  ];
+  final done = core
+      ? 'devpul and devpul_cli set to $version and the UI built into '
+            'packages/devpul'
+      : '$name set to $version';
+  stdout.writeln('$done. Next:\n\n${steps.map((s) => '  $s').join('\n')}');
 }
 
 /// Fails when a package's new version is a smaller bump than dart_apitool's
@@ -157,11 +189,19 @@ void _run(String executable, List<String> args) {
   }
 }
 
-void _bumpPubspec(File file, String version, Iterable<String> packages) {
-  var text = file.readAsStringSync().replaceFirst(
-    RegExp(r'^version: .*$', multiLine: true),
-    'version: $version',
-  );
+void _bumpPubspec(
+  File file,
+  String version,
+  Iterable<String> packages, {
+  bool own = true,
+}) {
+  var text = file.readAsStringSync();
+  if (own) {
+    text = text.replaceFirst(
+      RegExp(r'^version: .*$', multiLine: true),
+      'version: $version',
+    );
+  }
   for (final name in packages) {
     text = text.replaceAll(
       RegExp('^  $name: \\^.*\$', multiLine: true),
