@@ -179,7 +179,7 @@ The file is written whole from `devpul.lock` and the copied files, so it is neve
 
 ## registry.json
 
-Served at `%SITE_URL%plugins/registry.json`, next to the [plugins page](/plugins/). One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it. Check for updates in the UI's Plugins tab matches an entry by `id` and by `url` against the handshake `origin`.
+Served at `%SITE_URL%plugins/registry.json`, next to the [plugins page](/plugins/). One entry per plugin at its latest version. `url` and `path` are what a lock entry records for a plugin installed from it. `published` is when that version was published, in UTC: its tag's commit date for git, pub.dev's date for a package; a `plugin.json` URL has none. Check for updates in the UI's Plugins tab matches an entry by `id` and by `url` against the handshake `origin`.
 
 The registry is built from the `<id>-v<version>` tags of the plugins in the DevPul repository and the entries in its `registry/third-party.json`, each fetched as `devpul add <id>` would fetch it and checked as `devpul check` checks a folder. A third-party entry is an `id` and an https `url`: a git repository with `<id>-v<version>` tags, plus `path` for the plugin folder in it, or a `plugin.json` URL. The README is shown on the plugin's page as markdown without HTML; images show as links and code blocks are highlighted by the language on their fence.
 
@@ -192,6 +192,7 @@ An entry with `package` is a pub package listed under a plugin id, from `registr
     {
       "id": "cart",
       "version": "1.3.0",
+      "published": "2026-01-15T09:30:00.000Z",
       "api": 1,
       "devpul": "^1.0.0",
       "description": "Cart contents and totals in a Cart tab.",
@@ -205,6 +206,7 @@ An entry with `package` is a pub package listed under a plugin id, from `registr
     {
       "id": "net",
       "version": "2.1.0",
+      "published": "2026-02-02T14:05:00.000Z",
       "description": "Requests from the net client in the Network tab.",
       "tags": ["network"],
       "usage": ["final client = NetClient(devpul: true);"],

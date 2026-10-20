@@ -46,7 +46,7 @@ Future<BuiltRegistry> buildRegistry(
         unknown.map((key) => 'plugin.json: $key: unknown field').join(', '),
       );
     }
-    entries[id] = _entry(fetched, url, path);
+    entries[id] = _entry(fetched, url, path, await fetcher.published(fetched));
     if (await fetcher.readme(fetched) case final readme?) readmes[id] = readme;
   }
 
@@ -170,6 +170,8 @@ Future<BuiltRegistry> buildRegistry(
         entries[id] = {
           'id': id,
           'version': '${latest.version}',
+          if (latest.published case final published?)
+            'published': _date(published),
           'description': latest.description ?? '',
           'tags': tags,
           'usage': usage,
@@ -201,14 +203,22 @@ bool _local(Uri uri) =>
     uri.scheme == 'http' &&
         (InternetAddress.tryParse(uri.host)?.isLoopback ?? false);
 
+String _date(DateTime date) => date.toUtc().toIso8601String();
+
 /// The manifest's fields, as written, that the UI and the marketplace read.
-Map<String, Object?> _entry(Fetched fetched, String url, String? path) {
+Map<String, Object?> _entry(
+  Fetched fetched,
+  String url,
+  String? path,
+  DateTime? published,
+) {
   final manifest = fetched.manifest;
   final json =
       jsonDecode(fetched.files['plugin.json']!) as Map<String, Object?>;
   return {
     'id': manifest.id,
     'version': '${manifest.version}',
+    if (published != null) 'published': _date(published),
     if (manifest.source != null) 'api': pluginApi,
     'devpul': json['devpul'],
     'description': manifest.description,

@@ -261,10 +261,10 @@ final class Fetcher {
   Future<Version> latestCli() async =>
       (await latestPackage('devpul_cli')).version;
 
-  /// The latest version of [package] on pub.dev, with its description.
-  Future<({Version version, String? description})> latestPackage(
-    String package,
-  ) async {
+  /// The latest version of [package] on pub.dev, with its description and
+  /// when it was published.
+  Future<({Version version, String? description, DateTime? published})>
+  latestPackage(String package) async {
     final url = '$pub$package';
     final text = await _get(Uri.parse(url));
     try {
@@ -275,6 +275,10 @@ final class Fetcher {
           version: Version.parse(version),
           description: switch (latest['pubspec']) {
             {'description': final String description} => description,
+            _ => null,
+          },
+          published: switch (latest['published']) {
+            final String published => DateTime.tryParse(published),
             _ => null,
           },
         );
@@ -354,6 +358,13 @@ final class Fetcher {
           (throw PluginException('$readme is missing in $url'));
     }
     return _get(Uri.parse(url).resolve(readme));
+  }
+
+  /// The commit date of [fetched] from git, or null when it was served
+  /// from a URL.
+  Future<DateTime?> published(Fetched fetched) async {
+    final LockEntry(:url, :commit) = fetched.entry;
+    return commit == null ? null : (await _mirror(url)).date(commit);
   }
 
   Future<Fetched> _url(String url) async {
@@ -620,6 +631,12 @@ final class _Repo {
               ? object
               : peeled,
     };
+  }
+
+  Future<DateTime> date(String commit) async {
+    final out = await git(['show', '-s', '--format=%ct', commit]);
+    final seconds = int.parse(utf8.decode(out).trim());
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
   }
 
   /// The file at [path] in [commit], or null when it is missing.
