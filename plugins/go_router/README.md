@@ -24,5 +24,3 @@ void main() {
 Click a route or a recent location to put it in the box, edit it, then Go. Attaching another router replaces the first. It does nothing unless `Devpul.included`.
 
 `DevpulNavigatorObserver` from `devpul_flutter` is optional: it keeps the Routes tab with each push and pop, which shows the pages go_router builds. Shell routes take their own `observers`.
-
-Needs `go_router` 14 or later.

@@ -27,5 +27,3 @@ Limits:
 - A run returns at most 500 rows or 1 MB. Blobs show their size and first 32 bytes, text over 64 KB is cut.
 - Columns with the same name show once, as sqflite returns rows as maps.
 - A statement that takes over 5 seconds keeps running in the app after the tab stops waiting.
-
-Needs `sqflite_common` 2.4 or later.

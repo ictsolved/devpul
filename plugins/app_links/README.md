@@ -24,5 +24,3 @@ void main() {
 Test links reach only listeners of a wrapped stream, not `getInitialLink`, `getLatestLink` or code that listens to `AppLinks` directly. To go through the platform, open the link from outside: `adb shell am start -a android.intent.action.VIEW -d <link>` on Android, `xcrun simctl openurl booted <link>` on the iOS simulator, `open <link>` on macOS, or the app's executable with the link as its argument on Linux.
 
 The initial link is `getInitialLink`'s: the link that launched the app, or on Linux the first link the app received.
-
-Needs `app_links` 6 or 7.

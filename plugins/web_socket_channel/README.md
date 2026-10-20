@@ -25,5 +25,3 @@ final channel = DevpulWebSocketChannel.wrap(
 Received messages are the ones the app's listener gets, so wrap before listening. Binary messages carry their size and first 1 KB. `redactBody` from `DevpulConfig` runs on every message with the URL, and `maxValueLength` cuts long ones. A busy socket can be capped with `Devpul.limit('web_socket_channel.receive', 20)`.
 
 The wrapper handles errors from `ready` to show a failed connection in the tab, so in debug builds an app that ignores `ready` gets no uncaught error from it. The stream still gets the error.
-
-Needs `web_socket_channel` 3.

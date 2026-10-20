@@ -27,5 +27,3 @@ Future<void> main() async {
 Test notifications use `install(details: ...)`, so pass the app's own `NotificationDetails` to test its channel, sound or actions. Without them Android posts on a channel named DevPul, which then shows in the app's notification settings.
 
 Android, iOS, macOS and Windows list scheduled and shown notifications; web, from 22, lists shown ones; Linux lists neither, and the tab says so.
-
-Needs `flutter_local_notifications` 20 to 22.

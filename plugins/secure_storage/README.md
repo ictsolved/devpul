@@ -17,5 +17,3 @@ void main() {
 ```
 
 Pass the app's own instance, `install(storage: storage)`, when it sets Android, Apple, web or Windows options; without one the tab reads `const FlutterSecureStorage()`. It does nothing unless `Devpul.included`.
-
-Needs `flutter_secure_storage` 9 to 11.

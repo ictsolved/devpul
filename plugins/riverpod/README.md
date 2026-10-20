@@ -20,5 +20,3 @@ void main() {
 ```dart
 devpulRiverpodObservers(exclude: [clockProvider], filter: (p) => p.name != null)
 ```
-
-Needs `flutter_riverpod` 3.
