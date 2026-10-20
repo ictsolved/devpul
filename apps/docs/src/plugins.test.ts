@@ -54,6 +54,7 @@ describe('pluginPages', async () => {
     expect(pages.map((p) => p.id)).toEqual(['plugins', 'plugins/cart', 'plugins/flags', 'plugins/net']);
     expect(pages[0]?.html).toContain('<a href="/plugins/cart/">');
     expect(pages[0]?.html).toContain('/issues/new?template=plugin_request.yml">Request a plugin</a>');
+    expect(pages[0]?.html).toContain('<time datetime="2026-01-15T09:30:00.000Z">Jan 15, 2026</time></p></li>');
   });
 
   it('shows the icon, version and install copy beside the title, and the README', () => {

@@ -140,7 +140,7 @@ export async function pluginPages({ plugins, readmes }: Registry, render?: (id: 
   const cards = plugins
     .map(
       (p) =>
-        `<li><a href="/plugins/${p.id}/">${iconOf(p)}<strong>${escape(p.id)}</strong><span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}</a><p>${escape(p.description)}</p><p>${tagsOf(p)}</p></li>`,
+        `<li><a href="/plugins/${p.id}/">${iconOf(p)}<strong>${escape(p.id)}</strong><span class="plugin-version">${escape(p.version)}</span>${kindOf(p)}</a><p>${escape(p.description)}</p><p class="plugin-card-meta">${tagsOf(p)}${p.published ? `<time datetime="${escape(p.published)}">${date(p.published)}</time>` : ''}</p></li>`,
     )
     .join('');
   const index: Page = {

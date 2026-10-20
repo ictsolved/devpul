@@ -92,6 +92,18 @@
   font-size: var(--sl-text-sm);
 }
 
+.plugin-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.plugin-card-meta time {
+  margin-left: auto;
+  font-size: var(--sl-text-xs);
+  color: var(--muted-foreground);
+}
+
 .plugin-meta {
   display: flex;
   flex-wrap: wrap;
