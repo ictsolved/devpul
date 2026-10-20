@@ -52,12 +52,33 @@ void main() {
     bad.writeAsStringSync(bad.readAsStringSync().replaceFirst('{', '{"x":1,'));
     commit(third, ['bad-v1.0.0']);
 
+    final dio = Directory(p.join(temp.path, 'devpul_dio'));
+    File('${dio.path}/README.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Dio\n');
+    File('${dio.path}/doc/README.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Doc\n');
+    await Process.run('tar', [
+      'czf',
+      '${temp.path}/devpul_dio.tar.gz',
+      '-C',
+      dio.path,
+      'doc',
+      'README.md',
+    ]);
+
     final stock = p.join(temp.path, 'stock');
     plugin(stock, 'stock', '2.0.0', readme: '# Stock\n');
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     served = 'http://127.0.0.1:${server.port}/plugin.json';
     server.listen((request) async {
-      final file = File(p.join(stock, request.uri.path.substring(1)));
+      final file = File(
+        p.join(
+          request.uri.path.endsWith('.tar.gz') ? temp.path : stock,
+          request.uri.path.substring(1),
+        ),
+      );
       if (request.uri.path == '/api/packages/devpul_dio') {
         request.response.write(
           jsonEncode({
@@ -66,6 +87,8 @@ void main() {
               'version': '1.1.0',
               'pubspec': {'description': 'Dio interceptor for DevPul.'},
               'published': '2026-03-04T05:06:07.890Z',
+              'archive_url':
+                  'http://127.0.0.1:${server.port}/devpul_dio.tar.gz',
             },
           }),
         );
@@ -167,6 +190,7 @@ void main() {
       'description': 'Dio interceptor for DevPul.',
       'url': 'https://pub.dev/packages/devpul_dio',
     });
+    expect(built.readmes, containsPair('dio', '# Dio\n'));
     final entry = parseRegistry(built.json)['dio']!;
     expect(entry.package, 'devpul_dio');
     expect(entry.usage, dio['usage']);

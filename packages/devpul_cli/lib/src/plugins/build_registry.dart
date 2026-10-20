@@ -178,6 +178,11 @@ Future<BuiltRegistry> buildRegistry(
           'package': package,
           'url': 'https://pub.dev/packages/$package',
         };
+        if (latest.archive case final archive?) {
+          if (await fetcher.packageReadme(archive) case final readme?) {
+            readmes[id] = readme;
+          }
+        }
       } on PluginException catch (e) {
         final problem = '$where: $package: ${e.message}';
         skipBroken ? log('$problem, not listed') : problems.add(problem);

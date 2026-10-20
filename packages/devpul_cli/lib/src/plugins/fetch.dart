@@ -261,9 +261,11 @@ final class Fetcher {
   Future<Version> latestCli() async =>
       (await latestPackage('devpul_cli')).version;
 
-  /// The latest version of [package] on pub.dev, with its description and
-  /// when it was published.
-  Future<({Version version, String? description, DateTime? published})>
+  /// The latest version of [package] on pub.dev, with its description, when
+  /// it was published and its archive.
+  Future<
+    ({Version version, String? description, DateTime? published, Uri? archive})
+  >
   latestPackage(String package) async {
     final url = '$pub$package';
     final text = await _get(Uri.parse(url));
@@ -279,6 +281,10 @@ final class Fetcher {
           },
           published: switch (latest['published']) {
             final String published => DateTime.tryParse(published),
+            _ => null,
+          },
+          archive: switch (latest['archive_url']) {
+            final String url => Uri.tryParse(url),
             _ => null,
           },
         );
@@ -358,6 +364,16 @@ final class Fetcher {
           (throw PluginException('$readme is missing in $url'));
     }
     return _get(Uri.parse(url).resolve(readme));
+  }
+
+  /// The README.md of the pub package [archive], or null when it has none.
+  Future<String?> packageReadme(Uri archive) async {
+    try {
+      final file = _untar(gzip.decode(await _bytes(archive)), 'README.md');
+      return file == null ? null : utf8.decode(file);
+    } on FormatException catch (e) {
+      throw PluginException('$archive: ${e.message}');
+    }
   }
 
   /// The commit date of [fetched] from git, or null when it was served
@@ -556,6 +572,15 @@ bool _loopback(String host) =>
     (InternetAddress.tryParse(host)?.isLoopback ?? false);
 
 Future<String> _get(Uri uri) async {
+  final bytes = await _bytes(uri);
+  try {
+    return utf8.decode(bytes);
+  } on FormatException {
+    throw PluginException('$uri is not UTF-8 text');
+  }
+}
+
+Future<List<int>> _bytes(Uri uri) async {
   final client = HttpClient();
   try {
     final response = await (await client.getUrl(uri)).close();
@@ -563,14 +588,44 @@ Future<String> _get(Uri uri) async {
     if (response.statusCode != HttpStatus.ok) {
       throw PluginException('$uri: HTTP ${response.statusCode}');
     }
-    return utf8.decode(bytes);
+    return bytes;
   } on IOException catch (e) {
     throw PluginException('$uri: $e');
-  } on FormatException {
-    throw PluginException('$uri is not UTF-8 text');
   } finally {
     client.close();
   }
+}
+
+/// The regular file [name] in the tar archive [tar], or null when it has
+/// none.
+List<int>? _untar(List<int> tar, String name) {
+  var at = 0;
+  while (at + 512 <= tar.length) {
+    final header = tar.sublist(at, at + 512);
+    if (header.every((byte) => byte == 0)) return null;
+    String field(int start, int length) {
+      final bytes = header.sublist(start, start + length);
+      final end = bytes.indexOf(0);
+      return latin1.decode(end < 0 ? bytes : bytes.sublist(0, end));
+    }
+
+    final size =
+        int.tryParse(field(124, 12).trim(), radix: 8) ??
+        (throw const FormatException('not a tar archive'));
+    // POSIX ustar splits long paths into a prefix; GNU uses those bytes
+    // for other fields.
+    final prefix = field(257, 6) == 'ustar' ? field(345, 155) : '';
+    final path = prefix.isEmpty ? field(0, 100) : '$prefix/${field(0, 100)}';
+    at += 512;
+    if (const {0, 0x30}.contains(header[156]) && path == name) {
+      if (at + size > tar.length) {
+        throw const FormatException('truncated tar archive');
+      }
+      return tar.sublist(at, at + size);
+    }
+    at += (size + 511) ~/ 512 * 512;
+  }
+  return null;
 }
 
 final class _Repo {
