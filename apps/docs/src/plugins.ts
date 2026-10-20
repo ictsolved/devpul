@@ -155,8 +155,9 @@ ${cards ? `<ul class="plugin-cards not-content">${cards}</ul>` : '<p>No plugins 
     index,
     ...(await Promise.all(
       plugins.map(async (p) => {
-        const requires = Object.entries(p.requires ?? {}).map(([name, range]) =>
-          link(`https://pub.dev/packages/${encodeURIComponent(name)}`, code(`${name} ${range}`)),
+        const requires = Object.entries(p.requires ?? {}).map(
+          ([name, range]) =>
+            `${link(`https://pub.dev/packages/${encodeURIComponent(name)}`, code(name))} ${escape(range)}`,
         );
         const published = p.published
           ? `<span>Published <time datetime="${escape(p.published)}">${date(p.published)}</time></span>`
